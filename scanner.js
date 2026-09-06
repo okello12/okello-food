@@ -6,6 +6,9 @@
   const lookupBtn=$('lookupBarcodeBtn');
   if(!input||!lookupBtn)return;
 
+  const SCANNER_LIB='https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
+  const DEBUG_KEY='okello_scanner_debug_v1';
+  const LAST_ERROR_KEY='okello_scanner_last_error_v1';
   const standalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
   const isiPhone=/iPhone|iPod/i.test(navigator.userAgent);
 
@@ -21,7 +24,7 @@
     .scanner-actions{display:grid;gap:9px;margin:10px 0}.scanner-action{min-height:50px;border-radius:12px;font-weight:850;padding:11px 13px;touch-action:manipulation;text-align:center;display:flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer}.scanner-action.primary{border:0;background:#1E4235;color:#fff}.scanner-action.secondary{border:1px solid #1E4235;background:#fff;color:#1E4235}
     .scanner-native-capture,.direct-native-scan{position:relative;overflow:hidden}.scanner-native-capture input,.direct-native-scan input{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;opacity:.001!important;cursor:pointer!important;border:0!important;z-index:5}.scanner-native-capture span{pointer-events:none;position:relative;z-index:1}.direct-native-scan>button{position:relative;z-index:1}
     .scanner-frame[hidden]{display:none!important}.scanner-frame{position:relative;overflow:hidden;border-radius:18px;background:#0e1411;min-height:280px;border:1px solid #2d4438}.scannerReader{min-height:280px}.scannerReader video{width:100%!important;height:auto!important;display:block;border-radius:16px}.scannerReader img{max-width:100%}.scanner-target{pointer-events:none;position:absolute;left:10%;right:10%;top:50%;transform:translateY(-50%);height:112px;border:3px solid rgba(255,255,255,.9);border-radius:18px;box-shadow:0 0 0 999px rgba(0,0,0,.18)}.scanner-line{position:absolute;left:14%;right:14%;top:50%;height:2px;background:#B8862B;box-shadow:0 0 10px rgba(184,134,43,.8);animation:okScan 1.8s ease-in-out infinite alternate}@keyframes okScan{from{transform:translateY(-38px)}to{transform:translateY(38px)}}
-    .scanner-status{margin:12px 0 0;color:#657067;font-size:.9rem;min-height:1.4em}.scanner-status.good{color:#326B51;font-weight:700}.scanner-status.bad{color:#A63A20;font-weight:700}.scanner-help{margin:10px 0 0;color:#657067;font-size:.8rem}.scanner-pwa-note{padding:10px 11px;border-radius:12px;background:#f5f0df;color:#6b5519;font-size:.8rem;margin:9px 0}
+    .scanner-status{margin:12px 0 0;color:#657067;font-size:.9rem;min-height:1.4em}.scanner-status.good{color:#326B51;font-weight:700}.scanner-status.bad{color:#A63A20;font-weight:700}.scanner-debug{display:block;margin-top:5px;font-size:.68rem;color:#7b5e21;overflow-wrap:anywhere}.scanner-help{margin:10px 0 0;color:#657067;font-size:.8rem}
     @media(max-width:520px){.barcode-actions{grid-template-columns:1fr}.scanner-panel{padding:14px}.scanner-frame,.scannerReader{min-height:250px}}
     @media(prefers-reduced-motion:reduce){.scanner-line{animation:none}}
   `;
@@ -34,22 +37,54 @@
 
   const sheet=document.createElement('div');sheet.className='scanner-sheet';sheet.hidden=true;sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');sheet.setAttribute('aria-labelledby','scannerTitle');sheet.innerHTML=`
     <div class="scanner-panel">
-      <div class="scanner-head"><div><h3 id="scannerTitle">Scan food barcode</h3><p>${isiPhone?'Use the iPhone camera. Okello Food will read the barcode from the photo.':'Use the live camera or take a barcode photo.'}</p></div><button type="button" class="scanner-close" id="scannerCloseBtn" aria-label="Close scanner">×</button></div>
-      ${standalone&&isiPhone?'<div class="scanner-pwa-note">The installed iPhone app now uses the native camera-photo route instead of the unreliable live browser camera.</div>':''}
+      <div class="scanner-head"><div><h3 id="scannerTitle">Scan food barcode</h3><p>${isiPhone?'Use the iPhone camera. Okello Food will read the barcode from the photo.':'Choose live camera or a barcode photo.'}</p></div><button type="button" class="scanner-close" id="scannerCloseBtn" aria-label="Close scanner">×</button></div>
       <div class="scanner-actions">
         <div class="scanner-action primary scanner-native-capture"><span>📷 Open camera & scan barcode</span><input id="scannerPhotoInput" type="file" accept="image/*" capture="environment" aria-label="Open camera and scan barcode"></div>
         ${isiPhone?'':'<button id="scannerStartLiveBtn" class="scanner-action secondary" type="button">▣ Start live barcode camera</button>'}
       </div>
       <div id="scannerFrame" class="scanner-frame" hidden><div id="scannerReader" class="scannerReader"></div><div class="scanner-target" aria-hidden="true"></div><div class="scanner-line" aria-hidden="true"></div></div>
       <div id="scannerStatus" class="scanner-status" aria-live="polite">${isiPhone?'Tap Open camera & scan barcode.':'Choose a scan method.'}</div>
-      <p class="scanner-help">You can always type the barcode manually on the Foods screen.</p>
+      <p class="scanner-help">You can also type the barcode manually on the Foods screen.</p>
     </div>`;
   document.body.appendChild(sheet);
 
-  const closeBtn=$('scannerCloseBtn'),status=$('scannerStatus'),frame=$('scannerFrame'),photoInput=$('scannerPhotoInput'),startBtn=$('scannerStartLiveBtn');
-  let scanner=null,closing=false,found=false,libraryPromise=null,lastActivation=0;
+  const closeBtn=$('scannerCloseBtn'),status=$('scannerStatus'),frame=$('scannerFrame'),photoInput=$('scannerPhotoInput'),startBtn=$('scannerStartLiveBtn'),title=$('scannerTitle');
+  let scanner=null,closing=false,found=false,libraryPromise=null,lastActivation=0,lastError=null;
 
-  function setStatus(message,kind=''){status.textContent=message;status.className='scanner-status'+(kind?' '+kind:'');}
+  function debugEnabled(){try{return localStorage.getItem(DEBUG_KEY)==='1';}catch(_){return false;}}
+  function normaliseError(err,stage){
+    const isObject=err&&typeof err==='object';
+    const name=isObject&&err.name?String(err.name):'';
+    const message=isObject&&err.message?String(err.message):String(err??'');
+    return {stage,name,message,kind:typeof err,at:new Date().toISOString()};
+  }
+  function recordError(stage,err){
+    lastError=normaliseError(err,stage);
+    console.error(`Okello scanner [${stage}]`,err,lastError);
+    try{sessionStorage.setItem(LAST_ERROR_KEY,JSON.stringify(lastError));}catch(_){}
+    return lastError;
+  }
+  function setStatus(message,kind='',detail=null){
+    status.textContent=message;
+    status.className='scanner-status'+(kind?' '+kind:'');
+    if(debugEnabled()&&detail){
+      const d=document.createElement('span');d.className='scanner-debug';
+      d.textContent=`debug · ${detail.stage} · ${detail.name||detail.kind||'unknown'} · ${detail.message||'no message'}`;
+      status.appendChild(d);
+    }
+  }
+  function toggleDebug(){
+    const next=!debugEnabled();
+    try{localStorage.setItem(DEBUG_KEY,next?'1':'0');}catch(_){}
+    setStatus(next?'Scanner debug is on. Retry the failed action.':'Scanner debug is off.','',next?lastError:null);
+  }
+  if(title){
+    let hold=null;
+    const cancel=()=>{clearTimeout(hold);hold=null;};
+    title.addEventListener('pointerdown',()=>{cancel();hold=setTimeout(toggleDebug,850);});
+    title.addEventListener('pointerup',cancel);title.addEventListener('pointercancel',cancel);title.addEventListener('pointerleave',cancel);
+  }
+
   function loadScannerLibrary(){
     if(window.Html5Qrcode)return Promise.resolve();
     if(libraryPromise)return libraryPromise;
@@ -61,7 +96,7 @@
         existing.addEventListener('error',()=>{libraryPromise=null;reject(new Error('scanner-library-load-failed'));},{once:true});
         return;
       }
-      const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';s.async=true;s.dataset.okelloScannerLib='1';
+      const s=document.createElement('script');s.src=SCANNER_LIB;s.async=true;s.dataset.okelloScannerLib='1';
       s.onload=()=>{s.dataset.loaded='1';resolve();};
       s.onerror=()=>{libraryPromise=null;reject(new Error('scanner-library-load-failed'));};
       document.head.appendChild(s);
@@ -69,9 +104,10 @@
     return libraryPromise;
   }
 
+  const nextPaint=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   async function stopScanner(){if(closing)return;closing=true;try{if(scanner&&scanner.isScanning)await scanner.stop();if(scanner)await scanner.clear();}catch(_){}scanner=null;closing=false;}
   async function closeScanner(){await stopScanner();sheet.hidden=true;frame.hidden=true;document.body.style.overflow='';try{scanBtn.focus({preventScroll:true});}catch(_){}}
-  function openScanner(){found=false;sheet.hidden=false;frame.hidden=true;document.body.style.overflow='hidden';setStatus(isiPhone?'Tap Open camera & scan barcode.':'Choose a scan method.');loadScannerLibrary().catch(()=>{});}
+  function openScanner(){found=false;sheet.hidden=false;frame.hidden=true;document.body.style.overflow='hidden';setStatus(isiPhone?'Tap Open camera & scan barcode.':'Choose a scan method.');loadScannerLibrary().catch(err=>recordError('library-preload',err));}
 
   async function onDecoded(text){
     if(found)return;
@@ -88,31 +124,75 @@
   }
   function scannerOptions(){const formats=supportedFormats();const options={verbose:false};if(formats.length)options.formatsToSupport=formats;return options;}
 
+  function permissionMessage(err){
+    const name=String(err?.name||'');
+    if(name==='NotAllowedError'||name==='SecurityError')return 'Camera access is blocked for this site. Allow Camera for this website, then retry, or use the photo option.';
+    if(name==='NotFoundError'||name==='DevicesNotFoundError')return 'No usable camera was found. Use the photo option or type the barcode manually.';
+    if(name==='NotReadableError'||name==='TrackStartError')return 'The camera is busy or could not be opened. Close other camera apps and retry.';
+    if(name==='OverconstrainedError'||name==='ConstraintNotSatisfiedError')return 'The requested rear camera was not available. Use the photo option instead.';
+    return 'The browser could not open the camera. Use the photo option instead.';
+  }
+
+  async function probeCamera(){
+    let stream=null;
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+      return true;
+    }finally{
+      try{stream?.getTracks().forEach(t=>t.stop());}catch(_){}
+    }
+  }
+
   async function startLive(){
     if(!startBtn||startBtn.dataset.busy==='1')return;
-    startBtn.dataset.busy='1';found=false;frame.hidden=false;setStatus('Starting live camera…');
-    if(!window.isSecureContext){setStatus('Live camera scanning needs HTTPS. Use the camera-photo option instead.','bad');startBtn.dataset.busy='0';return;}
-    if(!navigator.mediaDevices?.getUserMedia){setStatus('This browser does not expose live camera access. Use the camera-photo option instead.','bad');startBtn.dataset.busy='0';return;}
+    startBtn.dataset.busy='1';found=false;frame.hidden=false;setStatus('Checking camera access…');
+    if(!window.isSecureContext){frame.hidden=true;setStatus('Live camera scanning needs HTTPS. Use the photo option instead.','bad');startBtn.dataset.busy='0';return;}
+    if(!navigator.mediaDevices?.getUserMedia){frame.hidden=true;setStatus('This browser does not expose live camera access. Use the photo option instead.','bad');startBtn.dataset.busy='0';return;}
+
+    let stage='camera-preflight';
     try{
+      await probeCamera();
+      stage='layout';
+      await nextPaint();
+      const reader=$('scannerReader');
+      if(!reader||reader.getBoundingClientRect().width<20)throw new Error('scanner-reader-has-zero-width');
+      stage='library-load';
       await loadScannerLibrary();
       if(!window.Html5Qrcode)throw new Error('scanner-library-unavailable');
+      stage='scanner-start';
       scanner=new window.Html5Qrcode('scannerReader',scannerOptions());
       await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:280,height:120}},onDecoded,()=>{});
       setStatus('Scanning… keep the barcode inside the box.');
-    }catch(err){console.error('Okello live scanner:',err);try{await stopScanner();}catch(_){}setStatus('Live camera could not start. Use the camera-photo option instead.','bad');}
-    finally{startBtn.dataset.busy='0';}
+    }catch(err){
+      const detail=recordError(stage,err);
+      try{await stopScanner();}catch(_){}
+      frame.hidden=true;
+      if(stage==='camera-preflight')setStatus(permissionMessage(err),'bad',detail);
+      else if(stage==='layout')setStatus('The scanner view was not ready. Close Scan, reopen it and try once more.','bad',detail);
+      else if(stage==='library-load')setStatus('The barcode reader could not load. Check your connection and retry.','bad',detail);
+      else setStatus('Camera access worked, but the barcode scanner could not start. Use the photo option instead.','bad',detail);
+    }finally{startBtn.dataset.busy='0';}
   }
 
   async function scanPhoto(file){
     if(!file)return;
     openScanner();found=false;frame.hidden=false;setStatus('Reading barcode from the photo…');
+    let stage='photo-layout';
     try{
-      await stopScanner();await loadScannerLibrary();
+      await stopScanner();
+      await nextPaint();
+      stage='library-load';
+      await loadScannerLibrary();
       if(!window.Html5Qrcode)throw new Error('scanner-library-unavailable');
+      stage='photo-decode';
       scanner=new window.Html5Qrcode('scannerReader',scannerOptions());
       const text=await scanner.scanFile(file,true);await onDecoded(text);
-    }catch(err){console.error('Okello photo scanner:',err);try{await stopScanner();}catch(_){}setStatus(String(err?.message||'').includes('scanner-library')?'The barcode reader could not load. Check your connection and retry.':'I could not find a barcode in that photo. Retake it with the barcode large, sharp and well lit.','bad');}
-    finally{photoInput.value='';}
+    }catch(err){
+      const detail=recordError(stage,err);
+      try{await stopScanner();}catch(_){}
+      frame.hidden=true;
+      setStatus(stage==='library-load'?'The barcode reader could not load. Check your connection and retry.':'I could not find a barcode in that photo. Retake it with the barcode large, sharp and well lit.','bad',detail);
+    }finally{photoInput.value='';}
   }
 
   function createDirectCapture(button,id){
@@ -149,5 +229,13 @@
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&!sheet.hidden)stopScanner();});
   window.addEventListener('pagehide',()=>stopScanner());
 
-  window.OkelloScanner=Object.freeze({version:5,open:openScanner,startLive,close:closeScanner,scanPhoto});
+  window.OkelloScanner=Object.freeze({
+    version:6,
+    open:openScanner,
+    startLive,
+    close:closeScanner,
+    scanPhoto,
+    setDebug(enabled){try{localStorage.setItem(DEBUG_KEY,enabled?'1':'0');}catch(_){}},
+    get lastError(){return lastError;}
+  });
 })();
