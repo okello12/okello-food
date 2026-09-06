@@ -2,7 +2,6 @@
   'use strict';
 
   const STORE = 'okello_food_tracker_v3';
-  const LEGACY = 'okello_food_tracker_v2';
   const SCHEMA_VERSION = 1;
   const MANAGED_PREFIXES = ['ghana_','world_'];
   const ALLOWED_CATEGORIES = new Set(['Starch','Protein','Beans','Vegetables','Dairy','Extras','Soup','Complete meal','Custom','Recipes','Raw ingredient']);
@@ -90,9 +89,7 @@
 
   function readState(){
     try{
-      const current=localStorage.getItem(STORE);
-      const legacy=localStorage.getItem(LEGACY);
-      return JSON.parse(current || legacy || '{}') || {};
+      return JSON.parse(localStorage.getItem(STORE) || '{}') || {};
     }catch(_){ return {}; }
   }
 
