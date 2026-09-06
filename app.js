@@ -2,7 +2,6 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const STORAGE_KEY = 'okello_food_tracker_v3';
-  const OLD_STORAGE_KEY = 'okello_food_tracker_v2';
   const todayKey = () => new Date().toISOString().slice(0,10);
   const formatDate = iso => new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long'}).format(new Date(iso+'T12:00:00'));
   const round1 = n => Math.round(n*10)/10;
@@ -86,13 +85,9 @@
 
   function loadState(){
     try{
-      const current = localStorage.getItem(STORAGE_KEY);
-      const legacy = localStorage.getItem(OLD_STORAGE_KEY);
-      const parsed = JSON.parse(current || legacy || 'null');
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
       if(!parsed) return structuredClone(defaultState);
-      const merged = {...defaultState,...parsed,targets:{...defaultState.targets,...(parsed.targets||{})},logs:parsed.logs||{},customFoods:parsed.customFoods||[],recipes:parsed.recipes||[]};
-      if(!current) localStorage.setItem(STORAGE_KEY,JSON.stringify(merged));
-      return merged;
+      return {...defaultState,...parsed,targets:{...defaultState.targets,...(parsed.targets||{})},logs:parsed.logs||{},customFoods:parsed.customFoods||[],recipes:parsed.recipes||[]};
     }catch(e){ return structuredClone(defaultState); }
   }
   function saveState(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); }
