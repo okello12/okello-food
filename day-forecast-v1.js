@@ -36,6 +36,7 @@
     return d.getHours()*60+d.getMinutes();
   }
   const mealMinute={Lunch:13*60,Dinner:19*60,Snack:21*60,Other:16*60};
+  const coreMeals=['Lunch','Dinner','Snack'];
   function entryMinute(entry,dayKey){
     const ts=Number(entry?.ts)||0;
     if(ts>0){
@@ -51,12 +52,27 @@
     const today=todayKey();
     return Object.entries(state.logs||{}).map(([day,entries])=>{
       const d=new Date(day+'T12:00:00');
-      const total=totalCalories(entries);
-      return {day,entries:Array.isArray(entries)?entries:[],time:d.getTime(),total};
+      const safeEntries=Array.isArray(entries)?entries:[];
+      const total=totalCalories(safeEntries);
+      return {day,entries:safeEntries,time:d.getTime(),total};
     }).filter(x=>x.day!==today && Number.isFinite(x.time) && x.time>=cutoff && x.entries.length && x.total>=Math.min(800,target*.35));
   }
+  function mealState(entries,day,minute){
+    const set=new Set();
+    for(const e of entries||[]){
+      if(coreMeals.includes(e?.meal) && entryMinute(e,day)<=minute) set.add(e.meal);
+    }
+    return set;
+  }
+  function sameMealProgress(a,b){
+    return coreMeals.every(meal=>a.has(meal)===b.has(meal));
+  }
   function historicalRemainingSamples(state,target,minute){
-    return pastDays(state,target).map(d=>({
+    const today=todayKey();
+    const todays=state.logs?.[today]||[];
+    // Everything in today's log has, by definition, been logged already.
+    const currentProgress=new Set(todays.map(x=>x?.meal).filter(x=>coreMeals.includes(x)));
+    return pastDays(state,target).filter(d=>sameMealProgress(mealState(d.entries,d.day,minute),currentProgress)).map(d=>({
       day:d.day,
       remaining:d.entries.reduce((n,e)=>n+(entryMinute(e,d.day)>minute?(Number(e?.kcal)||0):0),0),
       total:d.total
@@ -78,10 +94,11 @@
     const loggedMeals=new Set(todays.map(x=>x?.meal).filter(Boolean));
     const {days,frequency}=mealFrequency(state,target);
     const shares={Lunch:.30,Dinner:.45,Snack:.15};
-    const starts={Lunch:13*60,Dinner:19*60,Snack:21*60};
+    // Keep an unlogged meal in the fallback until its normal window is plausibly over.
+    const ends={Lunch:16*60,Dinner:22*60+30,Snack:23*60+59};
     let remaining=0;
     for(const meal of Object.keys(shares)){
-      if(loggedMeals.has(meal)||minute>=starts[meal])continue;
+      if(loggedMeals.has(meal)||minute>=ends[meal])continue;
       const commonEnough=days?frequency[meal]>=.30:meal==='Dinner';
       if(commonEnough)remaining+=target*shares[meal];
     }
