@@ -1,5 +1,5 @@
-const CACHE='okello-food-v8';
-const ASSETS=['./','./index.html','./styles.css','./app.js','./ghana-foods.js','./scanner.js','./ux-v2.js','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
+const CACHE='okello-food-v9';
+const ASSETS=['./','./index.html','./styles.css','./app.js','./ghana-foods.js','./scanner.js','./ux-v2.js','./features-v1.js','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
 
 self.addEventListener('install',e=>e.waitUntil(
   caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())
@@ -23,12 +23,14 @@ self.addEventListener('fetch',e=>{
         let foods=await cache.match('./ghana-foods.js');
         let scanner=await cache.match('./scanner.js');
         let ux=await cache.match('./ux-v2.js');
+        let features=await cache.match('./features-v1.js');
         if(!main) main=await fetch(e.request);
         const mainText=await main.text();
         const foodText=foods ? await foods.text() : '';
         const scannerText=scanner ? await scanner.text() : '';
         const uxText=ux ? await ux.text() : '';
-        return new Response(foodText+'\n'+mainText+'\n'+scannerText+'\n'+uxText,{
+        const featureText=features ? await features.text() : '';
+        return new Response(foodText+'\n'+mainText+'\n'+scannerText+'\n'+uxText+'\n'+featureText,{
           status:200,
           headers:{'Content-Type':'application/javascript; charset=utf-8','Cache-Control':'no-cache'}
         });
