@@ -25,6 +25,7 @@
   let timer=null;
   function localResults(term){return intel.search(term,{limit:9,includeRestaurant:true});}
   function openRestaurant(key){clickTab('today');setTimeout(()=>{const sel=$('restDish');if(!sel)return;sel.value=key;sel.dispatchEvent(new Event('change',{bubbles:true}));sel.closest('.smart-card')?.scrollIntoView({behavior:'smooth',block:'start'});},120);}
+  function useFirst(term){const first=localResults(term)[0];if(first){if(first.restaurantKey)openRestaurant(first.restaurantKey);else selectFood(first.id);return true;}return false;}
 
   async function searchOnline(term){
     results.hidden=true;const sheet=document.querySelector('.online-sheet'),list=$('onlineList');if(!sheet||!list)return;sheet.hidden=false;list.innerHTML='<div class="online-empty">Searching packaged products…</div>';
@@ -49,6 +50,14 @@
   }
 
   search.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(show,70);});
-  search.addEventListener('keydown',e=>{if(e.key!=='Enter')return;e.preventDefault();const first=localResults(search.value)[0];if(first){if(first.restaurantKey)openRestaurant(first.restaurantKey);else selectFood(first.id);}else if(search.value.trim().length>=2)searchOnline(search.value.trim());});
+  search.addEventListener('keydown',e=>{if(e.key!=='Enter')return;e.preventDefault();if(!useFirst(search.value)&&search.value.trim().length>=2)searchOnline(search.value.trim());});
   clear.addEventListener('click',()=>{search.value='';show();search.focus();});
+
+  const librarySearch=$('librarySearch');
+  librarySearch?.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'||!e.target.value.trim()) return;
+    e.preventDefault();e.stopImmediatePropagation();
+    const q=e.target.value.trim();
+    if(!useFirst(q)){search.value=q;show();document.querySelector('.global-hub')?.scrollIntoView({behavior:'smooth',block:'start'});}
+  },true);
 })();
