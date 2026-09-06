@@ -14,6 +14,8 @@ It is a projection, not advice. It never changes the calorie target, banks calor
 
 For the current clock time it looks back over the previous 45 days and, on sufficiently populated logged days, calculates how many calories were logged after the same time of day. Entry timestamps are used when they genuinely belong to that historical day. Older or migrated entries with unusable timestamps fall back to conservative meal-time anchors.
 
+The comparison also matches meal progress. If lunch is logged today but dinner is not, a historical day only counts as comparable if lunch had been logged and dinner had not yet been logged by the same time on that day. This avoids understating the forecast merely because dinner happened unusually early on a past day.
+
 The centre forecast is:
 
 `calories logged today + median historical calories remaining after this time`
@@ -28,7 +30,7 @@ When there are at least five comparable historical days, the interface also show
 - 5 to 9 comparable days: Learned habit
 - 10 or more comparable days: Strong habit signal
 
-With fewer than three comparable days, the app uses a clearly labelled fallback based on the existing meal-share pattern and observed meal frequency where available.
+With fewer than three comparable days, the app uses a clearly labelled fallback based on the existing meal-share pattern and observed meal frequency where available. An unlogged meal remains eligible in that fallback until its normal eating window is plausibly over rather than disappearing at the nominal meal start time.
 
 The forecast does not show a numerical projection until something has been logged today.
 
