@@ -1,21 +1,21 @@
-const VERSION='15';
-const CACHE='okello-food-v15';
+const VERSION='16';
+const CACHE='okello-food-v16';
 const ASSETS=[
   './',
   './index.html',
-  './styles.css?v=15',
-  './bootstrap-v14.js?v=14',
-  './ghana-foods.js?v=15',
-  './app.js?v=15',
-  './scanner.js?v=15',
-  './ux-v2.js?v=15',
-  './features-v1.js?v=15',
-  './smart-support.js?v=15',
-  './smart-v2.js?v=15',
-  './activity-v1.js?v=15',
-  './update-v1.js?v=15',
-  './app-chrome-v1.js?v=15',
-  './ios-exit-v1.js?v=15',
+  './styles.css?v=14',
+  './bootstrap-v14.js',
+  './ghana-foods.js?v=16',
+  './app.js?v=16',
+  './scanner.js?v=16',
+  './ux-v2.js?v=16',
+  './features-v1.js?v=16',
+  './smart-support.js?v=16',
+  './smart-v2.js?v=16',
+  './activity-v1.js?v=16',
+  './update-v1.js?v=16',
+  './app-chrome-v1.js?v=16',
+  './ios-exit-v1.js?v=16',
   './manifest.webmanifest',
   './assets/icon-192.png',
   './assets/icon-512.png'
