@@ -1,6 +1,6 @@
 # Okello Food backup architecture
 
-Okello Food keeps personal data in several local browser stores. A backup is complete only if it preserves all of the stores that materially affect the user's history, personalisation, authored content and activity views.
+Okello Food keeps personal data in several local browser stores. A backup is complete only if it preserves all of the stores that materially affect the user's history, personalisation, authored content, activity views and shopping recommendations.
 
 ## Current complete backup
 
@@ -11,6 +11,9 @@ Okello Food keeps personal data in several local browser stores. A backup is com
 - `satiety` from `okello_satiety_v1` — hungry, comfortable and full feedback used by Personal Food Memory and Weekly Intelligence.
 - `activity` from `okello_activity_v1` — activity goals, daily steps data, activity entries and preferences.
 - `photoNotes` from `okello_photo_notes_v1` when that store contains data.
+- `shoppingProducts` from `okello_shopping_products_v1` — saved barcode product facts used for instant repeat shopping checks and product-to-product comparison.
+
+`okello_shopping_products_v1` is durable recommendation input, not disposable cache. A previously scanned product can affect what the app shows during a later shopping decision, including when the network is unavailable, so it must travel with the user's complete backup. Missing nutrient fields are preserved as `null`; they must never be normalised to zero merely to make comparison arithmetic easier.
 
 The current photo-meal capture flow only previews the selected photo with an object URL and passes the typed description into Quick Log. It does not persist the image itself, and the current `smart-v3.js` does not actively write `okello_photo_notes_v1`. The backup nevertheless preserves that store when present so user-authored notes from an older or future implementation are not silently discarded.
 
@@ -24,9 +27,11 @@ Plain backups use `format: okello-backup-v2`.
 
 Encrypted backups use `format: okello-encrypted-v2`. The inner payload is the same complete v2 bundle. Encryption continues to use PBKDF2 with SHA-256 to derive an AES-GCM 256-bit key from the user's passphrase.
 
+The shopping-products field is additive within the v2 bundle. Older v2 backups remain valid when it is absent.
+
 ## Restore safety
 
-Restore is intentionally replacement-based rather than merge-based. Before either a plain or encrypted backup writes anything, the app shows a confirmation naming the backup export date when it is available and explicitly warns that the food, weight and activity data already on the device will be replaced.
+Restore is intentionally replacement-based rather than merge-based. Before either a plain or encrypted backup writes anything, the app shows a confirmation naming the backup export date when it is available and explicitly warns that the food, weight, activity and saved shopping data already on the device will be replaced.
 
 Older backups without an `exportedAt` value are labelled as older backups with the date unavailable rather than inferring a potentially misleading date from the file metadata.
 
@@ -36,7 +41,7 @@ Cancelling the confirmation leaves the current device data untouched.
 
 Restore accepts the older plain state-only JSON format.
 
-Encrypted restore accepts both `okello-encrypted-v1` and `okello-encrypted-v2`. Older encrypted files restore the data they contain without failing because favourites, satiety, activity or photo-note fields are absent.
+Encrypted restore accepts both `okello-encrypted-v1` and `okello-encrypted-v2`. Older encrypted files restore the data they contain without failing because favourites, satiety, activity, photo-note or shopping-product fields are absent.
 
 Auxiliary stores are restored only when the matching field is present and valid, so importing an older backup never fails merely because a newer store did not exist yet.
 
