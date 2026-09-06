@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="icon" href="assets/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=18">
+  <link rel="stylesheet" href="styles.css?v=19">
 </head>
 <body>
   <div class="app-shell">
@@ -20,7 +20,7 @@
       <div>
         <p class="eyebrow">PERSONAL FOOD TRACKER</p>
         <h1>Okello Food</h1>
-        <p class="standfirst">Ghanaian food, measured properly. Log the grams and let the app do the arithmetic.</p>
+        <p class="standfirst">Food from Ghana and around the world, measured properly. Log the grams and let the app do the arithmetic.</p>
       </div>
       <button id="installBtn" class="ghost-btn install-btn" hidden type="button">Add to Home Screen</button>
     </header>
@@ -41,78 +41,43 @@
         </div>
 
         <div class="score-grid">
-          <article class="score-card hero-score">
-            <span>Calories</span><strong id="todayCalories">0</strong><small id="calRemainText">2,300 kcal left</small>
-          </article>
-          <article class="score-card">
-            <span>Protein</span><strong id="todayProtein">0 g</strong><small id="proteinRemainText">150 g left</small>
-          </article>
-          <article class="score-card">
-            <span>Fibre</span><strong id="todayFibre">0 g</strong><small>Approximate</small>
-          </article>
+          <article class="score-card hero-score"><span>Calories</span><strong id="todayCalories">0</strong><small id="calRemainText">2,300 kcal left</small></article>
+          <article class="score-card"><span>Protein</span><strong id="todayProtein">0 g</strong><small id="proteinRemainText">150 g left</small></article>
+          <article class="score-card"><span>Fibre</span><strong id="todayFibre">0 g</strong><small>Approximate</small></article>
         </div>
         <div class="progress-wrap" aria-label="Calorie target progress"><div id="calorieBar" class="progress-bar"></div></div>
 
         <section class="card quick-add-card">
-          <div class="section-heading">
-            <div><p class="eyebrow">QUICK ADD</p><h3>Log a meal</h3></div>
-            <span id="selectedFoodBadge" class="pill">White rice</span>
-          </div>
-
-          <div class="food-search-wrap">
-            <input id="foodSearch" type="search" placeholder="Search rice, kenkey, goat, oats..." autocomplete="off" aria-label="Search foods">
-            <div id="foodSuggestions" class="suggestions" hidden></div>
-          </div>
-
+          <div class="section-heading"><div><p class="eyebrow">QUICK ADD</p><h3>Log a meal</h3></div><span id="selectedFoodBadge" class="pill">White rice</span></div>
+          <div class="food-search-wrap"><input id="foodSearch" type="search" placeholder="Search rice, curry, sushi, tacos, kenkey..." autocomplete="off" aria-label="Search foods"><div id="foodSuggestions" class="suggestions" hidden></div></div>
           <div class="form-grid">
             <label>Food<select id="foodSelect"></select></label>
             <label>Amount<div class="input-with-unit"><input id="gramsInput" type="number" inputmode="decimal" min="1" max="5000" value="200"><span>g</span></div></label>
             <label>Meal<select id="mealSelect"><option>Lunch</option><option>Dinner</option><option>Snack</option><option>Other</option></select></label>
           </div>
-
-          <div class="smart-box" aria-live="polite">
-            <div><span class="smart-label">SMART PORTION</span><strong id="smartPortion">200 g</strong><small id="smartPortionNote">Suggested from your target and what you have already eaten.</small></div>
-            <button id="useSmartPortionBtn" class="secondary-btn mini" type="button">Use suggestion</button>
-          </div>
-
+          <div class="smart-box" aria-live="polite"><div><span class="smart-label">SMART PORTION</span><strong id="smartPortion">200 g</strong><small id="smartPortionNote">Suggested from your target and what you have already eaten.</small></div><button id="useSmartPortionBtn" class="secondary-btn mini" type="button">Use suggestion</button></div>
           <div id="quickCalc" class="calc-readout" aria-live="polite"></div>
           <button id="addFoodBtn" class="primary-btn" type="button">Add to today</button>
         </section>
 
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">TODAY'S LOG</p><h3>Your meals</h3></div></div>
-          <div id="todayLog" class="log-list empty-state">Nothing logged yet.</div>
-        </section>
+        <section class="card"><div class="section-heading"><div><p class="eyebrow">TODAY'S LOG</p><h3>Your meals</h3></div></div><div id="todayLog" class="log-list empty-state">Nothing logged yet.</div></section>
       </section>
 
       <section id="tab-foods" class="panel" aria-labelledby="foodsTitle">
-        <div class="section-heading top-gap"><div><p class="eyebrow">PORTION LIBRARY</p><h2 id="foodsTitle">Foods you actually eat</h2></div></div>
-        <p class="lede">Each food now shows a smart serving for the meal selected on Today. You can still change the grams yourself.</p>
-        <input id="librarySearch" class="full-search" type="search" placeholder="Search the food library..." aria-label="Search the food library">
+        <div class="section-heading top-gap"><div><p class="eyebrow">WORLD FOOD LIBRARY</p><h2 id="foodsTitle">Foods from Ghana and around the world</h2></div></div>
+        <p class="lede">Search Ghanaian staples, everyday ingredients and popular dishes from many regions. Mixed dishes are estimates, so your own recipe or packet label is still the best source when available.</p>
+        <input id="librarySearch" class="full-search" type="search" placeholder="Search foods, dishes or cuisines..." aria-label="Search the food library">
         <div class="chips" id="categoryChips"></div>
         <div id="foodLibrary" class="food-grid"></div>
 
         <section class="card custom-food-card">
-          <p class="eyebrow">ADD ANY FOOD</p>
-          <h3>Save a food that is not on the list</h3>
-          <p class="muted">For packaged food, enter the barcode and I will try to pull the nutrition automatically. If it is not found, copy the values from the label per 100 g.</p>
-
-          <div class="barcode-row">
-            <label>Barcode
-              <input id="barcodeInput" type="text" inputmode="numeric" autocomplete="off" placeholder="e.g. 5000112637922">
-            </label>
-            <button id="lookupBarcodeBtn" class="secondary-btn" type="button">Look up</button>
-          </div>
-          <div id="barcodeStatus" class="lookup-status" aria-live="polite"></div>
-          <div id="barcodePreview" class="barcode-preview" hidden></div>
-
+          <p class="eyebrow">ADD ANY FOOD</p><h3>Save a food that is not on the list</h3>
+          <p class="muted">For packaged food, enter or scan the barcode and I will try to pull the nutrition automatically. If it is not found, copy the values from the label per 100 g.</p>
+          <div class="barcode-row"><label>Barcode<input id="barcodeInput" type="text" inputmode="numeric" autocomplete="off" placeholder="e.g. 5000112637922"></label><button id="lookupBarcodeBtn" class="secondary-btn" type="button">Look up</button></div>
+          <div id="barcodeStatus" class="lookup-status" aria-live="polite"></div><div id="barcodePreview" class="barcode-preview" hidden></div>
           <div class="form-grid custom-grid">
             <label>Name<input id="customName" type="text" placeholder="e.g. My seeded bread"></label>
-            <label>Category
-              <select id="customCategory">
-                <option>Starch</option><option>Protein</option><option>Beans</option><option>Vegetables</option><option>Dairy</option><option>Extras</option><option>Soup</option><option>Complete meal</option><option selected>Custom</option>
-              </select>
-            </label>
+            <label>Category<select id="customCategory"><option>Starch</option><option>Protein</option><option>Beans</option><option>Vegetables</option><option>Dairy</option><option>Extras</option><option>Soup</option><option>Complete meal</option><option selected>Custom</option></select></label>
             <label>kcal / 100 g<input id="customKcal" type="number" min="0" step="0.1" inputmode="decimal"></label>
             <label>Protein / 100 g<input id="customProtein" type="number" min="0" step="0.1" inputmode="decimal"></label>
             <label>Fibre / 100 g<input id="customFibre" type="number" min="0" step="0.1" inputmode="decimal"></label>
@@ -125,60 +90,32 @@
 
       <section id="tab-recipes" class="panel" aria-labelledby="recipesTitle">
         <div class="section-heading top-gap"><div><p class="eyebrow">RECIPE CALCULATOR</p><h2 id="recipesTitle">Cost the whole pot once</h2></div></div>
-        <p class="lede">Best for jollof, beef stew, okro soup, light soup and any dish where oil and meat vary from pot to pot.</p>
+        <p class="lede">Use this for jollof, curries, soups, stews, pasta sauces, biryani, chilli and any home-cooked dish where oil and ingredients vary.</p>
         <section class="card">
-          <div class="form-grid two-col">
-            <label>Recipe name<input id="recipeName" type="text" placeholder="e.g. Sunday okro soup"></label>
-            <label>Finished pot weight (g)<input id="recipeFinalWeight" type="number" min="1" inputmode="decimal" placeholder="e.g. 3200"></label>
-          </div>
+          <div class="form-grid two-col"><label>Recipe name<input id="recipeName" type="text" placeholder="e.g. Sunday okro soup"></label><label>Finished pot weight (g)<input id="recipeFinalWeight" type="number" min="1" inputmode="decimal" placeholder="e.g. 3200"></label></div>
           <p class="lede" style="margin:0 0 10px;font-size:.9rem">Use the <strong>raw ingredient</strong> options for anything that goes into the pot uncooked. Picking a cooked food for raw rice or raw meat undercounts the whole pot.</p>
-          <div class="recipe-add-row">
-            <select id="recipeFoodSelect"></select>
-            <div class="input-with-unit"><input id="recipeIngredientGrams" type="number" min="1" value="100" inputmode="decimal"><span>g</span></div>
-            <button id="addIngredientBtn" class="secondary-btn" type="button">Add ingredient</button>
-          </div>
+          <div class="recipe-add-row"><select id="recipeFoodSelect"></select><div class="input-with-unit"><input id="recipeIngredientGrams" type="number" min="1" value="100" inputmode="decimal"><span>g</span></div><button id="addIngredientBtn" class="secondary-btn" type="button">Add ingredient</button></div>
           <div id="ingredientList" class="ingredient-list empty-state">No ingredients yet.</div>
-          <div id="recipeResult" class="recipe-result" hidden>
-            <div><span>Whole pot</span><strong id="recipeTotalCalories">0 kcal</strong></div>
-            <div><span>Per 100 g</span><strong id="recipePer100">0 kcal</strong></div>
-            <div><span>Protein / 100 g</span><strong id="recipeProtein100">0 g</strong></div>
-          </div>
+          <div id="recipeResult" class="recipe-result" hidden><div><span>Whole pot</span><strong id="recipeTotalCalories">0 kcal</strong></div><div><span>Per 100 g</span><strong id="recipePer100">0 kcal</strong></div><div><span>Protein / 100 g</span><strong id="recipeProtein100">0 g</strong></div></div>
           <div class="button-row"><button id="calculateRecipeBtn" class="secondary-btn" type="button">Calculate</button><button id="saveRecipeBtn" class="primary-btn" type="button">Save recipe</button></div>
           <p class="tiny-note">For bone-in meat, nutrition is approximate unless you use edible meat weight. Water loss changes the finished weight, which is why weighing the finished pot matters.</p>
         </section>
         <section class="card"><div class="section-heading"><div><p class="eyebrow">SAVED RECIPES</p><h3>Your pots</h3></div></div><div id="savedRecipes" class="log-list empty-state">No saved recipes yet.</div></section>
       </section>
 
-      <section id="tab-history" class="panel" aria-labelledby="historyTitle">
-        <div class="section-heading top-gap"><div><p class="eyebrow">HISTORY</p><h2 id="historyTitle">Daily totals</h2></div></div>
-        <div id="historyList" class="history-list empty-state">Your completed days will appear here.</div>
-      </section>
+      <section id="tab-history" class="panel" aria-labelledby="historyTitle"><div class="section-heading top-gap"><div><p class="eyebrow">HISTORY</p><h2 id="historyTitle">Daily totals</h2></div></div><div id="historyList" class="history-list empty-state">Your completed days will appear here.</div></section>
 
       <section id="tab-settings" class="panel" aria-labelledby="settingsTitle">
         <div class="section-heading top-gap"><div><p class="eyebrow">SETTINGS</p><h2 id="settingsTitle">Your targets</h2></div></div>
-        <section class="card">
-          <div class="form-grid two-col">
-            <label>Daily calorie target<input id="targetCalories" type="number" min="1200" max="6000" value="2300"></label>
-            <label>Daily protein target (g)<input id="targetProtein" type="number" min="50" max="400" value="150"></label>
-          </div>
-          <button id="saveTargetsBtn" class="primary-btn" type="button">Save targets</button>
-        </section>
-        <section class="card">
-          <p class="eyebrow">SMART PORTIONS</p><h3>Built around your eating pattern</h3>
-          <p class="muted">The suggestion engine reserves roughly 30% of your calories for lunch, 45% for dinner, 15% for a snack and 10% as flexibility. It also respects what you have already logged that day and the type of food you are adding.</p>
-          <p class="tiny-note">A smart portion is a practical starting suggestion, not a requirement. Your scale entry always wins.</p>
-        </section>
-        <section class="card">
-          <p class="eyebrow">BACKUP</p><h3>Keep your history safe</h3>
-          <p class="muted">Your data stays on this device. Export a backup occasionally, especially before changing phones or clearing Safari website data.</p>
-          <div class="button-row"><button id="exportBtn" class="secondary-btn" type="button">Export backup</button><label class="secondary-btn file-label">Import backup<input id="importInput" type="file" accept="application/json" hidden></label></div>
-        </section>
+        <section class="card"><div class="form-grid two-col"><label>Daily calorie target<input id="targetCalories" type="number" min="1200" max="6000" value="2300"></label><label>Daily protein target (g)<input id="targetProtein" type="number" min="50" max="400" value="150"></label></div><button id="saveTargetsBtn" class="primary-btn" type="button">Save targets</button></section>
+        <section class="card"><p class="eyebrow">SMART PORTIONS</p><h3>Built around your eating pattern</h3><p class="muted">The suggestion engine reserves roughly 30% of your calories for lunch, 45% for dinner, 15% for a snack and 10% as flexibility. It also respects what you have already logged that day and the type of food you are adding.</p><p class="tiny-note">A smart portion is a practical starting suggestion, not a requirement. Your scale entry always wins.</p></section>
+        <section class="card"><p class="eyebrow">BACKUP</p><h3>Keep your history safe</h3><p class="muted">Your data stays on this device. Export a backup occasionally, especially before changing phones or clearing Safari website data.</p><div class="button-row"><button id="exportBtn" class="secondary-btn" type="button">Export backup</button><label class="secondary-btn file-label">Import backup<input id="importInput" type="file" accept="application/json" hidden></label></div></section>
         <section class="card install-help"><p class="eyebrow">IPHONE INSTALL</p><h3>Put it on your Home Screen</h3><ol><li>Open the hosted app in Safari.</li><li>Tap <strong>Share</strong>.</li><li>Choose <strong>Add to Home Screen</strong>.</li><li>Open it from the new Okello Food icon.</li></ol><p class="tiny-note">Once installed, the app can work offline. Your logs and saved recipes remain on this device.</p></section>
-        <section class="card disclaimer"><p class="eyebrow">NOTE</p><p>Nutrition figures are practical estimates, not laboratory measurements. Ghanaian dishes vary sharply by recipe, especially jollof, stew, soups, banku and kenkey. Use packet labels, barcode data or the recipe calculator where you can.</p></section>
+        <section class="card disclaimer"><p class="eyebrow">NOTE</p><p>Nutrition figures are practical estimates, not laboratory measurements. Mixed dishes from every cuisine can vary sharply by recipe, especially oil-heavy meals, curries, soups, stews, rice dishes and takeaways. Use packet labels, barcode data or your own recipe calculator where you can.</p></section>
       </section>
     </main>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="bootstrap-v14.js?v=18" defer></script>
+  <script src="bootstrap-v14.js?v=19" defer></script>
 </body>
 </html>
