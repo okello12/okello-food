@@ -27,9 +27,9 @@ From v28 onward, `app.js`, `ghana-foods.js`, `world-foods.js` and `food-data-lay
 
 v29 adds a recovery quarantine for the narrow case where `okello_food_tracker_v3` exists but is not a JSON object, for example invalid JSON or an array.
 
-Before any safe default replaces that unreadable current value, the module stores the exact raw string in `okello_food_tracker_v3_quarantine_v1` with a capture timestamp and reason. Only after that write succeeds does it create a clean working v3. This prevents catalogue or tracker startup from becoming the component that destroys the last recoverable copy.
+Before any safe default replaces that unreadable current value, the module stores the exact raw string in `okello_food_tracker_v3_quarantine_v1`. The normal quarantine format includes a capture timestamp and reason. Only after the quarantine succeeds does the module create a clean working v3. This prevents catalogue or tracker startup from becoming the component that destroys the last recoverable copy.
 
-If local quarantine cannot be written, the invalid v3 is left untouched and the raw value remains available in memory for an immediate recovery download during that session.
+The quarantine path is also designed for a nearly full local-storage quota. It first tries to copy the damaged value without touching v3. If duplication fails, it temporarily frees the current key, retries the quarantine write and, if the metadata wrapper is too large, falls back to storing the exact raw value directly under the quarantine key. If every quarantine attempt fails, it restores the original v3 value and keeps the same raw value in memory for an immediate recovery download during that session.
 
 A persistent recovery banner is shown while a quarantine record exists. It offers:
 
@@ -56,6 +56,7 @@ The release should be checked against these states:
 - neither key: a fresh v3 default is created;
 - corrupt v2 with no v3: default v3 is created and corrupt v2 is retained;
 - corrupt v3 with no quarantine: exact raw v3 is quarantined first, then safe v3 is created;
+- corrupt v3 when duplicate storage would exceed quota: the move/raw-only fallback preserves the damaged value before safe v3 is created;
 - valid v3 plus an existing quarantine: v3 remains unchanged and recovery remains pending;
 - repeated startup after migration: v3 remains unchanged;
 - storage unavailable: the application continues through its existing in-memory/default fallbacks.
