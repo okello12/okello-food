@@ -1,7 +1,6 @@
 (() => {
   'use strict';
   const KEY='okello_food_tracker_v3';
-  const LEGACY='okello_food_tracker_v2';
   const LIBRARY_VERSION=1;
 
   // Broad international catalogue for everyday tracking.
@@ -192,9 +191,7 @@
   const extraFoods=rows.map(r=>({id:r[0],name:r[1],emoji:r[2],cat:r[3],kcal:r[4],protein:r[5],fibre:r[6],portion:r[7],min:r[8],max:r[9],region:r[10],quality:r[11],note:r[12]}));
 
   try{
-    const current=localStorage.getItem(KEY);
-    const legacy=localStorage.getItem(LEGACY);
-    const state=JSON.parse(current||legacy||'null')||{targets:{calories:2300,protein:150},logs:{},customFoods:[],recipes:[]};
+    const state=JSON.parse(localStorage.getItem(KEY)||'null')||{targets:{calories:2300,protein:150},logs:{},customFoods:[],recipes:[]};
     state.customFoods=Array.isArray(state.customFoods)?state.customFoods:[];
     extraFoods.forEach(food=>{
       const i=state.customFoods.findIndex(f=>f&&f.id===food.id);
