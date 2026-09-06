@@ -49,7 +49,30 @@
     {id:'veg',name:'Mixed vegetables',emoji:'🥦',cat:'Vegetables',kcal:40,protein:2.5,fibre:3,portion:300,min:200,max:400,note:'250–400 g'},
     {id:'okro',name:'Okro soup, estimate',emoji:'🥘',cat:'Soup',kcal:90,protein:7,fibre:2.5,portion:350,min:250,max:450,note:'Recipe dependent; build your own recipe'},
     {id:'light_soup',name:'Light soup, estimate',emoji:'🍲',cat:'Soup',kcal:55,protein:4,fibre:1,portion:350,min:250,max:450,note:'Recipe dependent'},
-    {id:'beef_stew',name:'Beef stew, estimate',emoji:'🥘',cat:'Soup',kcal:145,protein:10,fibre:1,portion:200,min:150,max:250,note:'Oil and cut of beef matter'}
+    {id:'beef_stew',name:'Beef stew, estimate',emoji:'🥘',cat:'Soup',kcal:145,protein:10,fibre:1,portion:200,min:150,max:250,note:'Oil and cut of beef matter'},
+
+    {id:'raw_rice',name:'Rice, raw (recipe)',emoji:'🍚',cat:'Raw ingredient',kcal:360,protein:7.1,fibre:1.3,portion:100,min:50,max:2000,raw:true,note:'dry weight into the pot'},
+    {id:'raw_beans',name:'Beans, dry (recipe)',emoji:'🫘',cat:'Raw ingredient',kcal:336,protein:23.5,fibre:10.6,portion:100,min:50,max:1500,raw:true,note:'dry weight into the pot'},
+    {id:'raw_corn_dough',name:'Corn dough, fermented (recipe)',emoji:'🌽',cat:'Raw ingredient',kcal:175,protein:4,fibre:2,portion:100,min:50,max:3000,raw:true,note:'for banku and kenkey'},
+    {id:'raw_cassava_dough',name:'Cassava dough (recipe)',emoji:'🥣',cat:'Raw ingredient',kcal:160,protein:1.4,fibre:1.8,portion:100,min:50,max:3000,raw:true,note:'raw weight'},
+    {id:'raw_chicken',name:'Chicken, raw edible (recipe)',emoji:'🍗',cat:'Raw ingredient',kcal:170,protein:20,fibre:0,portion:100,min:50,max:3000,raw:true,note:'mixed cuts, bone removed'},
+    {id:'raw_beef',name:'Beef, raw stewing (recipe)',emoji:'🥩',cat:'Raw ingredient',kcal:175,protein:20,fibre:0,portion:100,min:50,max:3000,raw:true,note:'raw weight'},
+    {id:'raw_goat',name:'Goat, raw edible (recipe)',emoji:'🍖',cat:'Raw ingredient',kcal:109,protein:20.6,fibre:0,portion:100,min:50,max:3000,raw:true,note:'bone removed'},
+    {id:'raw_fish',name:'Fresh fish, raw (recipe)',emoji:'🐟',cat:'Raw ingredient',kcal:96,protein:20,fibre:0,portion:100,min:50,max:3000,raw:true,note:'tilapia, cod, hake'},
+    {id:'raw_smoked_fish',name:'Smoked dried fish (recipe)',emoji:'🐟',cat:'Raw ingredient',kcal:290,protein:62,fibre:0,portion:50,min:10,max:800,raw:true,note:'very protein dense'},
+    {id:'raw_plantain',name:'Plantain, raw (recipe)',emoji:'🍌',cat:'Raw ingredient',kcal:122,protein:1.3,fibre:2.3,portion:200,min:50,max:3000,raw:true,note:'peeled weight'},
+    {id:'raw_yam',name:'Yam, raw (recipe)',emoji:'🍠',cat:'Raw ingredient',kcal:118,protein:1.5,fibre:4.1,portion:200,min:50,max:3000,raw:true,note:'peeled weight'},
+    {id:'raw_palm_oil',name:'Palm oil (recipe)',emoji:'🛢️',cat:'Raw ingredient',kcal:884,protein:0,fibre:0,portion:50,min:5,max:500,raw:true,note:'weigh it, do not pour by eye'},
+    {id:'raw_veg_oil',name:'Vegetable oil (recipe)',emoji:'🛢️',cat:'Raw ingredient',kcal:884,protein:0,fibre:0,portion:50,min:5,max:500,raw:true,note:'weigh it, do not pour by eye'},
+    {id:'raw_pepper_base',name:'Blended tomato, pepper, onion (recipe)',emoji:'🍅',cat:'Raw ingredient',kcal:30,protein:1.2,fibre:1.2,portion:500,min:50,max:3000,raw:true,note:'the ground base'},
+    {id:'raw_tomato_paste',name:'Tomato paste (recipe)',emoji:'🥫',cat:'Raw ingredient',kcal:82,protein:4.3,fibre:2.5,portion:100,min:10,max:600,raw:true,note:'tin weight'},
+    {id:'raw_onion',name:'Onion, raw (recipe)',emoji:'🧅',cat:'Raw ingredient',kcal:40,protein:1.1,fibre:1.7,portion:150,min:20,max:1000,raw:true,note:'peeled weight'},
+    {id:'raw_okro',name:'Okro, raw (recipe)',emoji:'🥒',cat:'Raw ingredient',kcal:33,protein:1.9,fibre:3.2,portion:300,min:50,max:2000,raw:true,note:'raw weight'},
+    {id:'raw_kontomire',name:'Kontomire leaves, raw (recipe)',emoji:'🥬',cat:'Raw ingredient',kcal:42,protein:4.6,fibre:2.9,portion:300,min:50,max:2000,raw:true,note:'raw weight'},
+    {id:'raw_garden_egg',name:'Garden eggs, raw (recipe)',emoji:'🍆',cat:'Raw ingredient',kcal:25,protein:1,fibre:3,portion:300,min:50,max:2000,raw:true,note:'raw weight'},
+    {id:'raw_egusi',name:'Egusi / agushi seeds (recipe)',emoji:'🌰',cat:'Raw ingredient',kcal:590,protein:28,fibre:4,portion:100,min:20,max:600,raw:true,note:'very energy dense'},
+    {id:'raw_groundnut_paste',name:'Groundnut paste (recipe)',emoji:'🥜',cat:'Raw ingredient',kcal:590,protein:25,fibre:6,portion:200,min:20,max:800,raw:true,note:'the main cost in groundnut soup'},
+    {id:'raw_stock_cube',name:'Stock cubes, seasoning (recipe)',emoji:'🧂',cat:'Raw ingredient',kcal:200,protein:5,fibre:0,portion:20,min:5,max:200,raw:true,note:'about 10 g a cube'}
   ];
 
   const defaultState = {targets:{calories:2300,protein:150},logs:{},customFoods:[],recipes:[]};
@@ -80,7 +103,7 @@
   }
   function foodById(id){ return allFoods().find(f=>f.id===id); }
   function calcFood(food,grams){ return {kcal:food.kcal*grams/100,protein:food.protein*grams/100,fibre:(food.fibre||0)*grams/100}; }
-  function escapeHtml(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function escapeHtml(s){ return String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c])); }
   function safeImage(url){ return /^https:\/\//i.test(String(url||'')) ? String(url) : ''; }
   function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(showToast.t); showToast.t=setTimeout(()=>t.classList.remove('show'),1800); }
 
@@ -99,6 +122,12 @@
     if(cat==='Complete meal'||cat==='Soup'||cat==='Recipes') return {min:p*.7,max:p*1.35};
     return {min:p*.75,max:p*1.25};
   }
+  const PROTEIN_CATS = ['Protein','Beans','Dairy'];
+  const PROTEIN_RESERVE = .35;
+  const EXTRAS_RESERVE = .08;
+  function mealHasCat(meal,cats){
+    return todayEntries().some(x=>x.meal===meal&&cats.includes((foodById(x.foodId)||{}).cat));
+  }
   function smartPortionFor(food,meal){
     if(!food || !(food.kcal>0)) return {grams:0,kcal:0,reason:'Calories per 100 g are needed first.'};
     const dailyTotal=totalsFor(todayEntries()).kcal;
@@ -108,17 +137,29 @@
     const mealUsed=mealCalories(meal);
     const mealRemaining=Math.max(0,mealTarget-mealUsed);
     if(mealRemaining<=0) return {grams:0,kcal:0,reason:`Your ${meal.toLowerCase()} allowance is already used. You can still override it.`};
+
+    const isProtein=PROTEIN_CATS.includes(food.cat);
+    const isExtra=food.cat==='Extras';
+    let held=0, holdNote='';
+    if(!isProtein && !mealHasCat(meal,PROTEIN_CATS)){ held+=mealTarget*PROTEIN_RESERVE; holdNote='protein'; }
+    if(!isExtra && !mealHasCat(meal,['Extras'])){ held+=mealTarget*EXTRAS_RESERVE; holdNote=holdNote?'protein and the oil or shito':'the oil or shito'; }
+    const spendable=isProtein?mealRemaining:Math.max(0,mealRemaining-held);
+    if(spendable<=0) return {grams:0,kcal:0,reason:`Holding ${Math.round(held)} kcal of this meal back for ${holdNote}. Log that first, then come back.`};
+
     const share=roleShares[food.cat] ?? roleShares.Custom;
-    const itemBudget=Math.min(dailyRemaining,mealRemaining,mealTarget*share);
+    const itemBudget=Math.min(dailyRemaining,spendable,mealTarget*share);
     const bounds=inferredBounds(food);
     const raw=itemBudget/(food.kcal/100);
     const maxByDaily=dailyRemaining/(food.kcal/100);
-    const maxByMeal=mealRemaining/(food.kcal/100);
-    let grams=Math.min(Math.max(raw,bounds.min),bounds.max,maxByDaily,maxByMeal);
+    const maxBySpendable=spendable/(food.kcal/100);
+    let grams=Math.min(Math.max(raw,bounds.min),bounds.max,maxByDaily,maxBySpendable);
     grams=Math.max(0,Math.round(grams/5)*5);
     if(grams===0) return {grams:0,kcal:0,reason:'There is not enough room left in this meal target.'};
     const c=calcFood(food,grams);
-    return {grams,kcal:c.kcal,protein:c.protein,dailyRemaining,mealTarget,mealRemaining,reason:`About ${Math.round(c.kcal)} kcal. ${Math.round(dailyRemaining)} kcal remain for the day before adding it.`};
+    const reason=held>0
+      ? `About ${Math.round(c.kcal)} kcal. ${Math.round(dailyRemaining)} kcal remain for the day, with ${Math.round(held)} kcal of this meal held back for ${holdNote}.`
+      : `About ${Math.round(c.kcal)} kcal. ${Math.round(dailyRemaining)} kcal remain for the day before adding it.`;
+    return {grams,kcal:c.kcal,protein:c.protein,dailyRemaining,mealTarget,mealRemaining,held,reason};
   }
 
   function initTabs(){
@@ -134,12 +175,15 @@
 
   function populateFoodSelects(){
     const foods=allFoods();
-    const opts=foods.map(f=>`<option value="${escapeHtml(f.id)}">${escapeHtml(f.emoji+' '+f.name)}</option>`).join('');
-    $('foodSelect').innerHTML=opts; $('recipeFoodSelect').innerHTML=opts;
-    if(foodById(selectedFoodId)) $('foodSelect').value=selectedFoodId; else selectedFoodId='rice';
+    const toOpt=f=>`<option value="${escapeHtml(f.id)}">${escapeHtml(f.emoji+' '+f.name)}</option>`;
+    $('foodSelect').innerHTML=foods.filter(f=>!f.raw).map(toOpt).join('');
+    $('recipeFoodSelect').innerHTML=
+      '<optgroup label="Raw ingredients, weight into the pot">'+foods.filter(f=>f.raw).map(toOpt).join('')+'</optgroup>'+ 
+      '<optgroup label="Already cooked or ready to eat">'+foods.filter(f=>!f.raw).map(toOpt).join('')+'</optgroup>';
+    if(foodById(selectedFoodId) && !foodById(selectedFoodId).raw) $('foodSelect').value=selectedFoodId; else selectedFoodId='rice';
   }
   function setSelectedFood(id,resetGrams=true){
-    const food=foodById(id); if(!food) return;
+    const food=foodById(id); if(!food || food.raw) return;
     selectedFoodId=id; $('foodSelect').value=id; $('selectedFoodBadge').textContent=food.name;
     if(resetGrams) $('gramsInput').value=food.portion;
     updateQuickCalc(); updateSmartPortion();
@@ -164,7 +208,7 @@
   function renderSuggestions(term){
     const box=$('foodSuggestions'); term=term.trim().toLowerCase();
     if(!term){box.hidden=true;box.innerHTML='';return;}
-    const matches=allFoods().filter(f=>(f.name+' '+f.cat).toLowerCase().includes(term)).slice(0,10);
+    const matches=allFoods().filter(f=>!f.raw&&(f.name+' '+f.cat).toLowerCase().includes(term)).slice(0,10);
     if(!matches.length){box.hidden=true;box.innerHTML='';return;}
     box.innerHTML=matches.map(f=>{const s=smartPortionFor(f,$('mealSelect').value);return `<button class="suggestion" type="button" data-food="${escapeHtml(f.id)}"><span>${escapeHtml(f.emoji+' '+f.name)}</span><small>${s.grams?s.grams+' g smart':'saved'}</small></button>`}).join('');
     box.hidden=false;
@@ -172,7 +216,7 @@
   }
 
   function addToToday(){
-    const food=foodById($('foodSelect').value); if(!food) return;
+    const food=foodById($('foodSelect').value); if(!food || food.raw) return;
     const g=clamp(Number($('gramsInput').value)||food.portion,1,5000); const c=calcFood(food,g);
     ensureToday().push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),foodId:food.id,name:food.name,emoji:food.emoji,grams:g,meal:$('mealSelect').value,kcal:c.kcal,protein:c.protein,fibre:c.fibre,ts:Date.now()});
     saveState(); renderToday(); updateSmartPortion(); renderFoodLibrary(); showToast('Added to today');
@@ -193,7 +237,7 @@
   }
 
   function renderCategoryChips(){
-    const cats=['All',...new Set(allFoods().map(f=>f.cat))];
+    const cats=['All',...new Set(allFoods().filter(f=>!f.raw).map(f=>f.cat))];
     $('categoryChips').innerHTML=cats.map(c=>`<button class="chip ${c===activeCategory?'active':''}" type="button" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
     $('categoryChips').querySelectorAll('[data-cat]').forEach(b=>b.addEventListener('click',()=>{activeCategory=b.dataset.cat;renderCategoryChips();renderFoodLibrary();}));
   }
@@ -201,7 +245,7 @@
   function renderFoodLibrary(){
     renderCategoryChips();
     const term=$('librarySearch').value.trim().toLowerCase(); const meal=$('mealSelect').value;
-    const foods=allFoods().filter(f=>(activeCategory==='All'||f.cat===activeCategory)&&(!term||(f.name+' '+f.cat).toLowerCase().includes(term)));
+    const foods=allFoods().filter(f=>!f.raw&&(activeCategory==='All'||f.cat===activeCategory)&&(!term||(f.name+' '+f.cat).toLowerCase().includes(term)));
     $('foodLibrary').innerHTML=foods.length?foods.map(f=>{const s=smartPortionFor(f,meal);return `<article class="food-card">${foodVisual(f)}<div><h4>${escapeHtml(f.name)}</h4><p>${Math.round(f.kcal)} kcal · ${round1(f.protein)} g protein per 100 g</p><div class="portion">${escapeHtml(f.note||f.portion+' g')}</div><div class="smart-line">${s.grams?`Smart now: ${s.grams} g · ${Math.round(s.kcal)} kcal`:'Smart now: —'}</div></div><button type="button" data-log-food="${escapeHtml(f.id)}">Use ${s.grams||f.portion} g on Today</button></article>`}).join(''):'<div class="empty-state">No foods match that search.</div>';
     $('foodLibrary').querySelectorAll('[data-log-food]').forEach(b=>b.addEventListener('click',()=>{const f=foodById(b.dataset.logFood);setSelectedFood(f.id,false);const s=smartPortionFor(f,$('mealSelect').value);$('gramsInput').value=s.grams||f.portion;updateQuickCalc();document.querySelector('[data-tab="today"]').click();window.scrollTo({top:0,behavior:'smooth'});}));
   }
