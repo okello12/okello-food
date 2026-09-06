@@ -7,6 +7,9 @@
   const foodsPanel=$('tab-foods');
   if(!library||!foodsPanel)return;
 
+  const globalSearch=$('globalFoodSearch');
+  if(globalSearch) globalSearch.placeholder='Search food, cuisine or packaged product…';
+
   const style=document.createElement('style');
   style.textContent=`
     .region-filter{margin:12px 0 14px;padding:12px;border:1px solid var(--rule);border-radius:16px;background:var(--white)}
@@ -27,26 +30,29 @@
   const chips=$('categoryChips');
   if(chips)chips.insertAdjacentElement('beforebegin',wrap); else foodsPanel.prepend(wrap);
 
-  function state(){try{return JSON.parse(localStorage.getItem(STORE)||'{}')||{};}catch(_){return {};}}
-  function regionFor(id){
+  function regionMap(){
+    try{
+      const s=JSON.parse(localStorage.getItem(STORE)||'{}')||{};
+      return new Map((s.customFoods||[]).filter(Boolean).map(f=>[String(f.id),f.region||'']));
+    }catch(_){return new Map();}
+  }
+  function regionFor(id,map){
     if(String(id).startsWith('ghana_'))return 'Ghana';
-    if(String(id).startsWith('world_')){
-      const f=(state().customFoods||[]).find(x=>x&&x.id===id);
-      return f?.region||'Global';
-    }
+    if(String(id).startsWith('world_'))return map.get(String(id))||'Global';
     return 'Global';
   }
   function matches(activeRegion,actual){
     if(activeRegion==='All')return true;
-    if(activeRegion==='North Africa & Middle East')return actual==='North Africa & Middle East';
+    if(actual==='East & Southeast Asia') return activeRegion==='East Asia'||activeRegion==='Southeast Asia';
     return actual===activeRegion;
   }
   function apply(){
     const cards=[...library.querySelectorAll('.food-card')];
+    const map=regionMap();
     let visible=0;
     cards.forEach(card=>{
       const id=card.querySelector('[data-log-food]')?.dataset.logFood||'';
-      const ok=matches(active,regionFor(id));
+      const ok=matches(active,regionFor(id,map));
       card.style.display=ok?'':'none';
       if(ok)visible++;
     });
