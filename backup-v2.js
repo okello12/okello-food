@@ -5,6 +5,7 @@
   const FAV_STORE='okello_food_favourites_v1';
   const SAT_STORE='okello_satiety_v1';
   const ACTIVITY_STORE='okello_activity_v1';
+  const PHOTO_STORE='okello_photo_notes_v1';
   const PLAIN_FORMAT='okello-backup-v2';
   const ENCRYPTED_FORMAT='okello-encrypted-v2';
   const todayKey=()=>new Date().toISOString().slice(0,10);
@@ -38,7 +39,8 @@
       state:readJson(MAIN_STORE,{}),
       favourites:readJson(FAV_STORE,[]),
       satiety:readJson(SAT_STORE,{}),
-      activity:readJson(ACTIVITY_STORE,null)
+      activity:readJson(ACTIVITY_STORE,null),
+      photoNotes:readJson(PHOTO_STORE,null)
     };
   }
 
@@ -61,6 +63,10 @@
     if(wrapped && isObject(input.activity)){
       localStorage.setItem(ACTIVITY_STORE,JSON.stringify(input.activity));
     }
+    const hasPhotoNotes=wrapped && input.photoNotes!==undefined && input.photoNotes!==null;
+    if(hasPhotoNotes){
+      localStorage.setItem(PHOTO_STORE,JSON.stringify(input.photoNotes));
+    }
 
     return {
       legacy:!wrapped,
@@ -68,9 +74,22 @@
         state:true,
         favourites:wrapped && Array.isArray(input.favourites),
         satiety:wrapped && isObject(input.satiety),
-        activity:wrapped && isObject(input.activity)
+        activity:wrapped && isObject(input.activity),
+        photoNotes:hasPhotoNotes
       }
     };
+  }
+
+  function backupDateLabel(payload){
+    const raw=isObject(payload) ? payload.exportedAt : null;
+    if(!raw) return 'this older backup (backup date unavailable)';
+    const d=new Date(raw);
+    if(Number.isNaN(d.getTime())) return 'this backup (date unavailable)';
+    return new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short'}).format(d);
+  }
+
+  function confirmRestore(payload){
+    return window.confirm(`Restore backup from ${backupDateLabel(payload)}? This will replace the food, weight and activity data currently on this device.`);
   }
 
   function downloadText(text,name,type='application/json'){
@@ -110,9 +129,11 @@
 
   async function importPlain(file){
     const parsed=JSON.parse(await file.text());
+    if(!confirmRestore(parsed)){ toast('Restore cancelled'); return false; }
     const result=restoreBundle(parsed);
     sessionStorage.setItem('okello_flash',result.legacy?'Older backup restored. New learning data was not present.':'Complete backup restored');
     location.reload();
+    return true;
   }
 
   async function exportEncrypted(){
@@ -134,7 +155,7 @@
 
   async function importEncrypted(file){
     const pass=$('syncPassphrase')?.value||'';
-    if(pass.length<8){toast('Enter the backup passphrase first');return;}
+    if(pass.length<8){toast('Enter the backup passphrase first');return false;}
     const enc=JSON.parse(await file.text());
     if(!['okello-encrypted-v1',ENCRYPTED_FORMAT].includes(enc?.format)) throw new Error('format');
     const salt=b64ToBytes(enc.salt);
@@ -143,9 +164,11 @@
     const key=await deriveKey(pass,salt);
     const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,cipher);
     const payload=JSON.parse(new TextDecoder().decode(plain));
+    if(!confirmRestore(payload)){ toast('Restore cancelled'); return false; }
     const result=restoreBundle(payload);
     sessionStorage.setItem('okello_flash',result.legacy?'Older encrypted backup restored':'Encrypted complete backup restored');
     location.reload();
+    return true;
   }
 
   // Capture first so the legacy handlers in app.js/features-v1.js do not create
@@ -168,21 +191,20 @@
     e.stopImmediatePropagation();
     const file=target.files?.[0];
     if(!file) return;
-    if(target.id==='importInput'){
-      importPlain(file).catch(()=>toast('That backup file could not be read'));
-    }else{
-      importEncrypted(file).catch(()=>toast('Could not restore: check the file and passphrase'));
-    }
+    const run=target.id==='importInput'
+      ? importPlain(file).catch(()=>toast('That backup file could not be read'))
+      : importEncrypted(file).catch(()=>toast('Could not restore: check the file and passphrase'));
+    Promise.resolve(run).finally(()=>{ target.value=''; });
   },true);
 
   function updateCopy(){
     const backupCard=$('exportBtn')?.closest('.card');
     const note=backupCard?.querySelector('.muted');
-    if(note) note.textContent='Your complete backup now includes food history, recipes, favourites, satiety feedback and activity data. Keep a recent copy before changing phones or clearing Safari website data.';
+    if(note) note.textContent='Your complete backup includes food history, recipes, favourites, satiety feedback, activity data and any saved photo meal notes. Restore always asks before replacing data on this device.';
 
     const secure=$('encryptedExportBtn')?.closest('.secure-transfer');
     const secureNote=secure?.querySelector('.secure-note');
-    if(secureNote) secureNote.textContent='The passphrase is not stored. The encrypted backup includes food and weight history, favourites, satiety feedback and activity data. Older encrypted backups remain restorable.';
+    if(secureNote) secureNote.textContent='The passphrase is not stored. The encrypted backup includes food and weight history, favourites, satiety feedback, activity data and any saved photo meal notes. Older encrypted backups remain restorable.';
   }
   updateCopy();
 
