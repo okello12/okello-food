@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 'v31';
+  const APP_VERSION = 'v32';
   const UPDATE_KEY = 'okello_last_update_check';
   const RELOAD_KEY = 'okello_controller_reload';
 
