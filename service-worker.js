@@ -1,21 +1,22 @@
-const VERSION='17';
-const CACHE='okello-food-v17';
+const VERSION='18';
+const CACHE='okello-food-v18';
 const ASSETS=[
   './',
   './index.html',
-  './styles.css?v=17',
-  './bootstrap-v14.js?v=17',
-  './ghana-foods.js?v=17',
-  './app.js?v=17',
-  './scanner.js?v=17',
-  './ux-v2.js?v=17',
-  './features-v1.js?v=17',
-  './smart-support.js?v=17',
-  './smart-v2.js?v=17',
-  './activity-v1.js?v=17',
-  './update-v1.js?v=17',
-  './app-chrome-v1.js?v=17',
-  './ios-exit-v1.js?v=17',
+  './styles.css?v=18',
+  './bootstrap-v14.js?v=18',
+  './ghana-foods.js?v=18',
+  './app.js?v=18',
+  './scanner.js?v=18',
+  './ux-v2.js?v=18',
+  './features-v1.js?v=18',
+  './smart-support.js?v=18',
+  './smart-v2.js?v=18',
+  './recipe-assistant-v1.js?v=18',
+  './activity-v1.js?v=18',
+  './update-v1.js?v=18',
+  './app-chrome-v1.js?v=18',
+  './ios-exit-v1.js?v=18',
   './manifest.webmanifest',
   './assets/icon-192.png',
   './assets/icon-512.png'
