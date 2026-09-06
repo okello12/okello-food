@@ -1,5 +1,5 @@
-const CACHE='okello-food-v11';
-const ASSETS=['./','./index.html','./styles.css','./app.js','./ghana-foods.js','./scanner.js','./ux-v2.js','./features-v1.js','./smart-support.js','./smart-v2.js','./activity-v1.js','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
+const CACHE='okello-food-v12';
+const ASSETS=['./','./index.html','./styles.css','./app.js','./ghana-foods.js','./scanner.js','./ux-v2.js','./features-v1.js','./smart-support.js','./smart-v2.js','./activity-v1.js','./update-v1.js','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
 
 self.addEventListener('install',e=>e.waitUntil(
   caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())
@@ -10,6 +10,10 @@ self.addEventListener('activate',e=>e.waitUntil(
     .then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
     .then(()=>self.clients.claim())
 ));
+
+self.addEventListener('message',e=>{
+  if(e.data && e.data.type==='SKIP_WAITING') self.skipWaiting();
+});
 
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET') return;
@@ -27,6 +31,7 @@ self.addEventListener('fetch',e=>{
         let support=await cache.match('./smart-support.js');
         let smart=await cache.match('./smart-v2.js');
         let activity=await cache.match('./activity-v1.js');
+        let updater=await cache.match('./update-v1.js');
         if(!main) main=await fetch(e.request);
         const mainText=await main.text();
         const foodText=foods ? await foods.text() : '';
@@ -36,7 +41,8 @@ self.addEventListener('fetch',e=>{
         const supportText=support ? await support.text() : '';
         const smartText=smart ? await smart.text() : '';
         const activityText=activity ? await activity.text() : '';
-        return new Response(foodText+'\n'+mainText+'\n'+scannerText+'\n'+uxText+'\n'+featureText+'\n'+supportText+'\n'+smartText+'\n'+activityText,{
+        const updateText=updater ? await updater.text() : '';
+        return new Response(foodText+'\n'+mainText+'\n'+scannerText+'\n'+uxText+'\n'+featureText+'\n'+supportText+'\n'+smartText+'\n'+activityText+'\n'+updateText,{
           status:200,
           headers:{'Content-Type':'application/javascript; charset=utf-8','Cache-Control':'no-cache'}
         });
