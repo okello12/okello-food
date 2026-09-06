@@ -16,6 +16,8 @@ The current photo-meal capture flow only previews the selected photo with an obj
 
 `okello_recipe_voice_draft_v1` is deliberately classified as disposable working state. It is only an unfinished Smart Pot text draft, not part of food history, a saved recipe or a learned preference. It is therefore not included in backups.
 
+`okello_food_tracker_v3_quarantine_v1` is deliberately classified as exceptional recovery evidence rather than normal application data. It can contain the exact unreadable raw value of a damaged v3 store. It is not included in or automatically restored from normal backups because doing so would propagate corrupt state. The storage migration layer exposes a separate recovery download and keeps the quarantine until the user deliberately clears it after recovery.
+
 ## Formats
 
 Plain backups use `format: okello-backup-v2`.
@@ -44,4 +46,4 @@ Legacy export/import handlers still exist in `app.js` and `features-v1.js`, but 
 
 ## Rule
 
-Any new local store that materially affects user history, recommendations, learned preferences, authored content or activity must either be added to the complete backup bundle or be explicitly documented as disposable cache or draft data.
+Any new local store that materially affects user history, recommendations, learned preferences, authored content or activity must either be added to the complete backup bundle or be explicitly documented as disposable cache, draft data or exceptional recovery evidence with its own recovery path.
