@@ -1,4 +1,4 @@
-const CACHE='okello-food-v4';
+const CACHE='okello-food-v5';
 const ASSETS=['./','./index.html','./styles.css','./app.js','./ghana-foods.js','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
 
 self.addEventListener('install',e=>e.waitUntil(
@@ -15,8 +15,8 @@ self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET') return;
   const url=new URL(e.request.url);
 
-  // Prepend the expandable Ghanaian-food catalogue before the main app executes.
-  // This lets us add foods without disturbing the core tracker or users' saved logs.
+  // Load the expandable Ghanaian-food catalogue before the main app executes.
+  // This lets us grow the library without disturbing users' saved logs.
   if(url.pathname.endsWith('/app.js')){
     e.respondWith((async()=>{
       try{
