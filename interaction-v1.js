@@ -33,22 +33,23 @@
   document.head.appendChild(style);
 
   if(!iosStandalone){
-    window.OkelloInteraction=Object.freeze({version:1,iosStandalone:false});
+    window.OkelloInteraction=Object.freeze({version:2,iosStandalone:false});
     return;
   }
 
-  // iPhone Home Screen mode has shown intermittent missed click delivery in the
-  // app's stacked sticky/fixed UI. Convert a clean touch tap on a button into one
-  // synchronous click and suppress the browser-generated duplicate. Scrolls and
-  // drags are left alone.
   let active=null;
   let moved=false;
   let fallbackCount=0;
   const maxMove=12;
 
+  function scannerOwned(el){
+    return !!el?.closest?.('.scanner-sheet') || !!el?.matches?.('#hubScanBtn,#scanBarcodeBtn');
+  }
+
   function buttonFrom(target){
     const b=target?.closest?.('button,[role="button"]');
     if(!b||b.disabled||b.getAttribute('aria-disabled')==='true') return null;
+    if(scannerOwned(b)) return null;
     if(b.hidden||getComputedStyle(b).display==='none'||getComputedStyle(b).visibility==='hidden') return null;
     return b;
   }
@@ -78,7 +79,6 @@
     const current=buttonFrom(e.target);
     if(!current||current!==tap.button)return;
 
-    // Prevent WebKit from also synthesising a second click after this touch.
     e.preventDefault();
     fallbackCount++;
     try{sessionStorage.setItem('okello_touch_fallback_count',String(fallbackCount));}catch(_){}
@@ -86,7 +86,7 @@
   },{passive:false,capture:true});
 
   window.OkelloInteraction=Object.freeze({
-    version:1,
+    version:2,
     iosStandalone:true,
     get fallbackTaps(){return fallbackCount;}
   });
