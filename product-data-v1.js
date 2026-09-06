@@ -54,6 +54,7 @@
     const fibre100=firstNumber(n,['fiber_100g','fibre_100g']);
     const sugar100=numberOrNull(n,'sugars_100g');
     const saturatedFat100=firstNumber(n,['saturated-fat_100g','saturated_fat_100g']);
+    const fat100=numberOrNull(n,'fat_100g');
     const salt100=numberOrNull(n,'salt_100g');
     const servingRaw=numberOrNull(p,'serving_quantity');
     const servingG=servingRaw!==null && servingRaw>0 ? servingRaw : null;
@@ -69,6 +70,7 @@
       fibre100,
       sugar100,
       saturatedFat100,
+      fat100,
       salt100,
       proteinPer100Kcal:ratioPer100Kcal(protein100,kcal100),
       fibrePer100Kcal:ratioPer100Kcal(fibre100,kcal100),
@@ -80,6 +82,7 @@
         fibre:fibre100!==null,
         sugar:sugar100!==null,
         saturatedFat:saturatedFat100!==null,
+        fat:fat100!==null,
         salt:salt100!==null,
         serving:servingG!==null
       }),
