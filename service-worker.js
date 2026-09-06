@@ -1,5 +1,5 @@
-const CACHE='okello-food-v6';
-const ASSETS=['./','./index.html','./styles.css','./app.js','./ghana-foods.js','./scanner.js','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
+const CACHE='okello-food-v7';
+const ASSETS=['./','./index.html','./styles.css','./app.js','./ghana-foods.js','./scanner.js','./ux-v2.js','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
 
 self.addEventListener('install',e=>e.waitUntil(
   caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())
@@ -15,7 +15,8 @@ self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET') return;
   const url=new URL(e.request.url);
 
-  // Build one local application bundle: expanded Ghanaian catalogue + tracker + camera scanner.
+  // Assemble the personal app in a stable order: food catalogue, tracker,
+  // camera scanner, then mobile-first UX enhancements.
   if(url.pathname.endsWith('/app.js')){
     e.respondWith((async()=>{
       try{
@@ -23,11 +24,13 @@ self.addEventListener('fetch',e=>{
         let main=await cache.match('./app.js');
         let foods=await cache.match('./ghana-foods.js');
         let scanner=await cache.match('./scanner.js');
+        let ux=await cache.match('./ux-v2.js');
         if(!main) main=await fetch(e.request);
         const mainText=await main.text();
         const foodText=foods ? await foods.text() : '';
         const scannerText=scanner ? await scanner.text() : '';
-        return new Response(foodText+'\n'+mainText+'\n'+scannerText,{
+        const uxText=ux ? await ux.text() : '';
+        return new Response(foodText+'\n'+mainText+'\n'+scannerText+'\n'+uxText,{
           status:200,
           headers:{'Content-Type':'application/javascript; charset=utf-8','Cache-Control':'no-cache'}
         });
