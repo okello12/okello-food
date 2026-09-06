@@ -35,8 +35,9 @@
   preview.insertAdjacentElement('afterend',card);
 
   const status=$('shoppingStatus'),current=$('shoppingCurrent'),compare=$('shoppingCompare');
-  const inflight=new Map();
   let compareCodes=[];
+
+  function productData(){return window.OkelloProductData||null;}
 
   function readStore(){
     try{
@@ -50,47 +51,14 @@
   function saveProduct(product){
     const store=readStore();
     const code=String(product.code);
-    store.products[code]=product;
+    store.products[code]={...product,lastScannedAt:new Date().toISOString()};
     store.order=[code,...store.order.filter(x=>x!==code)].slice(0,MAX_PRODUCTS);
     for(const key of Object.keys(store.products))if(!store.order.includes(key))delete store.products[key];
     writeStore(store);
   }
 
   function esc(s){return String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]||c));}
-  function num(v){const n=Number(v);return Number.isFinite(n)?n:null;}
-  function present(obj,key){return Object.prototype.hasOwnProperty.call(obj||{},key)&&obj[key]!==null&&obj[key]!==''&&Number.isFinite(Number(obj[key]));}
-  function nutrient(n,key){return present(n,key)?Number(n[key]):null;}
-  function kcalValue(n){
-    if(present(n,'energy-kcal_100g'))return Number(n['energy-kcal_100g']);
-    if(present(n,'energy_100g'))return Number(n.energy_100g)/4.184;
-    return null;
-  }
-  function ratio(value,kcal){return value!==null&&kcal!==null&&kcal>0?(value/kcal)*100:null;}
   function fmt(n,d=1){return n===null?'—':Number(n).toFixed(d).replace(/\.0$/,'');}
-
-  function productFromApi(code,p){
-    const n=p?.nutriments||{};
-    const kcal=kcalValue(n);
-    const protein=nutrient(n,'proteins_100g');
-    const fibre=present(n,'fiber_100g')?Number(n.fiber_100g):(present(n,'fibre_100g')?Number(n.fibre_100g):null);
-    const serving=present(p,'serving_quantity')&&Number(p.serving_quantity)>0?Number(p.serving_quantity):null;
-    return {
-      code:String(code),
-      name:String(p?.product_name||'Scanned product'),
-      brands:String(p?.brands||''),
-      kcal100:kcal,
-      protein100:protein,
-      fibre100:fibre,
-      proteinPer100Kcal:ratio(protein,kcal),
-      fibrePer100Kcal:ratio(fibre,kcal),
-      servingG:serving,
-      image:String(p?.image_front_small_url||''),
-      source:'openfoodfacts',
-      sourceCheckedAt:new Date().toISOString(),
-      lastScannedAt:new Date().toISOString(),
-      completeness:{kcal:kcal!==null,protein:protein!==null,fibre:fibre!==null}
-    };
-  }
 
   function metric(label,value,unit){
     const missing=value===null;
@@ -153,21 +121,13 @@
     renderComparison();
   }
 
-  async function fetchProduct(code){
-    const key=String(code);
-    if(inflight.has(key))return inflight.get(key);
-    const promise=(async()=>{
-      const fields='product_name,brands,nutriments,image_front_small_url,serving_quantity,serving_size';
-      const res=await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(key)}.json?fields=${fields}`,{headers:{Accept:'application/json'}});
-      if(!res.ok)throw new Error('shopping-lookup-failed');
-      const data=await res.json();
-      if(!data||data.status!==1||!data.product)throw new Error('shopping-product-not-found');
-      const product=productFromApi(key,data.product);
+  function fetchProduct(code){
+    const api=productData();
+    if(!api?.get)return Promise.reject(new Error('product-data-service-unavailable'));
+    return api.get(String(code)).then(product=>{
       saveProduct(product);
       return product;
-    })().finally(()=>inflight.delete(key));
-    inflight.set(key,promise);
-    return promise;
+    });
   }
 
   async function assess(code){
@@ -202,12 +162,12 @@
     }
   }
 
-  // app.js remains the owner of the normal barcode form lookup. This listener
-  // adds a shopping assessment without intercepting or stopping that flow.
+  // The shopping layer no longer parses Open Food Facts itself. It consumes the
+  // shared product-data service and only owns durable shelf/history state + UI.
   lookupBtn.addEventListener('click',()=>assess(input.value));
 
   window.OkelloShopping=Object.freeze({
-    version:1,
+    version:2,
     storeKey:STORE,
     assess,
     getProduct:code=>cached(String(code||'')),
