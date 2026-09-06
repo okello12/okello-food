@@ -1,20 +1,22 @@
 (() => {
   'use strict';
 
-  const VERSION = '18';
+  const VERSION = '19';
   const scripts = [
-    'ghana-foods.js?v=18',
-    'app.js?v=18',
-    'scanner.js?v=18',
-    'ux-v2.js?v=18',
-    'features-v1.js?v=18',
-    'smart-support.js?v=18',
-    'smart-v2.js?v=18',
-    'recipe-assistant-v1.js?v=18',
-    'activity-v1.js?v=18',
-    'update-v1.js?v=18',
-    'app-chrome-v1.js?v=18',
-    'ios-exit-v1.js?v=18'
+    'ghana-foods.js?v=19',
+    'world-foods.js?v=19',
+    'app.js?v=19',
+    'scanner.js?v=19',
+    'ux-v2.js?v=19',
+    'world-library-v1.js?v=19',
+    'features-v1.js?v=19',
+    'smart-support.js?v=19',
+    'smart-v2.js?v=19',
+    'recipe-assistant-v1.js?v=19',
+    'activity-v1.js?v=19',
+    'update-v1.js?v=19',
+    'app-chrome-v1.js?v=19',
+    'ios-exit-v1.js?v=19'
   ];
 
   function loadScript(src) {
@@ -67,7 +69,7 @@
     if (!('serviceWorker' in navigator)) return;
     try {
       let version = await controllerVersion();
-      const reg = await navigator.serviceWorker.register('./service-worker.js?v=18', {updateViaCache:'none'});
+      const reg = await navigator.serviceWorker.register('./service-worker.js?v=19', {updateViaCache:'none'});
       try { await reg.update(); } catch (_) {}
 
       const promote = worker => {
