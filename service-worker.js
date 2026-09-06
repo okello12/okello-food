@@ -1,4 +1,4 @@
-const CACHE='okello-food-v7';
+const CACHE='okello-food-v8';
 const ASSETS=['./','./index.html','./styles.css','./app.js','./ghana-foods.js','./scanner.js','./ux-v2.js','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
 
 self.addEventListener('install',e=>e.waitUntil(
@@ -15,8 +15,6 @@ self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET') return;
   const url=new URL(e.request.url);
 
-  // Assemble the personal app in a stable order: food catalogue, tracker,
-  // camera scanner, then mobile-first UX enhancements.
   if(url.pathname.endsWith('/app.js')){
     e.respondWith((async()=>{
       try{
