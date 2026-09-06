@@ -1,32 +1,33 @@
 (() => {
   'use strict';
 
-  const VERSION = '35';
+  const VERSION = '36';
   const scripts = [
-    'storage-migration-v1.js?v=35',
-    'ghana-foods.js?v=35',
-    'world-foods.js?v=35',
-    'food-data-layer-v1.js?v=35',
-    'amount-quality-v2.js?v=35',
-    'app.js?v=35',
-    'food-intelligence-v1.js?v=35',
-    'personal-food-memory-v1.js?v=35',
-    'scanner.js?v=35',
-    'ux-v2.js?v=35',
-    'scanner-launch-v1.js?v=35',
-    'world-library-v1.js?v=35',
-    'features-v1.js?v=35',
-    'day-forecast-v1.js?v=35',
-    'smart-support.js?v=35',
-    'smart-v3.js?v=35',
-    'search-intelligence-v1.js?v=35',
-    'recipe-assistant-v1.js?v=35',
-    'activity-v1.js?v=35',
-    'backup-v2.js?v=35',
-    'update-v1.js?v=35',
-    'app-chrome-v1.js?v=35',
-    'ios-exit-v1.js?v=35',
-    'interaction-v1.js?v=35'
+    'storage-migration-v1.js?v=36',
+    'ghana-foods.js?v=36',
+    'world-foods.js?v=36',
+    'food-data-layer-v1.js?v=36',
+    'amount-quality-v2.js?v=36',
+    'app.js?v=36',
+    'food-intelligence-v1.js?v=36',
+    'personal-food-memory-v1.js?v=36',
+    'scanner.js?v=36',
+    'ux-v2.js?v=36',
+    'scanner-launch-v1.js?v=36',
+    'shopping-v1.js?v=36',
+    'world-library-v1.js?v=36',
+    'features-v1.js?v=36',
+    'day-forecast-v1.js?v=36',
+    'smart-support.js?v=36',
+    'smart-v3.js?v=36',
+    'search-intelligence-v1.js?v=36',
+    'recipe-assistant-v1.js?v=36',
+    'activity-v1.js?v=36',
+    'backup-v2.js?v=36',
+    'update-v1.js?v=36',
+    'app-chrome-v1.js?v=36',
+    'ios-exit-v1.js?v=36',
+    'interaction-v1.js?v=36'
   ];
 
   function loadScript(src) {
@@ -79,7 +80,7 @@
     if (!('serviceWorker' in navigator)) return;
     try {
       let version = await controllerVersion();
-      const reg = await navigator.serviceWorker.register('./service-worker.js?v=35', {updateViaCache:'none'});
+      const reg = await navigator.serviceWorker.register('./service-worker.js?v=36', {updateViaCache:'none'});
       try { await reg.update(); } catch (_) {}
 
       const promote = worker => {
