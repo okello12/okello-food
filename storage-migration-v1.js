@@ -29,24 +29,69 @@
   }
   function readQuarantine(){
     try{
-      const q=JSON.parse(localStorage.getItem(QUARANTINE)||'null');
-      return isObject(q)&&typeof q.raw==='string'?q:null;
+      const stored=localStorage.getItem(QUARANTINE);
+      if(stored==null)return null;
+      try{
+        const q=JSON.parse(stored);
+        if(isObject(q)&&typeof q.raw==='string')return q;
+      }catch(_){}
+      // Quota fallback: the quarantine key may contain the exact raw damaged
+      // value directly, without a metadata wrapper.
+      return {
+        format:'okello-storage-quarantine-raw-v1',
+        sourceKey:CURRENT,
+        capturedAt:null,
+        reason:'invalid-current-raw-only',
+        raw:stored,
+        rawOnly:true
+      };
     }catch(_){return null;}
   }
-  function saveQuarantine(raw){
-    const existing=readQuarantine();
-    if(existing)return {saved:true,created:false,record:existing};
-    const record={
+  function quarantineRecord(raw){
+    return {
       format:'okello-storage-quarantine-v1',
       sourceKey:CURRENT,
       capturedAt:new Date().toISOString(),
       reason:'invalid-current',
       raw:String(raw)
     };
+  }
+  function saveQuarantine(raw){
+    const existing=readQuarantine();
+    if(existing)return {saved:true,created:false,record:existing};
+    const record=quarantineRecord(raw);
+    const wrapped=JSON.stringify(record);
+
+    // First try without touching v3. This is the normal path.
     try{
-      localStorage.setItem(QUARANTINE,JSON.stringify(record));
+      localStorage.setItem(QUARANTINE,wrapped);
       return {saved:true,created:true,record};
-    }catch(_){return {saved:false,created:false,record:null};}
+    }catch(_){}
+
+    // If storage is full, duplicating a large damaged value may fail. Move it
+    // transactionally instead: free CURRENT, write quarantine, and restore CURRENT
+    // if quarantine still cannot be persisted.
+    try{
+      localStorage.removeItem(CURRENT);
+      try{
+        localStorage.setItem(QUARANTINE,wrapped);
+        return {saved:true,created:true,record};
+      }catch(_){}
+
+      // A metadata wrapper can be larger than the original due to escaping. Store
+      // the exact raw value directly as a last persistent fallback.
+      try{
+        localStorage.setItem(QUARANTINE,String(raw));
+        return {saved:true,created:true,record:{...record,rawOnly:true}};
+      }catch(_){}
+
+      // Quarantine failed: put the original value back before returning.
+      try{localStorage.setItem(CURRENT,String(raw));}catch(_restore){}
+      return {saved:false,created:false,record:null};
+    }catch(_){
+      try{localStorage.setItem(CURRENT,String(raw));}catch(_restore){}
+      return {saved:false,created:false,record:null};
+    }
   }
 
   let volatileRecoveryRaw=null;
