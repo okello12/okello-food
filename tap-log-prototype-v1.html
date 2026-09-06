@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FAF8F3">
+<title>Okello Food — Tap-to-log prototype</title>
+<style>
+:root{--paper:#FAF8F3;--ink:#14231C;--forest:#1E4235;--gold:#B8862B;--clay:#A63A20;--muted:#657067;--rule:#DDD6C7;--tint:#F1EDE1;--white:#fff;--shadow:0 16px 44px rgba(20,35,28,.12)}
+*{box-sizing:border-box}html{background:var(--paper);-webkit-text-size-adjust:100%}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.4}button,input,select{font:inherit}button{touch-action:manipulation}.app{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(92px + env(safe-area-inset-bottom))}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.eyebrow{margin:0 0 4px;font-size:.69rem;letter-spacing:.13em;font-weight:900;color:var(--gold)}h1,h2,h3{font-family:"Iowan Old Style",Palatino,Georgia,serif;color:var(--forest);letter-spacing:-.02em;margin:0}.proto{border:1px solid var(--gold);color:#6b5519;background:#fff8df;border-radius:999px;padding:6px 9px;font-size:.7rem;font-weight:900;white-space:nowrap}.hero{margin:20px 0 12px;background:var(--forest);color:#fff;border-radius:24px;padding:20px;box-shadow:var(--shadow)}.hero span{display:block;color:rgba(255,255,255,.74);font-size:.78rem}.hero strong{display:block;font-size:3.4rem;line-height:1;margin:5px 0 6px;letter-spacing:-.06em}.hero small{color:rgba(255,255,255,.78)}.hero-meta{display:flex;gap:12px;margin-top:15px;flex-wrap:wrap}.hero-meta div{background:rgba(255,255,255,.1);border-radius:12px;padding:8px 10px}.hero-meta b{display:block}.section-head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:18px 0 10px}.section-head small{color:var(--muted)}.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.food-tile{border:1px solid var(--rule);background:#fff;border-radius:18px;padding:14px;text-align:left;color:var(--ink);min-height:112px;box-shadow:0 5px 18px rgba(20,35,28,.05)}.food-tile:active{transform:scale(.985)}.food-tile .emoji{font-size:1.45rem}.food-tile strong{display:block;color:var(--forest);margin:7px 0 3px;font-size:.96rem}.food-tile small{display:block;color:var(--muted);font-size:.76rem}.food-tile .usual{margin-top:7px;color:var(--clay);font-weight:900}.search-card{background:#fff;border:1px solid var(--rule);border-radius:18px;padding:14px;margin-top:12px}.search-card input{width:100%;min-height:48px;border:1.5px solid var(--forest);border-radius:13px;padding:10px 12px;font-size:16px}.search-results{display:grid;gap:7px;margin-top:8px}.search-row{border:0;background:var(--tint);border-radius:12px;padding:10px 12px;text-align:left;color:var(--ink);display:flex;justify-content:space-between;gap:10px}.insight{margin-top:14px;border-left:4px solid var(--gold);background:#fff;border-radius:16px;padding:13px 14px;color:var(--muted);font-size:.86rem}.insight strong{display:block;color:var(--forest);margin-bottom:3px}.sheet[hidden]{display:none!important}.sheet{position:fixed;inset:0;z-index:1000;background:rgba(10,18,14,.58);display:flex;align-items:flex-end;justify-content:center;padding:12px}.panel{width:min(620px,100%);background:var(--paper);border-radius:24px 24px 16px 16px;padding:17px;box-shadow:0 24px 70px rgba(0,0,0,.28)}.panel-head{display:flex;align-items:start;justify-content:space-between;gap:12px}.close{width:44px;height:44px;border-radius:50%;border:1px solid var(--rule);background:#fff;font-size:1.2rem}.picked{display:flex;gap:10px;align-items:center;margin:12px 0}.picked .bigemoji{font-size:2rem}.picked small{display:block;color:var(--muted)}.field{margin:11px 0}.field label{display:block;color:var(--muted);font-size:.76rem;font-weight:850;margin-bottom:5px}.field input{width:100%;min-height:52px;border:1px solid var(--rule);border-radius:13px;background:#fff;padding:10px 12px;font-size:18px}.meal-row{display:flex;gap:7px;overflow:auto}.meal-chip{flex:0 0 auto;border:1px solid var(--rule);background:#fff;color:var(--muted);border-radius:999px;padding:9px 12px;font-weight:850}.meal-chip.active{background:var(--forest);border-color:var(--forest);color:#fff}.add{width:100%;min-height:54px;border:0;border-radius:14px;background:var(--forest);color:#fff;font-weight:900;font-size:1rem;margin-top:14px}.hint{color:var(--muted);font-size:.76rem;margin-top:8px;text-align:center}.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translate(-50%,18px);opacity:0;pointer-events:none;background:var(--forest);color:#fff;padding:10px 14px;border-radius:999px;font-weight:800;font-size:.82rem;transition:.18s;z-index:1200}.toast.show{opacity:1;transform:translate(-50%,0)}.bottom{position:fixed;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));max-width:660px;margin:auto;background:rgba(250,248,243,.96);border:1px solid var(--rule);border-radius:18px;padding:6px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;box-shadow:0 12px 38px rgba(20,35,28,.17)}.bottom button{min-height:48px;border:0;border-radius:12px;background:transparent;color:var(--muted);font-size:.72rem;font-weight:850}.bottom button.active{background:var(--forest);color:#fff}.pulse{animation:pulse .42s ease}@keyframes pulse{50%{transform:scale(1.035)}}
+@media(min-width:560px){.tiles{grid-template-columns:repeat(3,1fr)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="top"><div><p class="eyebrow">TODAY</p><h1>Okello Food</h1></div><span class="proto">PROTOTYPE ONLY</span></div>
+  <section class="hero" id="hero"><span>Calories left today</span><strong id="remaining">2,300</strong><small id="usedLine">0 kcal logged · target 2,300</small><div class="hero-meta"><div><span>Protein</span><b id="proteinLine">0 / 150 g</b></div><div><span>Fibre</span><b id="fibreLine">0 g</b></div></div></section>
+
+  <div class="section-head"><div><p class="eyebrow">QUICK LOG</p><h2>Most likely now</h2></div><small>Tap one</small></div>
+  <section class="tiles" id="tiles"></section>
+
+  <section class="search-card"><input id="search" type="search" placeholder="Search everything else…" autocomplete="off"><div class="search-results" id="results"></div></section>
+
+  <section class="insight" id="insight"><strong>One useful thing</strong><span id="insightText">Your most likely foods appear above. No form until you actually need one.</span></section>
+</main>
+
+<div class="sheet" id="sheet" hidden>
+  <section class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="panel-head"><div><p class="eyebrow">QUICK LOG</p><h2 id="sheetTitle">Add food</h2></div><button class="close" id="close" type="button" aria-label="Close">×</button></div>
+    <div class="picked"><span class="bigemoji" id="pickEmoji">🍽️</span><div><h3 id="pickName"></h3><small id="pickWhy"></small></div></div>
+    <div class="field"><label for="grams">Amount</label><input id="grams" type="number" inputmode="decimal" min="1" max="5000"></div>
+    <div class="field"><label>Meal — picked for you</label><div class="meal-row" id="mealRow"></div></div>
+    <button class="add" id="add" type="button">Add</button>
+    <div class="hint">Prototype only: this simulates the interaction and does not change your real Okello Food log.</div>
+  </section>
+</div>
+<div class="toast" id="toast">Added</div>
+<nav class="bottom" aria-label="Prototype navigation"><button class="active">Today</button><button>Foods</button><button>History</button><button>Settings</button></nav>
+
+<script>
+(() => {
+  'use strict';
+  const STORE='okello_food_tracker_v3';
+  const $=id=>document.getElementById(id);
+  const today=()=>new Date().toISOString().slice(0,10);
+  const median=a=>{if(!a.length)return null;const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;};
+  const fallback=[
+    {id:'rice',name:'White rice, cooked',emoji:'🍚',grams:200,kcal100:130,meal:'Dinner'},
+    {id:'egg',name:'Boiled egg',emoji:'🥚',grams:150,kcal100:143,meal:'Lunch'},
+    {id:'chicken',name:'Chicken breast, cooked',emoji:'🍗',grams:220,kcal100:165,meal:'Dinner'},
+    {id:'ghana_waakye',name:'Waakye',emoji:'🍚',grams:250,kcal100:156,meal:'Lunch'},
+    {id:'banku',name:'Banku',emoji:'🥣',grams:225,kcal100:145,meal:'Dinner'},
+    {id:'tilapia',name:'Tilapia, cooked',emoji:'🐟',grams:220,kcal100:128,meal:'Dinner'},
+    {id:'sardines',name:'Sardines',emoji:'🐟',grams:100,kcal100:185,meal:'Lunch'},
+    {id:'veg',name:'Mixed vegetables',emoji:'🥦',grams:300,kcal100:40,meal:'Dinner'}
+  ];
+  function read(){try{return JSON.parse(localStorage.getItem(STORE)||'{}')||{};}catch(_){return {};}}
+  function entries(s){const out=[];for(const [day,rows] of Object.entries(s.logs||{}))for(const e of rows||[])out.push({...e,day});return out;}
+  function defaultMeal(){const h=new Date().getHours();if(h<11)return 'Other';if(h<16)return 'Lunch';if(h<21)return 'Dinner';return 'Snack';}
+  function profiles(){
+    const s=read(),all=entries(s),by=new Map(),now=Date.now(),recentCut=now-45*864e5;
+    for(const e of all){if(!e.foodId||!(+e.grams>0))continue;const k=String(e.foodId);if(!by.has(k))by.set(k,[]);by.get(k).push(e);}
+    const custom=new Map((s.customFoods||[]).map(f=>[String(f.id),f]));
+    const list=[];
+    for(const [id,rows] of by){
+      const recent=rows.filter(r=>new Date(r.day+'T12:00:00').getTime()>=recentCut);
+      const source=recent.length>=3?recent:rows;
+      const weighed=source.filter(r=>r.amountQuality==='weighed');
+      const portionRows=weighed.length>=3?weighed:source.filter(r=>r.amountQuality!=='estimated');
+      const usable=portionRows.length>=3?portionRows:source;
+      const usual=Math.round(median(usable.map(r=>+r.grams).filter(Boolean))||100);
+      const mealCounts={Lunch:0,Dinner:0,Snack:0,Other:0};rows.forEach(r=>mealCounts[r.meal]!==undefined&&mealCounts[r.meal]++);
+      const preferred=Object.entries(mealCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||defaultMeal();
+      const last=Math.max(...rows.map(r=>new Date(r.day+'T12:00:00').getTime()||0));
+      const recentDays=Math.max(0,(now-last)/864e5);
+      const timeBoost=preferred===defaultMeal()?8:0;
+      const score=Math.log2(rows.length+1)*4+(recentDays<=7?5:recentDays<=30?3:1)+timeBoost;
+      const c=custom.get(id)||{};
+      const lastRow=rows[rows.length-1]||{};
+      const kcalPer100=lastRow.grams?((+lastRow.kcal||0)/(+lastRow.grams||1))*100:(+c.kcal||0);
+      list.push({id,name:lastRow.name||c.name||id,emoji:lastRow.emoji||c.emoji||'🍽️',grams:usual,meal:preferred,kcal100:kcalPer100||0,count:rows.length,score});
+    }
+    const seen=new Set(list.map(x=>x.id));
+    fallback.forEach((f,i)=>{if(!seen.has(f.id))list.push({...f,count:0,score:3-i*.1});});
+    return list.sort((a,b)=>b.score-a.score);
+  }
+  function totals(){const s=read(),rows=s.logs?.[today()]||[];return rows.reduce((a,e)=>({k:a.k+(+e.kcal||0),p:a.p+(+e.protein||0),f:a.f+(+e.fibre||0)}),{k:0,p:0,f:0});}
+  let simulatedExtra=0,current=null,currentMeal=defaultMeal();
+  function renderHero(){const s=read(),t=totals(),target=+(s.targets?.calories)||2300,protein=+(s.targets?.protein)||150,left=Math.max(0,target-t.k-simulatedExtra);$('remaining').textContent=Math.round(left).toLocaleString();$('usedLine').textContent=`${Math.round(t.k+simulatedExtra).toLocaleString()} kcal logged · target ${target.toLocaleString()}`;$('proteinLine').textContent=`${Math.round(t.p)} / ${Math.round(protein)} g`;$('fibreLine').textContent=`${Math.round(t.f)} g`;}
+  const pool=profiles();
+  function renderTiles(list=pool.slice(0,6)){ $('tiles').innerHTML=list.map(f=>`<button class="food-tile" type="button" data-id="${f.id}"><span class="emoji">${f.emoji}</span><strong>${f.name}</strong><small>${f.count?`${f.count} previous log${f.count===1?'':'s'}`:'Quick pick'}</small><small class="usual">${Math.round(f.grams)} g · ${f.meal}</small></button>`).join('');document.querySelectorAll('.food-tile').forEach(b=>b.addEventListener('click',()=>open(pool.find(f=>f.id===b.dataset.id))));}
+  function open(f){if(!f)return;current=f;currentMeal=f.meal||defaultMeal();$('pickEmoji').textContent=f.emoji;$('pickName').textContent=f.name;$('pickWhy').textContent=f.count?`Prefilled from your usual ${Math.round(f.grams)} g and most common meal.`:'Prefilled with a sensible starting amount.';$('grams').value=Math.round(f.grams);renderMeals();$('sheet').hidden=false;document.body.style.overflow='hidden';}
+  function close(){$('sheet').hidden=true;document.body.style.overflow='';}
+  function renderMeals(){const meals=['Lunch','Dinner','Snack','Other'];$('mealRow').innerHTML=meals.map(m=>`<button class="meal-chip ${m===currentMeal?'active':''}" type="button" data-meal="${m}">${m}</button>`).join('');document.querySelectorAll('[data-meal]').forEach(b=>b.addEventListener('click',()=>{currentMeal=b.dataset.meal;renderMeals();}));}
+  $('add').addEventListener('click',()=>{if(!current)return;const g=Math.max(1,+$('grams').value||current.grams);const kcal=current.kcal100?current.kcal100*g/100:0;simulatedExtra+=kcal;close();renderHero();const hero=$('hero');hero.classList.remove('pulse');void hero.offsetWidth;hero.classList.add('pulse');$('toast').textContent=`Added ${current.name} · ${Math.round(g)} g`;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),1500);});
+  $('close').addEventListener('click',close);$('sheet').addEventListener('click',e=>{if(e.target===$('sheet'))close();});
+  $('search').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();const r=q?pool.filter(f=>f.name.toLowerCase().includes(q)).slice(0,8):[];$('results').innerHTML=r.map(f=>`<button class="search-row" type="button" data-search-id="${f.id}"><span>${f.emoji} ${f.name}</span><b>${Math.round(f.grams)} g</b></button>`).join('');document.querySelectorAll('[data-search-id]').forEach(b=>b.addEventListener('click',()=>open(pool.find(f=>f.id===b.dataset.searchId))));});
+  const learned=pool.filter(f=>f.count>=3).length;$('insightText').textContent=learned?`${learned} foods already have enough history to prefill from your own pattern. The six shown above are ranked for this time of day.`:'As your history grows, these tiles can become personal rather than generic.';
+  renderHero();renderTiles();
+})();
+</script>
+</body>
+</html>
