@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="icon" href="assets/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body>
   <div class="app-shell">
@@ -131,6 +131,7 @@
             <label>Recipe name<input id="recipeName" type="text" placeholder="e.g. Sunday okro soup"></label>
             <label>Finished pot weight (g)<input id="recipeFinalWeight" type="number" min="1" inputmode="decimal" placeholder="e.g. 3200"></label>
           </div>
+          <p class="lede" style="margin:0 0 10px;font-size:.9rem">Use the <strong>raw ingredient</strong> options for anything that goes into the pot uncooked. Picking a cooked food for raw rice or raw meat undercounts the whole pot.</p>
           <div class="recipe-add-row">
             <select id="recipeFoodSelect"></select>
             <div class="input-with-unit"><input id="recipeIngredientGrams" type="number" min="1" value="100" inputmode="decimal"><span>g</span></div>
@@ -178,6 +179,6 @@
     </main>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="bootstrap-v14.js" defer></script>
+  <script src="bootstrap-v14.js?v=17" defer></script>
 </body>
 </html>
