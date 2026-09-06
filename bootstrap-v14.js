@@ -1,27 +1,28 @@
 (() => {
   'use strict';
 
-  const VERSION = '24';
+  const VERSION = '25';
   const scripts = [
-    'ghana-foods.js?v=24',
-    'world-foods.js?v=24',
-    'food-data-layer-v1.js?v=24',
-    'app.js?v=24',
-    'food-intelligence-v1.js?v=24',
-    'personal-food-memory-v1.js?v=24',
-    'scanner.js?v=24',
-    'ux-v2.js?v=24',
-    'world-library-v1.js?v=24',
-    'features-v1.js?v=24',
-    'smart-support.js?v=24',
-    'smart-v3.js?v=24',
-    'search-intelligence-v1.js?v=24',
-    'recipe-assistant-v1.js?v=24',
-    'activity-v1.js?v=24',
-    'backup-v2.js?v=24',
-    'update-v1.js?v=24',
-    'app-chrome-v1.js?v=24',
-    'ios-exit-v1.js?v=24'
+    'ghana-foods.js?v=25',
+    'world-foods.js?v=25',
+    'food-data-layer-v1.js?v=25',
+    'app.js?v=25',
+    'food-intelligence-v1.js?v=25',
+    'personal-food-memory-v1.js?v=25',
+    'scanner.js?v=25',
+    'ux-v2.js?v=25',
+    'world-library-v1.js?v=25',
+    'features-v1.js?v=25',
+    'day-forecast-v1.js?v=25',
+    'smart-support.js?v=25',
+    'smart-v3.js?v=25',
+    'search-intelligence-v1.js?v=25',
+    'recipe-assistant-v1.js?v=25',
+    'activity-v1.js?v=25',
+    'backup-v2.js?v=25',
+    'update-v1.js?v=25',
+    'app-chrome-v1.js?v=25',
+    'ios-exit-v1.js?v=25'
   ];
 
   function loadScript(src) {
@@ -74,7 +75,7 @@
     if (!('serviceWorker' in navigator)) return;
     try {
       let version = await controllerVersion();
-      const reg = await navigator.serviceWorker.register('./service-worker.js?v=24', {updateViaCache:'none'});
+      const reg = await navigator.serviceWorker.register('./service-worker.js?v=25', {updateViaCache:'none'});
       try { await reg.update(); } catch (_) {}
 
       const promote = worker => {
