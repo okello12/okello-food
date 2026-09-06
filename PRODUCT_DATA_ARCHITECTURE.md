@@ -43,6 +43,7 @@ The shared shape should support at least:
 - `fibre100`
 - `sugar100`
 - `saturatedFat100`
+- `fat100`
 - `salt100`
 - `proteinPer100Kcal`
 - `fibrePer100Kcal`
@@ -88,11 +89,95 @@ A protein-oriented lean is allowed only when it is framed explicitly, for exampl
 
 Future versions can make this more contextual by using remaining protein relative to remaining calories, or by adding an explicit user goal/profile. Until then, the app should prefer an honest mixed verdict over an unexplained score.
 
+## Two separate colour systems
+
+Traffic-light nutrition and personal-fit verdicts answer different questions and must remain visually and semantically separate.
+
+### UK front-of-pack traffic lights
+
+If Okello Food displays green / amber / red nutrient traffic lights for fat, saturated fat, sugar or salt, it must implement the official UK front-of-pack scheme exactly rather than borrowing the colours with custom thresholds.
+
+Implementation must:
+
+- source the current thresholds from official UK guidance at the time of implementation;
+- preserve the scheme's per-100-g / per-100-ml and portion rules exactly;
+- label the component clearly as the UK front-of-pack traffic-light scheme;
+- never substitute Okello-specific thresholds behind the same colours.
+
+If Okello uses different thresholds or a different nutrition interpretation, it must use a different visual language so a shopper cannot mistake an Okello judgement for the public labelling standard.
+
+### Personal fit
+
+The personal-fit verdict is not a nutrient traffic light and must not reuse the same meaning.
+
+It answers whether the product fits the user's current goal, using inspectable metrics such as protein density, fibre density, calorie density and, only where justified, category-specific rules. Copy must describe the product, not judge the shopper.
+
+Examples of acceptable language:
+
+- `Good protein for the calories.`
+- `High calorie for the protein it provides.`
+- `Higher saturated fat for this category.`
+- `Easy to overeat; portion size matters.`
+
+Avoid moral or identity language such as `bad food`, `guilty`, `clean`, `cheat`, or wording that implies a judgement about the person holding or eating the product.
+
+## Assessment states
+
+Category-aware assessment has three explicit states:
+
+1. **Category known and supported** — use the matching category rule set, provided required nutrient inputs are present.
+2. **Category unknown or unsupported** — show only generic truths that do not depend on category, such as protein per 100 kcal, fibre per 100 kcal and calorie density. Do not silently fall back to a category-specific colour verdict.
+3. **Incomplete product data** — show `Cannot fully assess` and identify the missing fields. Missing values must never be treated as zero.
+
+The UI should make the state visible so confidence in the input travels with the verdict.
+
+## Category rules are data, not code
+
+Category-aware fit logic should be represented as a small inspectable rules table rather than scattered conditionals.
+
+Each supported category should declare:
+
+- category id and aliases accepted for that rule;
+- which two or three metrics matter;
+- thresholds or comparison bands for those metrics;
+- required fields;
+- explanatory copy fragments;
+- any standing caveat that should be shown without acting as a penalty.
+
+Initial scope should be deliberately small. It is better to support a handful of well-defined categories than to pretend every Open Food Facts category is reliable.
+
+Illustrative rule intent:
+
+- yoghurt: protein density and sugar, with other nutrients shown separately;
+- bread: fibre density, salt and calorie context;
+- oils: fat quality and portion control, not protein density;
+- nuts / nut butters: fat quality and portion control, with `easy to overeat` as a caveat rather than a negative score.
+
+These examples are product-design intent, not final thresholds. Thresholds must be validated before runtime use.
+
 ## Category boundary
 
 Category is intentionally not required for two-scan comparison or the Personal Shelf.
 
 `Find me a better one` remains blocked until category matching is dependable enough and results can be constrained to products the user can realistically buy in the UK. Crowd-sourced Open Food Facts category tags alone are not sufficient evidence for a confident recommendation.
+
+## Better-choice claims
+
+A comparative sentence such as `there is a better choice` is allowed only when a specific alternative is actually known and named.
+
+If no better alternative is available, the verdict should stay descriptive, for example:
+
+> Good protein, but high in saturated fat for this category.
+
+Do not imply an actionable alternative exists when the app cannot show one.
+
+## Personal Shelf is the primary recommendation surface
+
+Shelf-based suggestions are not a temporary substitute for wider search. They are the strongest first recommendation source because the user has already encountered those products and may already know they are obtainable, acceptable in price and suitable in taste.
+
+The first `better choice` implementation should therefore compare a newly scanned product against relevant products in the user's own shelf before any wider catalogue search is attempted.
+
+A wider UK-availability-aware search is an extension of this feature, not a replacement for the Personal Shelf recommendation path.
 
 ## Local shopping store
 
@@ -105,5 +190,8 @@ A future transport/data cache may be introduced separately, but if it does not m
 1. Two-product comparison.
 2. Shared product-data service and retirement of duplicate parsing/request logic.
 3. Personal Shelf built on the shared service.
-4. Category and UK-availability validation.
-5. `Find me a better one` only after step 4 is dependable.
+4. Small data-driven category rule table with explicit unknown-category and incomplete-data states.
+5. Exact UK front-of-pack traffic-light component, if implemented, using the official scheme rather than custom thresholds.
+6. Shelf-based `better choice` suggestions where a specific alternative is known.
+7. Category and UK-availability validation for wider product search.
+8. Wider `Find me a better one` only after step 7 is dependable.
