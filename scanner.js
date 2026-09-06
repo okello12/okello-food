@@ -49,7 +49,7 @@
   document.body.appendChild(sheet);
 
   const closeBtn=$('scannerCloseBtn'),status=$('scannerStatus'),frame=$('scannerFrame'),photoInput=$('scannerPhotoInput'),startBtn=$('scannerStartLiveBtn'),title=$('scannerTitle');
-  let scanner=null,closing=false,found=false,libraryPromise=null,lastActivation=0,lastError=null;
+  let scanner=null,closing=false,found=false,libraryPromise=null,lastActivation=0,lastError=null,lastAttempt=null,lastAttempts=[];
 
   function debugEnabled(){try{return localStorage.getItem(DEBUG_KEY)==='1';}catch(_){return false;}}
   function normaliseError(err,stage){
@@ -60,6 +60,8 @@
   }
   function recordError(stage,err){
     lastError=normaliseError(err,stage);
+    if(lastAttempt)lastError.attempt=lastAttempt;
+    if(lastAttempts.length)lastError.attempts=lastAttempts.slice();
     console.error(`Okello scanner [${stage}]`,err,lastError);
     try{sessionStorage.setItem(LAST_ERROR_KEY,JSON.stringify(lastError));}catch(_){}
     return lastError;
@@ -69,7 +71,8 @@
     status.className='scanner-status'+(kind?' '+kind:'');
     if(debugEnabled()&&detail){
       const d=document.createElement('span');d.className='scanner-debug';
-      d.textContent=`debug · ${detail.stage} · ${detail.name||detail.kind||'unknown'} · ${detail.message||'no message'}`;
+      const attempts=Array.isArray(detail.attempts)&&detail.attempts.length?` · attempts ${detail.attempts.join(', ')}`:'';
+      d.textContent=`debug · ${detail.stage} · ${detail.name||detail.kind||'unknown'} · ${detail.message||'no message'}${attempts}`;
       status.appendChild(d);
     }
   }
@@ -174,8 +177,82 @@
     }finally{startBtn.dataset.busy='0';}
   }
 
+  // iPhone stills can be very large. Rather than depend on one decode of the
+  // original file, try a small ordered set of derived images: a bounded full
+  // frame, a barcode-shaped centre crop, and a contrast pass, then the original.
+  const DECODE_MAX_EDGE=1600;
+  const CROP_WIDTH_FRACTION=0.90;
+  const CROP_HEIGHT_FRACTION=0.58;
+
+  function loadBitmap(file){
+    if(window.createImageBitmap){
+      return createImageBitmap(file,{imageOrientation:'from-image'}).catch(()=>loadViaImage(file));
+    }
+    return loadViaImage(file);
+  }
+  function loadViaImage(file){
+    return new Promise((resolve,reject)=>{
+      const url=URL.createObjectURL(file);
+      const img=new Image();
+      img.onload=()=>{URL.revokeObjectURL(url);resolve(img);};
+      img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('image-decode-failed'));};
+      img.src=url;
+    });
+  }
+  function toFile(canvas,name){
+    return new Promise(resolve=>{
+      if(!canvas.toBlob)return resolve(null);
+      canvas.toBlob(blob=>resolve(blob?new File([blob],name,{type:'image/jpeg'}):null),'image/jpeg',0.92);
+    });
+  }
+  function draw(src,sx,sy,sw,sh,maxEdge,grey){
+    const scale=Math.min(1,maxEdge/Math.max(sw,sh));
+    const w=Math.max(1,Math.round(sw*scale)),h=Math.max(1,Math.round(sh*scale));
+    const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+    const ctx=canvas.getContext('2d',{willReadFrequently:!!grey});
+    if(!ctx)throw new Error('canvas-context-unavailable');
+    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+    ctx.drawImage(src,sx,sy,sw,sh,0,0,w,h);
+    if(grey){
+      try{
+        const img=ctx.getImageData(0,0,w,h),d=img.data;
+        for(let i=0;i<d.length;i+=4){
+          const v=d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114;
+          const c=Math.max(0,Math.min(255,(v-128)*1.8+128));
+          d[i]=d[i+1]=d[i+2]=c;
+        }
+        ctx.putImageData(img,0,0);
+      }catch(_){/* keep the plain render if pixel access is unavailable */}
+    }
+    return canvas;
+  }
+
+  async function decodeCandidates(file){
+    const out=[];
+    let src=null;
+    try{src=await loadBitmap(file);}catch(_){return [{name:'original',file}];}
+    const w=src.width||src.naturalWidth,h=src.height||src.naturalHeight;
+    if(!w||!h){try{src.close?.();}catch(_){}return [{name:'original',file}];}
+
+    const full=await toFile(draw(src,0,0,w,h,DECODE_MAX_EDGE,false),'scan-full.jpg');
+    if(full)out.push({name:'downscaled',file:full});
+
+    const cw=Math.round(w*CROP_WIDTH_FRACTION),ch=Math.round(h*CROP_HEIGHT_FRACTION);
+    const sx=Math.round((w-cw)/2),sy=Math.round((h-ch)/2);
+    const crop=await toFile(draw(src,sx,sy,cw,ch,DECODE_MAX_EDGE,false),'scan-crop.jpg');
+    if(crop)out.push({name:'centre-crop',file:crop});
+
+    const boosted=await toFile(draw(src,0,0,w,h,DECODE_MAX_EDGE,true),'scan-contrast.jpg');
+    if(boosted)out.push({name:'contrast',file:boosted});
+
+    try{src.close?.();}catch(_){}
+    out.push({name:'original',file});
+    return out;
+  }
+
   async function scanPhoto(file){
     if(!file)return;
+    lastAttempt=null;lastAttempts=[];
     openScanner();found=false;frame.hidden=false;setStatus('Reading barcode from the photo…');
     let stage='photo-layout';
     try{
@@ -184,14 +261,31 @@
       stage='library-load';
       await loadScannerLibrary();
       if(!window.Html5Qrcode)throw new Error('scanner-library-unavailable');
+
+      stage='photo-prepare';
+      const candidates=await decodeCandidates(file);
+
       stage='photo-decode';
-      scanner=new window.Html5Qrcode('scannerReader',scannerOptions());
-      const text=await scanner.scanFile(file,true);await onDecoded(text);
+      let text=null,lastErr=null;
+      for(const candidate of candidates){
+        if(found)break;
+        lastAttempt=candidate.name;lastAttempts.push(candidate.name);
+        try{
+          scanner=new window.Html5Qrcode('scannerReader',scannerOptions());
+          text=await scanner.scanFile(candidate.file,false);
+          if(text)break;
+        }catch(err){
+          lastErr=err;
+          try{await stopScanner();}catch(_){}
+        }
+      }
+      if(!text)throw(lastErr||new Error('no-barcode-found'));
+      await onDecoded(text);
     }catch(err){
       const detail=recordError(stage,err);
       try{await stopScanner();}catch(_){}
       frame.hidden=true;
-      setStatus(stage==='library-load'?'The barcode reader could not load. Check your connection and retry.':'I could not find a barcode in that photo. Retake it with the barcode large, sharp and well lit.','bad',detail);
+      setStatus(stage==='library-load'?'The barcode reader could not load. Check your connection and retry.':'I could not find a barcode in that photo. Fill more of the frame with the barcode, hold steady, and avoid glare on the packet.','bad',detail);
     }finally{photoInput.value='';}
   }
 
@@ -200,7 +294,7 @@
     const wrapper=document.createElement('span');wrapper.className='direct-native-scan';wrapper.style.display='inline-block';wrapper.style.position='relative';wrapper.style.width=getComputedStyle(button).display==='block'?'100%':'';
     button.parentNode.insertBefore(wrapper,button);wrapper.appendChild(button);
     const capture=document.createElement('input');capture.id=id;capture.type='file';capture.accept='image/*';capture.setAttribute('capture','environment');capture.setAttribute('aria-label','Open camera and scan barcode');
-    capture.addEventListener('change',e=>{const file=e.target.files?.[0];if(file)scanPhoto(file);capture.value='';});
+    capture.addEventListener('change',e=>{const selected=e.target.files?.[0];if(selected)scanPhoto(selected);capture.value='';});
     wrapper.appendChild(capture);button.dataset.nativeScan='1';
   }
 
@@ -230,12 +324,13 @@
   window.addEventListener('pagehide',()=>stopScanner());
 
   window.OkelloScanner=Object.freeze({
-    version:6,
+    version:7,
     open:openScanner,
     startLive,
     close:closeScanner,
     scanPhoto,
     setDebug(enabled){try{localStorage.setItem(DEBUG_KEY,enabled?'1':'0');}catch(_){}},
-    get lastError(){return lastError;}
+    get lastError(){return lastError;},
+    get lastAttempt(){return lastAttempt;}
   });
 })();
