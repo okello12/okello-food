@@ -1,7 +1,6 @@
 (() => {
   'use strict';
   const KEY = 'okello_food_tracker_v3';
-  const LEGACY = 'okello_food_tracker_v2';
   const LIBRARY_VERSION = 5;
 
   // Expanded Ghanaian and everyday-food catalogue.
@@ -107,9 +106,7 @@
   ];
 
   try {
-    const current = localStorage.getItem(KEY);
-    const legacy = localStorage.getItem(LEGACY);
-    const state = JSON.parse(current || legacy || 'null') || {
+    const state = JSON.parse(localStorage.getItem(KEY) || 'null') || {
       targets:{calories:2300,protein:150},logs:{},customFoods:[],recipes:[]
     };
 
