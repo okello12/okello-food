@@ -103,7 +103,35 @@
   }
   function foodById(id){ return allFoods().find(f=>f.id===id); }
   function calcFood(food,grams){ return {kcal:food.kcal*grams/100,protein:food.protein*grams/100,fibre:(food.fibre||0)*grams/100}; }
-  function escapeHtml(s){ return String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c])); }
+
+  function cloneFood(food){ return food ? {...food} : null; }
+  function normaliseSearchText(value){ return String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+  window.OkelloFoodCatalog = Object.freeze({
+    version:'1',
+    getById(id){ return cloneFood(foodById(String(id||''))); },
+    findByName(term){
+      const q=normaliseSearchText(term); if(!q) return null;
+      const foods=allFoods().filter(f=>!f.raw);
+      const scored=foods.map(f=>{
+        const name=normaliseSearchText(f.name);
+        const short=normaliseSearchText(String(f.name||'').replace(/\([^)]*\)/g,' '));
+        let score=0;
+        if(name===q||short===q) score=4;
+        else if(name.startsWith(q)||short.startsWith(q)) score=3;
+        else if(name.includes(q)||short.includes(q)||q.includes(short)) score=2;
+        return {f,score};
+      }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score||String(a.f.name).length-String(b.f.name).length);
+      return scored.length ? cloneFood(scored[0].f) : null;
+    },
+    all(){ return allFoods().filter(f=>!f.raw).map(cloneFood); },
+    calc(foodOrId,grams){
+      const food=typeof foodOrId==='string'?foodById(foodOrId):foodOrId;
+      const g=Math.max(0,Number(grams)||0);
+      return food?calcFood(food,g):{kcal:0,protein:0,fibre:0};
+    }
+  });
+
+  function escapeHtml(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
   function safeImage(url){ return /^https:\/\//i.test(String(url||'')) ? String(url) : ''; }
   function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(showToast.t); showToast.t=setTimeout(()=>t.classList.remove('show'),1800); }
 
