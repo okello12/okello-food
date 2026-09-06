@@ -2,7 +2,7 @@
 
 ## Ownership
 
-`storage-migration-v1.js` is the runtime owner of migration from `okello_food_tracker_v2` to `okello_food_tracker_v3`.
+`storage-migration-v1.js` is the sole owner of migration from `okello_food_tracker_v2` to `okello_food_tracker_v3`.
 
 It must load before the Ghana catalogue, world catalogue, data layer and main tracker.
 
@@ -15,19 +15,17 @@ The migration contract is deliberately small:
 5. If v3 exists but is invalid, preserve it rather than silently replacing potentially recoverable user data.
 6. Never delete the v2 key during this migration release. It remains a rollback/recovery copy.
 
-The module exposes `window.OkelloStorageMigration` for diagnostics only. Normal application code should read and write v3.
+The module exposes `window.OkelloStorageMigration` for diagnostics only. Normal application code reads and writes v3 only.
+
+## Single-owner boundary
+
+From v28 onward, `app.js`, `ghana-foods.js`, `world-foods.js` and `food-data-layer-v1.js` no longer read the legacy v2 key. They operate only on `okello_food_tracker_v3` after the migration module has run.
+
+`storage-migration-v1.js` is therefore the only runtime source file permitted to name `okello_food_tracker_v2`. Any future schema migration must be added to the migration boundary rather than duplicated in catalogue, tracker or feature modules.
 
 ## Idempotence
 
 Running the migration repeatedly is safe. Once v3 exists, the migration becomes a no-op and does not recopy or overwrite from v2.
-
-## Legacy readers
-
-Several older modules still contain `current || legacy` fallback reads. From v28 onward those branches are dormant in normal startup because the migration owner runs first and guarantees a v3 store whenever storage is usable.
-
-They are retained for one compatibility release rather than rewriting four mature catalogue/state modules at the same time as the migration boundary changes. This keeps the migration release narrow and recoverable.
-
-The next storage cleanup can remove those dormant v2 references after v28 has been verified on existing v3 users, v2-only migration, fresh installs and corrupt-legacy recovery. At that point `storage-migration-v1.js` will be the only source file permitted to name `okello_food_tracker_v2`.
 
 ## Verification cases
 
