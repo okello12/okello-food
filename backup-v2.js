@@ -6,6 +6,7 @@
   const SAT_STORE='okello_satiety_v1';
   const ACTIVITY_STORE='okello_activity_v1';
   const PHOTO_STORE='okello_photo_notes_v1';
+  const SHOPPING_STORE='okello_shopping_products_v1';
   const PLAIN_FORMAT='okello-backup-v2';
   const ENCRYPTED_FORMAT='okello-encrypted-v2';
   const todayKey=()=>new Date().toISOString().slice(0,10);
@@ -40,7 +41,8 @@
       favourites:readJson(FAV_STORE,[]),
       satiety:readJson(SAT_STORE,{}),
       activity:readJson(ACTIVITY_STORE,null),
-      photoNotes:readJson(PHOTO_STORE,null)
+      photoNotes:readJson(PHOTO_STORE,null),
+      shoppingProducts:readJson(SHOPPING_STORE,null)
     };
   }
 
@@ -67,6 +69,10 @@
     if(hasPhotoNotes){
       localStorage.setItem(PHOTO_STORE,JSON.stringify(input.photoNotes));
     }
+    const hasShoppingProducts=wrapped && isObject(input.shoppingProducts);
+    if(hasShoppingProducts){
+      localStorage.setItem(SHOPPING_STORE,JSON.stringify(input.shoppingProducts));
+    }
 
     return {
       legacy:!wrapped,
@@ -75,7 +81,8 @@
         favourites:wrapped && Array.isArray(input.favourites),
         satiety:wrapped && isObject(input.satiety),
         activity:wrapped && isObject(input.activity),
-        photoNotes:hasPhotoNotes
+        photoNotes:hasPhotoNotes,
+        shoppingProducts:hasShoppingProducts
       }
     };
   }
@@ -89,7 +96,7 @@
   }
 
   function confirmRestore(payload){
-    return window.confirm(`Restore backup from ${backupDateLabel(payload)}? This will replace the food, weight and activity data currently on this device.`);
+    return window.confirm(`Restore backup from ${backupDateLabel(payload)}? This will replace the food, weight, activity and saved shopping data currently on this device.`);
   }
 
   function downloadText(text,name,type='application/json'){
@@ -200,11 +207,11 @@
   function updateCopy(){
     const backupCard=$('exportBtn')?.closest('.card');
     const note=backupCard?.querySelector('.muted');
-    if(note) note.textContent='Your complete backup includes food history, recipes, favourites, satiety feedback, activity data and any saved photo meal notes. Restore always asks before replacing data on this device.';
+    if(note) note.textContent='Your complete backup includes food history, recipes, favourites, satiety feedback, activity data, saved shopping scans and any saved photo meal notes. Restore always asks before replacing data on this device.';
 
     const secure=$('encryptedExportBtn')?.closest('.secure-transfer');
     const secureNote=secure?.querySelector('.secure-note');
-    if(secureNote) secureNote.textContent='The passphrase is not stored. The encrypted backup includes food and weight history, favourites, satiety feedback, activity data and any saved photo meal notes. Older encrypted backups remain restorable.';
+    if(secureNote) secureNote.textContent='The passphrase is not stored. The encrypted backup includes food and weight history, favourites, satiety feedback, activity data, saved shopping scans and any saved photo meal notes. Older encrypted backups remain restorable.';
   }
   updateCopy();
 
