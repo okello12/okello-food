@@ -1,11 +1,11 @@
 (() => {
   'use strict';
-  const STORE='okello_food_tracker_v3';
   const $=id=>document.getElementById(id);
   const library=$('foodLibrary');
   const search=$('librarySearch');
   const foodsPanel=$('tab-foods');
-  if(!library||!foodsPanel)return;
+  const data=window.OkelloFoodData;
+  if(!library||!foodsPanel||!data)return;
 
   const globalSearch=$('globalFoodSearch');
   if(globalSearch) globalSearch.placeholder='Search food, cuisine or packaged product…';
@@ -26,21 +26,10 @@
 
   const wrap=document.createElement('section');
   wrap.className='region-filter';
-  wrap.innerHTML=`<div class="region-filter-head"><strong>Explore by region</strong><span id="regionVisibleCount"></span></div><div class="region-chips">${regions.map(r=>`<button type="button" class="region-chip ${r==='All'?'active':''}" data-region="${r}">${r}</button>`).join('')}</div><p class="world-count">Ghana stays fully represented, with a much broader international catalogue around it.</p>`;
+  wrap.innerHTML=`<div class="region-filter-head"><strong>Explore by region</strong><span id="regionVisibleCount"></span></div><div class="region-chips">${regions.map(r=>`<button type="button" class="region-chip ${r==='All'?'active':''}" data-region="${r}">${r}</button>`).join('')}</div><p class="world-count">All regional filters read from the shared food-data layer, so nutrition and region metadata stay in one place.</p>`;
   const chips=$('categoryChips');
   if(chips)chips.insertAdjacentElement('beforebegin',wrap); else foodsPanel.prepend(wrap);
 
-  function regionMap(){
-    try{
-      const s=JSON.parse(localStorage.getItem(STORE)||'{}')||{};
-      return new Map((s.customFoods||[]).filter(Boolean).map(f=>[String(f.id),f.region||'']));
-    }catch(_){return new Map();}
-  }
-  function regionFor(id,map){
-    if(String(id).startsWith('ghana_'))return 'Ghana';
-    if(String(id).startsWith('world_'))return map.get(String(id))||'Global';
-    return 'Global';
-  }
   function matches(activeRegion,actual){
     if(activeRegion==='All')return true;
     if(actual==='East & Southeast Asia') return activeRegion==='East Asia'||activeRegion==='Southeast Asia';
@@ -48,11 +37,10 @@
   }
   function apply(){
     const cards=[...library.querySelectorAll('.food-card')];
-    const map=regionMap();
     let visible=0;
     cards.forEach(card=>{
       const id=card.querySelector('[data-log-food]')?.dataset.logFood||'';
-      const ok=matches(active,regionFor(id,map));
+      const ok=matches(active,data.regionForId(id));
       card.style.display=ok?'':'none';
       if(ok)visible++;
     });
