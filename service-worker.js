@@ -1,20 +1,21 @@
-const VERSION='14';
-const CACHE='okello-food-v14';
+const VERSION='15';
+const CACHE='okello-food-v15';
 const ASSETS=[
   './',
   './index.html',
-  './styles.css?v=14',
-  './bootstrap-v14.js',
-  './ghana-foods.js?v=14',
-  './app.js?v=14',
-  './scanner.js?v=14',
-  './ux-v2.js?v=14',
-  './features-v1.js?v=14',
-  './smart-support.js?v=14',
-  './smart-v2.js?v=14',
-  './activity-v1.js?v=14',
-  './update-v1.js?v=14',
-  './app-chrome-v1.js?v=14',
+  './styles.css?v=15',
+  './bootstrap-v14.js?v=14',
+  './ghana-foods.js?v=15',
+  './app.js?v=15',
+  './scanner.js?v=15',
+  './ux-v2.js?v=15',
+  './features-v1.js?v=15',
+  './smart-support.js?v=15',
+  './smart-v2.js?v=15',
+  './activity-v1.js?v=15',
+  './update-v1.js?v=15',
+  './app-chrome-v1.js?v=15',
+  './ios-exit-v1.js?v=15',
   './manifest.webmanifest',
   './assets/icon-192.png',
   './assets/icon-512.png'
