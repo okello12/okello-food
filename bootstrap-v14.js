@@ -1,33 +1,34 @@
 (() => {
   'use strict';
 
-  const VERSION = '36';
+  const VERSION = '37';
   const scripts = [
-    'storage-migration-v1.js?v=36',
-    'ghana-foods.js?v=36',
-    'world-foods.js?v=36',
-    'food-data-layer-v1.js?v=36',
-    'amount-quality-v2.js?v=36',
-    'app.js?v=36',
-    'food-intelligence-v1.js?v=36',
-    'personal-food-memory-v1.js?v=36',
-    'scanner.js?v=36',
-    'ux-v2.js?v=36',
-    'scanner-launch-v1.js?v=36',
-    'shopping-v1.js?v=36',
-    'world-library-v1.js?v=36',
-    'features-v1.js?v=36',
-    'day-forecast-v1.js?v=36',
-    'smart-support.js?v=36',
-    'smart-v3.js?v=36',
-    'search-intelligence-v1.js?v=36',
-    'recipe-assistant-v1.js?v=36',
-    'activity-v1.js?v=36',
-    'backup-v2.js?v=36',
-    'update-v1.js?v=36',
-    'app-chrome-v1.js?v=36',
-    'ios-exit-v1.js?v=36',
-    'interaction-v1.js?v=36'
+    'storage-migration-v1.js?v=37',
+    'ghana-foods.js?v=37',
+    'world-foods.js?v=37',
+    'food-data-layer-v1.js?v=37',
+    'amount-quality-v2.js?v=37',
+    'product-data-v1.js?v=37',
+    'app.js?v=37',
+    'food-intelligence-v1.js?v=37',
+    'personal-food-memory-v1.js?v=37',
+    'scanner.js?v=37',
+    'ux-v2.js?v=37',
+    'scanner-launch-v1.js?v=37',
+    'shopping-v1.js?v=37',
+    'world-library-v1.js?v=37',
+    'features-v1.js?v=37',
+    'day-forecast-v1.js?v=37',
+    'smart-support.js?v=37',
+    'smart-v3.js?v=37',
+    'search-intelligence-v1.js?v=37',
+    'recipe-assistant-v1.js?v=37',
+    'activity-v1.js?v=37',
+    'backup-v2.js?v=37',
+    'update-v1.js?v=37',
+    'app-chrome-v1.js?v=37',
+    'ios-exit-v1.js?v=37',
+    'interaction-v1.js?v=37'
   ];
 
   function loadScript(src) {
@@ -80,7 +81,7 @@
     if (!('serviceWorker' in navigator)) return;
     try {
       let version = await controllerVersion();
-      const reg = await navigator.serviceWorker.register('./service-worker.js?v=36', {updateViaCache:'none'});
+      const reg = await navigator.serviceWorker.register('./service-worker.js?v=37', {updateViaCache:'none'});
       try { await reg.update(); } catch (_) {}
 
       const promote = worker => {
