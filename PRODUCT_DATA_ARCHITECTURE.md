@@ -10,7 +10,7 @@ The product-data service must return `null` for an absent or unusable nutrient v
 
 A product assessment may say that the available data is incomplete. It must not manufacture a poor score from missing data.
 
-## Implementation status — v39
+## Implementation status — v40
 
 `product-data-v1.js` is the shared normalisation and retrieval service for barcode product data.
 
@@ -36,6 +36,8 @@ The old direct Open Food Facts request and lossy barcode nutrient parsing in `ap
 When the form and shopping layer ask for the same barcode during one lookup, both calls go through `OkelloProductData.get()`. The service's in-flight map therefore gives both consumers the same promise and one network request.
 
 The Personal Shelf landed in v39. It is a view over the existing durable shopping-product store rather than a second product database. It can search products already scanned and put saved products back into the two-product comparison without requiring a fresh network request.
+
+v40 adds the first category-rule layer. It is deliberately conservative: category-specific context is used only for an exact allow-listed source category tag. Similar names, child-looking names and neighbouring categories do not inherit a rule by substring or fuzzy matching.
 
 ## Executable missingness contract
 
@@ -156,7 +158,59 @@ Each saved record is the normalised product-data shape plus shelf metadata such 
 - reading a shelf product through `OkelloShopping.getProduct()` or `recent()` returns a frozen record, including frozen nested `completeness` and `sourceCategories` data, so downstream UI cannot quietly patch missing values;
 - shelf display formatting is derived at render time and is never written back into the canonical product record.
 
-The store remains capped to recent products and is already included in complete and encrypted backups. Personal Shelf adds no new durable storage key.
+The shelf was originally capped at 60 recently scanned products. v40 raises that cap to 200 because the store is now durable recommendation history rather than a short transport cache.
+
+Okello does **not** automatically pin a product merely because it was scanned several times. Repeated scanning proves repeated encounters, not preference or purchase intent. If retention pressure becomes real, an explicit `Keep on shelf` / pin action is preferable to silently inferring preference from scan frequency.
+
+The store is already included in complete and encrypted backups. Personal Shelf adds no new durable storage key.
+
+## Category rules are data, not code
+
+`category-rules-v1.js` is the v40 category boundary. The rule table is frozen and inspectable. Runtime assessment reads the table rather than scattering category thresholds through shopping UI code.
+
+The first supported exact source tags are deliberately narrow:
+
+- `en:yogurts` → yoghurt;
+- `en:breads` → bread;
+- `en:peanut-butters` → peanut butter;
+- `en:olive-oils` → olive oil.
+
+No substring matching, singular/plural guessing, parent inference or nearest-category fallback is allowed. For example, `en:yogurt-drinks` does not inherit the yoghurt rule merely because the string looks related.
+
+Each rule declares:
+
+- exact accepted source tags;
+- required product fields;
+- the metrics that matter for that category;
+- the interpretation type for each metric;
+- explanatory caveats that do not act as penalties.
+
+### Explicit assessment states
+
+The category layer returns one of three states:
+
+1. **Supported** — an exact allow-listed source tag matched and every required input is present/valid.
+2. **Incomplete** — an exact supported category matched, but a required source or derived value is missing/invalid. Category-specific observations are withheld and generic nutrient facts remain available.
+3. **Unsupported** — no exact supported tag matched. Only generic factual density is shown. The product cannot borrow a neighbouring category's thresholds.
+
+`category-rules-v1.test.js` and `category-rules-v1.test.html` make this boundary executable. The tests include a deliberately similar but unsupported tag and assert that it does not receive the yoghurt rule.
+
+## Reference thresholds used in v40
+
+The category layer does not invent red/amber/green cutoffs.
+
+Where it describes protein or fibre density, it uses existing GB nutrition-claim references as transparent factual benchmarks:
+
+- source of protein: at least 12% of the food's energy from protein;
+- high protein: at least 20% of energy from protein;
+- source of fibre: at least 1.5 g fibre per 100 kcal (or 3 g per 100 g under the regulation);
+- high fibre: at least 3 g fibre per 100 kcal (or 6 g per 100 g under the regulation).
+
+For the app's protein-per-100-kcal display, the 12% and 20% energy conditions correspond to 3 g and 5 g protein per 100 kcal using the standard 4 kcal per gram protein energy factor.
+
+These are reference statements, not Okello personal-fit colours and not the UK front-of-pack traffic-light scheme. Sugar, salt and saturated fat are shown as packet quantities or transparent proportions until their own validated component exists.
+
+Source basis: GB government guidance on retained Regulation (EC) No 1924/2006 and its conditions for permitted nutrition claims; the retained regulation's Annex supplies the fibre and protein conditions.
 
 ## Two separate colour systems
 
@@ -190,45 +244,13 @@ Examples of acceptable language:
 
 Avoid moral or identity language such as `bad food`, `guilty`, `clean`, `cheat`, or wording that implies a judgement about the person holding or eating the product.
 
-## Assessment states
-
-Category-aware assessment has three explicit states:
-
-1. **Category known and supported** — use the matching category rule set, provided required nutrient inputs are present.
-2. **Category unknown or unsupported** — show only generic truths that do not depend on category, such as protein per 100 kcal, fibre per 100 kcal and calorie density. Do not silently fall back to a category-specific colour verdict.
-3. **Incomplete product data** — show `Cannot fully assess` and identify the missing fields. Missing values must never be treated as zero.
-
-The UI should make the state visible so confidence in the input travels with the verdict.
-
-## Category rules are data, not code
-
-Category-aware fit logic should be represented as a small inspectable rules table rather than scattered conditionals.
-
-Each supported category should declare:
-
-- category id and aliases accepted for that rule;
-- which two or three metrics matter;
-- thresholds or comparison bands for those metrics;
-- required fields;
-- explanatory copy fragments;
-- any standing caveat that should be shown without acting as a penalty.
-
-Initial scope should be deliberately small. It is better to support a handful of well-defined categories than to pretend every Open Food Facts category is reliable.
-
-Illustrative rule intent:
-
-- yoghurt: protein density and sugar, with other nutrients shown separately;
-- bread: fibre density, salt and calorie context;
-- oils: fat quality and portion control, not protein density;
-- nuts / nut butters: fat quality and portion control, with `easy to overeat` as a caveat rather than a negative score.
-
-These examples are product-design intent, not final thresholds. Thresholds must be validated before runtime use.
-
 ## Category boundary
 
 Category is intentionally not required for two-scan comparison or the Personal Shelf.
 
-`Find me a better one` remains blocked until category matching is dependable enough and results can be constrained to products the user can realistically buy in the UK. Crowd-sourced Open Food Facts category tags alone are not sufficient evidence for a confident recommendation.
+`Find me a better one` remains blocked until category matching is dependable enough and results can be constrained to products the user can realistically buy in the UK. Crowd-sourced Open Food Facts category tags alone are not sufficient evidence for a confident wider recommendation.
+
+The v40 exact-tag allow-list is sufficient for limited category context on a scanned item. It is **not** treated as evidence that category discovery is broad enough for stage-seven catalogue search.
 
 ## Better-choice claims
 
@@ -248,7 +270,7 @@ The first `better choice` implementation should therefore compare a newly scanne
 
 A wider UK-availability-aware search is an extension of this feature, not a replacement for the Personal Shelf recommendation path.
 
-The v39 shelf itself does not yet issue `better choice` recommendations. It stores and exposes the evidence safely and lets the user make explicit saved-product comparisons. Recommendation language remains gated on the later category rules.
+The v39/v40 shelf itself does not yet issue `better choice` recommendations. It stores and exposes the evidence safely and lets the user make explicit saved-product comparisons.
 
 ## Local shopping store
 
@@ -263,8 +285,8 @@ A future transport/data cache may be introduced separately, but if it does not m
    - 2a. Shared service + executable contract tests. **Implemented in v37.**
    - 2b. Packaged-food form moved onto the service; direct request and lossy barcode parser retired. **Implemented in v38.**
 3. Personal Shelf built on the shared service and durable normalised product store. **Implemented in v39.**
-4. Small data-driven category rule table with explicit unknown-category and incomplete-data states. **Next.**
-5. Exact UK front-of-pack traffic-light component, if implemented, using the official scheme rather than custom thresholds.
+4. Small data-driven category rule table with exact-match category evidence plus explicit unsupported and incomplete states. **Implemented in v40.**
+5. Exact UK front-of-pack traffic-light component, if implemented, using the official scheme rather than custom thresholds. **Next.**
 6. Shelf-based `better choice` suggestions where a specific alternative is known.
 7. Category and UK-availability validation for wider product search.
 8. Wider `Find me a better one` only after step 7 is dependable.
