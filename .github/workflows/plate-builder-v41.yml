@@ -37,5 +37,7 @@ jobs:
         run: node smart-portion-output-v41.test.js
       - name: Run piece-sheet state contract tests
         run: node piece-sheet-contract-v41.test.js
+      - name: Run piece-sheet rendering contract tests
+        run: node piece-sheet-v41.test.js
       - name: Run future-template recalculation tests
         run: node template-engine-v41.test.js
