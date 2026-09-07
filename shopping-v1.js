@@ -3,7 +3,7 @@
 
   const $=id=>document.getElementById(id);
   const STORE='okello_shopping_products_v1';
-  const MAX_PRODUCTS=60;
+  const MAX_PRODUCTS=200;
   const input=$('barcodeInput');
   const lookupBtn=$('lookupBarcodeBtn');
   const preview=$('barcodePreview');
@@ -17,6 +17,7 @@
     .shopping-current{margin-top:11px;border-top:1px solid var(--rule);padding-top:11px}.shopping-product-name{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.shopping-product-name strong{display:block;color:var(--ink)}.shopping-product-name small{display:block;color:var(--muted);margin-top:2px}.shopping-cache{font-size:.68rem;color:var(--muted);white-space:nowrap}
     .shopping-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}.shopping-metric{border:1px solid var(--rule);border-radius:12px;padding:9px;background:var(--paper)}.shopping-metric span{display:block;color:var(--muted);font-size:.67rem;line-height:1.15}.shopping-metric strong{display:block;margin-top:3px;color:var(--forest);font-size:.96rem}.shopping-metric.missing strong{color:var(--muted);font-size:.78rem}
     .shopping-serving{margin:9px 0 0;font-size:.77rem;color:var(--muted)}.shopping-serving strong{color:var(--ink)}
+    .shopping-fit{margin-top:10px;border:1px solid var(--rule);border-radius:12px;padding:10px 11px;background:var(--paper);font-size:.78rem;line-height:1.35}.shopping-fit strong{display:block;color:var(--ink);margin-bottom:3px}.shopping-fit small{display:block;color:var(--muted);margin-top:5px}.shopping-fit.incomplete{border-style:dashed}.shopping-fit.unsupported{color:var(--muted)}.shopping-fit-observations{display:grid;gap:3px;margin-top:5px}.shopping-fit-caveat{margin-top:6px;color:var(--muted)}
     .shopping-compare{margin-top:12px;border-top:1px solid var(--rule);padding-top:12px}.shopping-compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.shopping-compare-item{border:1px solid var(--rule);border-radius:13px;padding:10px;background:var(--paper)}.shopping-compare-item strong{display:block;font-size:.85rem}.shopping-compare-item small{display:block;color:var(--muted);margin-top:2px}.shopping-compare-item dl{margin:8px 0 0;display:grid;gap:4px}.shopping-compare-item dl div{display:flex;justify-content:space-between;gap:8px;font-size:.74rem}.shopping-compare-item dt{color:var(--muted)}.shopping-compare-item dd{margin:0;font-weight:800;color:var(--ink)}
     .shopping-verdict{margin:10px 0 0;border-radius:12px;background:var(--tint);padding:10px 11px;color:var(--ink);font-size:.82rem;line-height:1.35}.shopping-note{margin:8px 0 0;color:var(--muted);font-size:.72rem}
     @media(max-width:520px){.shopping-metrics{grid-template-columns:1fr 1fr}.shopping-compare-grid{grid-template-columns:1fr}}
@@ -38,6 +39,7 @@
   let compareCodes=[];
 
   function productData(){return window.OkelloProductData||null;}
+  function categoryRules(){return window.OkelloCategoryRules||null;}
 
   function readStore(){
     try{
@@ -94,6 +96,35 @@
     return `<div class="shopping-metric${missing?' missing':''}"><span>${esc(label)}</span><strong>${missing?'Data missing':esc(fmt(value))+' '+esc(unit)}</strong></div>`;
   }
 
+  function missingLabel(key){
+    return ({
+      proteinPer100Kcal:'protein/calorie data',
+      fibrePer100Kcal:'fibre/calorie data',
+      sugar100:'sugars',
+      salt100:'salt',
+      kcal100:'calories',
+      fat100:'fat',
+      saturatedFat100:'saturated fat',
+      'derived metric':'a derived metric'
+    })[key]||String(key||'data');
+  }
+
+  function fitContext(product){
+    const api=categoryRules();
+    if(!api?.assess){
+      return '<div class="shopping-fit unsupported"><strong>Category context unavailable</strong>Generic nutrient density above is still valid.</div>';
+    }
+    const result=api.assess(product);
+    if(result.state==='unsupported'){
+      return `<div class="shopping-fit unsupported"><strong>Category unknown or unsupported</strong>${esc(result.message)}<small>No neighbouring category thresholds are borrowed.</small></div>`;
+    }
+    if(result.state==='incomplete'){
+      const missing=result.missing.map(missingLabel).join(', ');
+      return `<div class="shopping-fit incomplete"><strong>${esc(result.categoryLabel)} recognised · assessment incomplete</strong>${esc(result.message)}${missing?`<small>Missing: ${esc(missing)}.</small>`:''}<small>Matched source tag: ${esc(result.evidenceTag||'—')}</small></div>`;
+    }
+    return `<div class="shopping-fit"><strong>Category-aware context · ${esc(result.categoryLabel)}</strong><div class="shopping-fit-observations">${result.observations.map(o=>`<div>${esc(o.text)}</div>`).join('')}</div>${result.caveat?`<div class="shopping-fit-caveat">${esc(result.caveat)}</div>`:''}<small>Exact source tag: ${esc(result.evidenceTag||'—')}. This is not a traffic-light verdict.</small></div>`;
+  }
+
   function renderCurrent(product,fromCache=false){
     if(!product){current.innerHTML='';return;}
     const missing=[];
@@ -107,7 +138,8 @@
         ${metric('Protein / 100 kcal',product.proteinPer100Kcal,'g')}
         ${metric('Fibre / 100 kcal',product.fibrePer100Kcal,'g')}
       </div>
-      <p class="shopping-serving"><strong>${product.servingG!==null?'Pack serving: '+esc(fmt(product.servingG,0))+' g':'Pack serving: not supplied'}</strong>${missing.length?' · Cannot fully assess: '+esc(missing.join(', '))+' missing from product data.':''}</p>`;
+      <p class="shopping-serving"><strong>${product.servingG!==null?'Pack serving: '+esc(fmt(product.servingG,0))+' g':'Pack serving: not supplied'}</strong>${missing.length?' · Cannot fully assess: '+esc(missing.join(', '))+' missing from product data.':''}</p>
+      ${fitContext(product)}`;
   }
 
   function compact(product){
@@ -207,8 +239,9 @@
   lookupBtn.addEventListener('click',()=>assess(input.value));
 
   window.OkelloShopping=Object.freeze({
-    version:3,
+    version:4,
     storeKey:STORE,
+    maxProducts:MAX_PRODUCTS,
     assess,
     compareSaved,
     getProduct:code=>cached(String(code||'')),
