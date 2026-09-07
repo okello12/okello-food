@@ -28,6 +28,10 @@ assert.ok(src.includes('piece.createLogDraft'),'rough servings must use governed
 assert.ok(src.includes("source:'rough-serving-v44'"),'rough serving source missing');
 assert.ok(src.includes('Estimated serving'),'estimated log badge missing');
 assert.ok(src.includes('Estimated from pieces'),'piece estimate badge missing');
+assert.ok(src.includes("const existing = qs('.v44-estimate-badge', row)"),'estimate badges must update in place rather than mutation-loop');
+assert.ok(src.includes("if(existing.textContent !== label) existing.textContent = label"),'stable estimate badge update guard missing');
+assert.ok(src.includes("if(!event.isTrusted || !roughSelection) return"),'manual gram edits must cancel rough-serving provenance');
+assert.ok(src.includes("$('useSmartPortionBtn')?.addEventListener('click'"),'Smart Portion must cancel any prior rough-serving selection');
 assert.ok(src.includes('v44-hidden-empty-activity'),'empty activity suppression missing');
 assert.equal(/\bfetch\s*\(/.test(src),false,'v44 UX layer must not introduce a network dependency');
 assert.equal(/location\.reload\s*\(/.test(src),false,'v44 UX layer must not force reloads');
