@@ -22,7 +22,12 @@ for(const [name,text] of [['index',index],['bootstrap',bootstrap],['service-work
   assert.equal(text.includes('?v=40'),false,`${name} still contains a v40 asset query`);
 }
 
-const scripts=[...bootstrap.matchAll(/'([^']+\.js\?v=41)'/g)].map(m=>m[1]);
+// Only the explicit boot manifest belongs in the cache parity comparison.
+// `bootstrap-v14.js` also contains the service-worker registration URL, which
+// is intentionally not one of the scripts loaded by `loadScript()`.
+const manifestMatch=bootstrap.match(/const scripts = \[([\s\S]*?)\];/);
+assert.ok(manifestMatch,'bootstrap script manifest was not found');
+const scripts=[...manifestMatch[1].matchAll(/'([^']+\.js\?v=41)'/g)].map(m=>m[1]);
 assert.ok(scripts.length>20,'bootstrap script manifest was not parsed');
 for(const script of scripts){
   assert.ok(sw.includes(`'./${script}'`),`service worker does not cache bootstrap script ${script}`);
