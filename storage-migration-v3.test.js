@@ -138,7 +138,6 @@ function currentSeed(state,extra={}){
 
 (function testAlreadyCanonicalStoreIsByteStableNoOp(){
   const state=fullState({logs:{'2026-09-02':[{id:'x',foodId:'ghana_okro_stew',kcal:200,protein:10,fibre:4,grams:300}]}});
-  // Deliberately unusual property order: no-op detection must not depend on JSON key order.
   const reordered={logs:state.logs,targets:state.targets,recipes:[],schemaVersion:3,customFoods:[],mealTemplates:[],definitionEvents:[],pieceCalibration:{observations:[]},coOccurrencePairs:[]};
   const raw=JSON.stringify(reordered);
   const storage=new FakeStorage({[CURRENT]:raw});
@@ -213,7 +212,7 @@ function currentSeed(state,extra={}){
   const storage=new FakeStorage({[CURRENT]:raw,[FAVOURITES]:'{not-json'});
   const api=run(storage);
   assert.equal(storage.raw(CURRENT),raw);
-  assert.equal(storage.raw(FAVOURITES),'{not-json'});
+  assert.equal(storage.raw(FAVOURITES),'{not-json');
   assert.equal(storage.getItem(QUARANTINE),null);
   assert.equal(storage.writes.length,0);
   assert.equal(api.result.status,'current');
