@@ -1,10 +1,11 @@
-name: Plate Builder v41 branch checks
+name: BalancePlate v43 branch checks
 
 on:
   push:
     branches:
       - feature/plate-builder-v41
       - fix/v41-smart-meal-minimums
+      - feature/v43-beta-feedback
   pull_request:
     branches:
       - main
@@ -58,8 +59,10 @@ jobs:
         run: node template-engine-v41.test.js
       - name: Run template runtime wiring tests
         run: node template-runtime-v41.test.js
-      - name: Audit v42 bootstrap, service worker and update bundle
-        run: node bundle-v42.test.js
+      - name: Run local beta feedback contract checks
+        run: node beta-feedback-v43.test.js
+      - name: Audit v43 bootstrap, service worker and update bundle
+        run: node bundle-v43.test.js
       - name: Syntax-check governed runtime modules
         run: >-
           node --check meal-catalog-facade-v1.js &&
@@ -74,4 +77,5 @@ jobs:
           node --check quick-add-piece-v41.js &&
           node --check catalog-ui-v41.js &&
           node --check template-engine-v41.js &&
-          node --check template-runtime-v41.js
+          node --check template-runtime-v41.js &&
+          node --check beta-feedback-v43.js
