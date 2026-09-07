@@ -6,32 +6,73 @@ Okello Food uses barcode product data for two different jobs: filling the packag
 
 Open Food Facts values are external observations, not defaults. Missing values stay missing.
 
-The product-data service must return `null` for an absent or unusable nutrient value. It must never turn an absent protein, fibre, calorie, sugar, saturated-fat or salt value into zero.
+The product-data service must return `null` for an absent or unusable nutrient value. It must never turn an absent protein, fibre, calorie, sugar, saturated-fat, fat or salt value into zero.
 
 A product assessment may say that the available data is incomplete. It must not manufacture a poor score from missing data.
 
-## Planned shared service
+## Implementation status — v37
 
-`product-data-v1.js` should become the single runtime owner of Open Food Facts product retrieval and normalisation.
+`product-data-v1.js` is now the shared normalisation and retrieval service for barcode product data.
 
-It should:
+It currently:
+
+- accepts a barcode and performs the Open Food Facts product request;
+- deduplicates concurrent requests for the same barcode;
+- returns the exact same in-flight `Promise` to concurrent callers for that barcode;
+- resolves those callers to the same frozen normalised product object;
+- preserves missing nutrient values as `null`;
+- preserves real numeric zeroes, including values supplied as the string `"0"`;
+- calculates density ratios only when their inputs are present and calories are positive;
+- keeps pack serving separate from product nutrient values;
+- carries source, checked-at, completeness and raw category evidence without promoting the crowd-sourced category to a trusted Okello category.
+
+`shopping-v1.js` is the first production consumer of this service and no longer owns its own Open Food Facts parser or request map.
+
+The legacy packaged-food form inside `app.js` has **not yet been migrated**. It still performs its older direct Open Food Facts lookup and still contains its older lossy `|| 0` parsing. Therefore v37 is the service landing, not the completion of the consumer migration. A scan/lookup can still make two requests while the form remains on the old path.
+
+Do not build the Personal Shelf until the form is moved onto `OkelloProductData` and that duplicate runtime path is retired.
+
+## Executable missingness contract
+
+The missingness and request-deduplication rules are executable tests, not just prose.
+
+`product-data-v1.test.js` covers at least:
+
+- protein field absent → `null`;
+- protein field empty string → `null`;
+- protein field `"0"` → numeric `0`, with completeness `true`;
+- calories `"0"` → numeric `0`, but protein/fibre-per-100-kcal ratios remain `null` because division by zero is invalid;
+- serving quantity `"0"` → no valid pack serving (`null`);
+- positive serving quantity → preserved;
+- zero sugar, saturated fat and salt → preserved as real zeroes;
+- two concurrent `get()` calls for the same barcode return the exact same `Promise`;
+- both callers resolve to the identical product object;
+- the shared request is made once;
+- the normalised product object is frozen.
+
+`product-data-v1.test.html` is the browser runner for that contract. A regression should fail loudly rather than silently changing missing values into zeroes.
+
+## Shared service contract
+
+`product-data-v1.js` is the runtime owner of Open Food Facts retrieval and normalisation for consumers that have migrated to it.
+
+It must:
 
 - accept a barcode and perform one product request;
 - deduplicate concurrent requests for the same barcode;
+- return the same in-flight promise, not caller-specific wrapper promises;
 - normalise the response into one stable product shape;
 - preserve missingness explicitly;
 - expose source and checked-at metadata;
 - calculate derived ratios only when their inputs are present and valid;
 - return pack serving data separately from personal portions;
-- avoid assigning a product category unless the category source is dependable enough for the consumer using it.
+- avoid assigning a trusted product category unless the category source is dependable enough for the consumer using it.
 
-Both the legacy packaged-food form and `shopping-v1.js` should consume this same normalised result. The current v36 double-request arrangement is an accepted temporary compromise only until this service is introduced.
-
-Do not build the Personal Shelf on top of two independent Open Food Facts parsing paths.
+Both the packaged-food form and `shopping-v1.js` must ultimately consume this same normalised result. The form migration remains the unfinished part of step 2.
 
 ## Normalised product shape
 
-The shared shape should support at least:
+The shared shape supports at least:
 
 - `code`
 - `name`
@@ -50,6 +91,7 @@ The shared shape should support at least:
 - `source`
 - `sourceCheckedAt`
 - `completeness`
+- `sourceCategories` as raw source evidence, not a trusted Okello category
 
 Derived values such as protein per 100 kcal are `null` whenever calories or the relevant nutrient are missing, or when calories are not positive.
 
@@ -187,9 +229,11 @@ A future transport/data cache may be introduced separately, but if it does not m
 
 ## Sequence
 
-1. Two-product comparison.
+1. Two-product comparison. **Implemented.**
 2. Shared product-data service and retirement of duplicate parsing/request logic.
-3. Personal Shelf built on the shared service.
+   - 2a. Shared service + executable contract tests. **Implemented in v37.**
+   - 2b. Move the packaged-food form onto the service and remove/bypass its lossy parser. **Still required.**
+3. Personal Shelf built on the shared service. **Blocked until 2b.**
 4. Small data-driven category rule table with explicit unknown-category and incomplete-data states.
 5. Exact UK front-of-pack traffic-light component, if implemented, using the official scheme rather than custom thresholds.
 6. Shelf-based `better choice` suggestions where a specific alternative is known.
