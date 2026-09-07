@@ -29,10 +29,23 @@ const okro={id:'ghana_okro_stew',name:'Okro stew',cat:'Soup',kcal:95,protein:5,f
   assert.deepEqual(result.items.map(x=>x.grams),[195,200,450]);
 }
 
+// The second real-device batch is also below the governed minimums. The old
+// composer emitted 160 g banku + 160 g tilapia + 260 g okro at a 690 kcal
+// lunch budget. Under the new rule that combination must be declined rather
+// than preserving the legacy under-minimum amounts.
 {
   const result=fit.fitFoods([banku,tilapia,okro],690,calc);
+  assert.equal(result.fit,false);
+  assert.equal(result.reason,'minimums-exceed-budget');
+  assert.deepEqual(result.trace.finalGrams,[180,180,260]);
+  assert(result.trace.finalKcal>690);
+}
+
+{
+  const result=fit.fitFoods([banku,tilapia,okro],940,calc);
   assert.equal(result.fit,true);
-  assert.deepEqual(result.items.map(x=>x.grams),[160,160,260]);
+  assert.deepEqual(result.items.map(x=>x.grams),[180,240,390]);
+  assert(result.kcal<=940+1e-9);
 }
 
 // Property regression: whenever a suggestion exists, every component is inside
