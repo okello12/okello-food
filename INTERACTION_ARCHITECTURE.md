@@ -88,6 +88,16 @@ Smart Portion must never silently become the opening count merely because it is 
 
 When no learned piece usual exists, a piece-native food opens at one piece using its preferred piece size. The Smart Portion recommendation can still be shown and applied with one tap.
 
+When there is no learned usual, the Smart Portion line should be visually more prominent than it is for an experienced food because it is the strongest available amount guidance. It still does not become the active amount until the person taps it.
+
+### Opening above the Smart Portion target
+
+Opening on a personal usual may place the active amount above the current Smart Portion target. That is allowed because the usual and the recommendation answer different questions, but the difference must be visible immediately.
+
+If the active amount is above `targetGrams`, the fixed live-nutrition region must show an above-target state on first render, including the size of the gap. The user must not have to tap the Smart Portion suggestion before learning that the opening amount exceeds the current recommendation.
+
+This is not a hard error and must not block confirmation. It is decision context: the app should make the trade-off visible without silently replacing the person's usual amount.
+
 ### Piece-first defaults
 
 Foods with natural piece models open directly in pieces. Goat, chicken, crab and fish should not require the person to discover a separate piece mode.
@@ -110,7 +120,9 @@ The active persisted provenance then becomes a plain gram entry:
 
 The sheet may keep the previous piece draft transiently so switching back during the same open interaction restores the earlier count and size. That transient state must not leak into the final log if the person confirms in grams.
 
-This prevents a gram log from pretending the person logged pieces when they did not.
+The transient draft has one explicit lifetime: **the current open sheet session only**. It is discarded on confirm, cancel, backdrop close, Escape close, or when another food opens the sheet. A later sheet opening must always construct a fresh draft from current memory, current calibration and current Smart Portion context rather than restoring an abandoned interaction.
+
+This prevents a gram log from pretending the person logged pieces when they did not and prevents stale editing state from reappearing later.
 
 ### Smart Portion target visibility
 
@@ -141,6 +153,14 @@ The preferred behaviour is to offer calibration **after the log has been written
 If a calibration invitation is ever shown on the amount sheet itself, it must be a quiet secondary line below the confirm action. It must never become a modal, required field, blocking step or inline panel that competes with count, size and confirm controls.
 
 This ordering protects the primary dining-table job: open sheet, adjust amount if necessary, confirm food. Calibration remains optional follow-up work.
+
+## Contract-first interaction rule
+
+Before implementing a new high-friction interaction, write down what the interaction depends on, which state is authoritative, what persists, what is transient and what may block the primary action.
+
+The scanner regressions showed the cost of solving symptoms before writing the underlying launch contract. Piece entry follows the opposite sequence: state/evidence rules, amount conversion, memory behaviour, Smart Portion behaviour and sheet hierarchy are defined and tested before the rendered interaction is wired into the live PWA.
+
+UI iteration after that point should primarily be about feel and ergonomics, not discovering data semantics after release.
 
 ## Rule for future capture handlers
 
