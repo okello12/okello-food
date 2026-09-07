@@ -17,7 +17,8 @@ class FakeStorage{
 }
 
 function run(storage){
-  const window={OkelloStorageMigration:{resolveFoodId:id=>String(id)==='ghana_okro_soup'?'ghana_okro_stew':String(id??'')}};
+  const aliases={okro:'ghana_okro_stew',okro_base:'ghana_okro_stew_base',ghana_okro_soup:'ghana_okro_stew'};
+  const window={OkelloStorageMigration:{resolveFoodId:id=>aliases[String(id??'')]||String(id??'')}};
   const context={window,localStorage:storage,console};
   vm.runInNewContext(SOURCE,context,{filename:'meal-data-contract-v1.js'});
   return context.window.OkelloMealDataContract;
@@ -28,16 +29,26 @@ function run(storage){
   const api=run(storage);
   const byId=id=>api.baseVariants.find(x=>x.id===id);
 
-  assert.equal(byId('okro_base').protein,1.5);
+  assert.equal(api.baseVariants.some(x=>x.id==='okro_base'),false,'legacy okro base should not be seeded');
   assert.equal(byId('light_soup_base').protein,1.5);
   assert.equal(byId('ghana_okro_stew_base').protein,1.5);
   assert.equal(byId('ghana_palmnut_soup_base').protein,1.5);
   assert.equal(byId('ghana_groundnut_soup_base').protein,4);
   assert.equal(byId('ghana_kontomire_stew_base').protein,3.5);
 
-  for(const id of ['okro_base','light_soup_base','ghana_okro_stew_base','ghana_palmnut_soup_base']){
+  for(const id of ['light_soup_base','ghana_okro_stew_base','ghana_palmnut_soup_base']){
     assert.ok(byId(id).protein<=2,`${id} still looks protein-loaded`);
   }
+})();
+
+(function testLegacyOkroDecoratesAsCanonicalStew(){
+  const storage=new FakeStorage({[STORE]:JSON.stringify({customFoods:[],recipes:[],mealTemplates:[],definitionEvents:[],pieceCalibration:{observations:[]}})});
+  const api=run(storage);
+  const legacy=api.decorateFood({id:'okro',name:'Old okro',cat:'Soup',kcal:90,protein:7,fibre:2.5});
+  assert.equal(legacy.id,'ghana_okro_stew');
+  assert.equal(legacy.basis,'includes-protein');
+  assert.equal(legacy.baseFoodId,'ghana_okro_stew_base');
+  assert.equal(api.resolveFoodId('okro_base'),'ghana_okro_stew_base');
 })();
 
 (function testPieceWeightsAreFrozenAndPersonalCalibrationIsFutureOnly(){
@@ -63,8 +74,6 @@ function run(storage){
   assert.equal(personal.estimateSource,'personal-piece-weight');
   assert.equal(api.pieceWeights.goat.medium,referenceBefore,'personal learning mutated frozen reference weight');
 
-  // A historical entry keeps the basis written at log time even if a later
-  // personal median changes.
   const oldLog={estimatedGrams:250,estimateBasisGrams:50,estimateSource:'reference-piece-weight'};
   assert.deepEqual(oldLog,{estimatedGrams:250,estimateBasisGrams:50,estimateSource:'reference-piece-weight'});
 })();
