@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Okello live yoghurt category check</title>
+  <style>body{font-family:system-ui,sans-serif;max-width:760px;margin:32px auto;padding:0 18px;line-height:1.45}.pass{color:#245d42}.fail{color:#9b2d1f}pre{white-space:pre-wrap;background:#f5f3ee;padding:14px;border-radius:10px}</style>
+</head>
+<body>
+  <main>
+    <h1>Live yoghurt category integration check</h1>
+    <p>This diagnostic uses Arla Protein Natural Yogurt 200 g, EAN 4016241051066, as a real product canary. It calls the same product-data service used by Okello Food, then passes the exact returned product object into the category-rule layer.</p>
+    <div id="status">Running live check…</div>
+    <pre id="details"></pre>
+  </main>
+  <script src="product-data-v1.js"></script>
+  <script src="category-rules-v1.js"></script>
+  <script>
+  (async()=>{
+    const status=document.getElementById('status');
+    const details=document.getElementById('details');
+    try{
+      const product=await window.OkelloProductData.get('4016241051066');
+      const assessment=window.OkelloCategoryRules.assess(product);
+      const snapshot={
+        code:product.code,
+        name:product.name,
+        sugar100:product.sugar100,
+        protein100:product.protein100,
+        proteinPer100Kcal:product.proteinPer100Kcal,
+        sourceCategories:product.sourceCategories,
+        assessment:{
+          state:assessment.state,
+          ruleId:assessment.ruleId,
+          evidenceTag:assessment.evidenceTag,
+          missing:assessment.missing
+        }
+      };
+      const supported=assessment.state==='supported'&&assessment.ruleId==='yoghurt';
+      status.className=supported?'pass':'fail';
+      status.textContent=supported
+        ? 'PASS: live product normalised and reached the supported yoghurt rule.'
+        : `CHECK: live product reached ${assessment.state}${assessment.ruleId?` (${assessment.ruleId})`:''}. Inspect the source tags and missing fields below.`;
+      details.textContent=JSON.stringify(snapshot,null,2);
+      window.OkelloLiveYoghurtCategoryCheck={ok:supported,product,assessment};
+    }catch(err){
+      status.className='fail';
+      status.textContent='LIVE CHECK ERROR: '+(err?.message||String(err));
+      details.textContent=JSON.stringify({code:err?.code||null,message:err?.message||String(err)},null,2);
+      window.OkelloLiveYoghurtCategoryCheck={ok:false,error:err};
+    }
+  })();
+  </script>
+</body>
+</html>
