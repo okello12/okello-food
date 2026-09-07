@@ -25,6 +25,11 @@
       <button id="installBtn" class="ghost-btn install-btn" hidden type="button">Add to Home Screen</button>
     </header>
 
+    <section id="v44PrimaryQuestion" class="v44-question" aria-labelledby="v44PrimaryQuestionTitle">
+      <h2 id="v44PrimaryQuestionTitle">What did you eat?</h2>
+      <p>Search the food first. You can be approximate about the amount.</p>
+    </section>
+
     <nav class="tabs" aria-label="Main sections">
       <button class="tab active" data-tab="today" type="button">Today</button>
       <button class="tab" data-tab="foods" type="button">Foods</button>
@@ -37,7 +42,7 @@
       <section id="tab-today" class="panel active" aria-labelledby="todayTitle">
         <div class="date-row">
           <div><p class="eyebrow">TODAY</p><h2 id="todayTitle"></h2></div>
-          <button id="clearTodayBtn" class="text-btn danger" type="button">Clear today</button>
+          <button id="clearTodayBtn" class="text-btn danger" type="button">Clear log</button>
         </div>
 
         <div class="score-grid">
@@ -64,7 +69,7 @@
       </section>
 
       <section id="tab-foods" class="panel" aria-labelledby="foodsTitle">
-        <div class="section-heading top-gap"><div><p class="eyebrow">WORLD FOOD LIBRARY</p><h2 id="foodsTitle">Foods from Ghana and around the world</h2></div></div>
+        <div class="section-heading top-gap"><div><p class="eyebrow">BROWSE FOODS</p><h2 id="foodsTitle">Foods from Ghana and around the world</h2></div></div>
         <p class="lede">Search Ghanaian staples, everyday ingredients and popular dishes from many regions. Mixed dishes are estimates, so your own recipe or packet label is still the best source when available.</p>
         <input id="librarySearch" class="full-search" type="search" placeholder="Search foods, dishes or cuisines..." aria-label="Search the food library">
         <div class="chips" id="categoryChips"></div>
@@ -116,6 +121,27 @@
     </main>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      const question = document.getElementById('v44PrimaryQuestion');
+      if (!question) return;
+      const reconcile = () => {
+        const hub = document.querySelector('.global-hub');
+        if (!hub) return false;
+        if (question.parentElement !== hub) hub.insertBefore(question, hub.firstChild);
+        hub.querySelectorAll('.v44-question').forEach(node => {
+          if (node !== question) node.remove();
+        });
+        return !!window.OkelloFirstRunV44;
+      };
+      const observer = new MutationObserver(() => {
+        if (reconcile()) observer.disconnect();
+      });
+      observer.observe(document.body, {childList:true, subtree:true});
+      reconcile();
+      setTimeout(() => observer.disconnect(), 10000);
+    })();
+  </script>
   <script src="bootstrap-v14.js?v=44" defer></script>
 </body>
 </html>
