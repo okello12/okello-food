@@ -30,8 +30,10 @@ for(const script of scripts){
   assert.ok(sw.includes(`'./${script}'`),`service worker does not cache bootstrap script ${script}`);
 }
 
-const cachedScripts=[...sw.matchAll(/'\.\/([^']+\.js\?v=42)'/g)].map(m=>m[1]);
-assert.deepEqual([...new Set(cachedScripts)].sort(),[...new Set(scripts)].sort(),'service-worker JS cache set and bootstrap manifest differ');
+// The service worker also caches the bootstrap shell itself. Compare only the
+// scripts that bootstrap subsequently loads through loadScript().
+const cachedScripts=[...sw.matchAll(/'\.\/([^']+\.js\?v=42)'/g)].map(m=>m[1]).filter(name=>name!=='bootstrap-v14.js?v=42');
+assert.deepEqual([...new Set(cachedScripts)].sort(),[...new Set(scripts)].sort(),'service-worker runtime JS cache set and bootstrap manifest differ');
 
 const required=[
   'meal-data-contract-v1.js?v=42',
