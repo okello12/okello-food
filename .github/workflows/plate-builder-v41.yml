@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/plate-builder-v41
+      - fix/v41-smart-meal-minimums
   pull_request:
     branches:
       - main
@@ -39,6 +40,8 @@ jobs:
         run: node piece-usual-v41.test.js
       - name: Run Smart Portion output contract tests
         run: node smart-portion-output-v41.test.js
+      - name: Run Smart Meal minimum-fit regression
+        run: node smart-meal-fit-v41.test.js
       - name: Run piece-sheet state contract tests
         run: node piece-sheet-contract-v41.test.js
       - name: Run piece-sheet rendering contract tests
@@ -59,6 +62,7 @@ jobs:
           node --check piece-entry-v41.js &&
           node --check piece-usual-v41.js &&
           node --check smart-portion-output-v41.js &&
+          node --check smart-meal-fit-v41.js &&
           node --check piece-sheet-contract-v41.js &&
           node --check piece-sheet-v41.js &&
           node --check quick-add-piece-v41.js &&
