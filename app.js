@@ -383,6 +383,17 @@
     populateFoodSelects(); $('targetCalories').value=state.targets.calories; $('targetProtein').value=state.targets.protein; setSelectedFood(selectedFoodId,true); renderToday(); renderFoodLibrary(); renderIngredients(); renderSavedRecipes(); renderHistory(); updateCustomSuggestion();
   }
 
+  function syncFromStorage(){
+    state=loadState();
+    initAll();
+    return true;
+  }
+
+  window.OkelloAppState=Object.freeze({
+    syncFromStorage,
+    getState:()=>state
+  });
+
   initTabs(); bindEvents(); initAll();
   if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('service-worker.js').catch(()=>{});
 })();
