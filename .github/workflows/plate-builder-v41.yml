@@ -23,6 +23,8 @@ jobs:
           node-version: '22'
       - name: Run storage migration idempotence tests
         run: node storage-migration-v3.test.js
+      - name: Run actual-phone-backup shape regression
+        run: node live-backup-shape-v41.test.js
       - name: Run meal data contract tests
         run: node meal-data-contract-v1.test.js
       - name: Audit full shipped catalogue basis classifications
