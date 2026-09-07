@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 'v43';
+  const APP_VERSION = 'v44';
   const UPDATE_KEY = 'okello_last_update_check';
   const RELOAD_KEY = 'okello_controller_reload';
 
@@ -60,7 +60,7 @@
       card.innerHTML = `
         <p class="eyebrow">APP UPDATE</p>
         <h3>Refresh Okello Food</h3>
-        <p class="muted">Home Screen apps on iPhone do not have Safari's normal reload button. Use this whenever an update seems slow to appear.</p>
+        <p class="muted">Home Screen apps can sometimes hold an older cached version. Use this whenever an update seems slow to appear.</p>
         <div class="button-row">
           <button id="settingsRefreshBtn" class="primary-btn" type="button">Check & refresh</button>
         </div>
