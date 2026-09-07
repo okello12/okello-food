@@ -74,9 +74,63 @@ Piece entry is a dining-table interaction. It must be usable one-handed and must
 
 The primary sheet may contain count, piece size, a grams alternative, the current actionable nutrition estimate and a Smart Portion suggestion. Those controls support the immediate decision and may update live.
 
-The Smart Portion continuous target is secondary context, not another amount the user must reconcile before logging. When the actionable piece amount is lower than the continuous `targetGrams`, the target should remain visible in secondary text so the user can see what allowance was left unused.
-
 The confirm action remains the visual and interaction priority. Nothing optional may be inserted between a valid amount selection and the ability to confirm it.
+
+### What the sheet opens showing
+
+Personal Food Memory and Smart Portion answer different questions and must not silently overwrite one another.
+
+When a reliable usual piece amount exists, the sheet opens on the **personal usual**. Example: if the person's learned usual is 4 medium goat pieces and Smart Portion currently recommends 3, the active count opens at 4.
+
+The Smart Portion suggestion remains visible as a secondary, tappable recommendation. Tapping it explicitly replaces the active count/size with the recommended piece amount.
+
+Smart Portion must never silently become the opening count merely because it is available. It is a recommendation, not a reconstruction of what the person normally eats.
+
+When no learned piece usual exists, a piece-native food opens at one piece using its preferred piece size. The Smart Portion recommendation can still be shown and applied with one tap.
+
+### Piece-first defaults
+
+Foods with natural piece models open directly in pieces. Goat, chicken, crab and fish should not require the person to discover a separate piece mode.
+
+The preferred piece size is selected automatically. For small/medium/large foods, medium is the normal default. Count uses a direct stepper rather than requiring numeric-keyboard entry.
+
+Gram-native foods such as banku remain gram-native.
+
+### Switching from pieces to grams
+
+Switching units is a change in the active amount representation, not merely a visual reformat.
+
+If the current piece entry is 3 medium pieces resolving to 168 g, switching to grams prefills **168 g**.
+
+The active persisted provenance then becomes a plain gram entry:
+
+- piece count and `pieceKey` are cleared from the active amount;
+- `estimatedGrams` and piece-weight source are not persisted on the gram entry;
+- the prefilled gram amount is `estimated` unless the person explicitly says it was weighed.
+
+The sheet may keep the previous piece draft transiently so switching back during the same open interaction restores the earlier count and size. That transient state must not leak into the final log if the person confirms in grams.
+
+This prevents a gram log from pretending the person logged pieces when they did not.
+
+### Smart Portion target visibility
+
+The Smart Portion continuous target is secondary context, not another amount the user must reconcile before logging.
+
+When the actionable piece amount differs from `targetGrams`, the target should remain visible in secondary text. This makes the rounding gap visible rather than silently truncating the allowance.
+
+For example, if a 187 g target becomes 3 medium pieces at 168 g, the sheet may show the 168 g actionable amount with the 187 g target underneath. The person can see that the recommendation leaves 19 g of the continuous allowance unused.
+
+The UI must not use `targetGrams` as the nutrition basis for the active piece amount.
+
+### Live nutrition placement
+
+The nutrition readout must update on every count or size change without moving the controls under the person's thumb.
+
+Markup/CSS therefore must reserve a fixed nutrition region before values are rendered. Calorie, protein and other numeric values should use tabular figures and stable-width containers so changing from 1 piece to 12 pieces does not cause layout shift.
+
+The confirm button, count stepper and size controls must not move vertically or horizontally as live nutrition values change.
+
+This is an interaction invariant, not cosmetic polish: a one-handed control that shifts while being tapped is a functional defect.
 
 ### Calibration prompt placement
 
