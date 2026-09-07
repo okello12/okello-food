@@ -9,7 +9,7 @@
   const catalog=window.OkelloFoodCatalog;
   if(!piece||!sheet||!sheetContract||!smartOutput||!catalog)return;
 
-  const VERSION=1;
+  const VERSION=2;
   const todayKey=()=>new Date().toISOString().slice(0,10);
   const round1=n=>Math.round((Number(n)||0)*10)/10;
 
@@ -24,6 +24,15 @@
     s.logs[day]=Array.isArray(s.logs[day])?s.logs[day]:[];
     s.logs[day].push(log);
     return s;
+  }
+
+  function toast(message){
+    const node=document.getElementById('toast');
+    if(!node)return;
+    node.textContent=message;
+    node.classList.add('show');
+    clearTimeout(toast.timer);
+    toast.timer=setTimeout(()=>node.classList.remove('show'),2200);
   }
 
   function selectedContext(){
@@ -119,9 +128,23 @@
     });
   }
 
-  // Quick Add can be re-rendered by later modules. Own the interaction at the
-  // document level so replacement controls inherit the behaviour automatically.
+  // Quick Add and Today controls can be re-rendered by later modules. Own the
+  // interaction at document capture level so replacement controls inherit the
+  // behaviour automatically and the legacy target listeners cannot create a
+  // second, poorer-provenance write path.
   document.addEventListener('click',event=>{
+    const edit=event.target?.closest?.('[data-edit]');
+    if(edit){
+      const index=Number(edit.getAttribute('data-edit'));
+      const entry=(readState().logs?.[todayKey()]||[])[index];
+      if(entry?.enteredUnit==='pieces'){
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        toast('To change a piece amount, remove it and add it again. Piece-aware editing is not available yet.');
+        return;
+      }
+    }
+
     const trigger=event.target?.closest?.('#addFoodBtn,#useSmartPortionBtn,#gramsInput');
     if(!trigger)return;
     const ctx=selectedContext();
