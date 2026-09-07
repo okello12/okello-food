@@ -7,14 +7,10 @@
   const STATIC_ALLOWED=new Set(['base-only','includes-protein']);
   const resolveFoodId=id=>window.OkelloStorageMigration?.resolveFoodId?.(id)||String(id??'');
 
-  // Soup/stew entries are explicit here. A new static Soup id must be added to
-  // this table or the contract test will fail. Complete meal is deliberately a
-  // composite category and is always includes-protein for plate-builder purposes.
   const SOUP_BASIS=Object.freeze({
     okro:{basis:'includes-protein',baseFoodId:'okro_base'},
     light_soup:{basis:'includes-protein',baseFoodId:'light_soup_base'},
     beef_stew:{basis:'includes-protein',baseFoodId:'ghana_tomato_stew'},
-
     ghana_groundnut_soup:{basis:'includes-protein',baseFoodId:'ghana_groundnut_soup_base'},
     ghana_palmnut_soup:{basis:'includes-protein',baseFoodId:'ghana_palmnut_soup_base'},
     ghana_ebunuebunu:{basis:'includes-protein'},
@@ -25,7 +21,6 @@
     ghana_agushie_stew:{basis:'base-only'},
     ghana_tomato_stew:{basis:'base-only'},
     ghana_light_soup:{basis:'includes-protein',baseFoodId:'light_soup_base'},
-
     world_chicken_curry:{basis:'includes-protein'},
     world_lamb_curry:{basis:'includes-protein'},
     world_miso_soup:{basis:'includes-protein'},
@@ -35,6 +30,25 @@
     world_harira:{basis:'includes-protein'},
     world_egusi_soup:{basis:'includes-protein'},
     world_doro_wat:{basis:'includes-protein'}
+  });
+
+  // Real-store verification showed that Complete meal is not synonymous with
+  // includes-protein. Waakye is explicitly "rice & beans only" and rice+stew
+  // explicitly says meat/fish are logged separately. Complete meals therefore
+  // require an explicit contract exactly like soups; no category fallback exists.
+  const COMPLETE_MEAL_BASIS=Object.freeze({
+    ghana_waakye:{basis:'base-only'},
+    ghana_red_red:{basis:'base-only'},
+    ghana_gari_beans:{basis:'base-only'},
+    ghana_gari_foto:{basis:'base-only'},
+    ghana_mpotompoto:{basis:'base-only'},
+    ghana_plantain_porridge:{basis:'base-only'},
+    ghana_apapransa:{basis:'base-only'},
+    ghana_tatale:{basis:'base-only'},
+    ghana_rice_stew:{basis:'base-only'},
+    ghana_koose:{basis:'base-only'},
+    ghana_yam_egg_stew:{basis:'includes-protein'},
+    ghana_jollof_chicken:{basis:'includes-protein'}
   });
 
   const BASE_VARIANTS=Object.freeze([
@@ -54,7 +68,6 @@
     {id:'ghana_pork',name:'Pork, cooked edible meat',emoji:'🍖',cat:'Protein',kcal:242,protein:27,fibre:0,portion:170,min:120,max:220,note:'Practical estimate; cut and fat level vary.',providesAnimalProtein:true}
   ]);
 
-  // Frozen reference table. Personal calibration never mutates this table.
   const PIECE_WEIGHTS=Object.freeze({
     goat:Object.freeze({small:30,medium:50,large:80}),
     beef:Object.freeze({piece:40}),
@@ -64,18 +77,13 @@
     mackerel:Object.freeze({half:90,whole:180})
   });
 
-  // Built-in raw foods are private to app.js, so the contract facade adds these
-  // flags when they are read. State-backed Protein foods are stamped below.
   const BUILTIN_ANIMAL_IDS=new Set([
     'egg','sardines','tuna','cottage','chicken','turkey','tilapia','salmon','mackerel','prawns','beef','goat','crab',
     'raw_chicken','raw_beef','raw_goat','raw_fish','raw_smoked_fish'
   ]);
   const PLANT_PROTEIN_EXCEPTIONS=new Set(['world_tofu_firm']);
 
-  function readState(){
-    try{return JSON.parse(localStorage.getItem(STORE)||'{}')||{};}
-    catch(_){return {};}
-  }
+  function readState(){try{return JSON.parse(localStorage.getItem(STORE)||'{}')||{};}catch(_){return {};}}
   function writeState(s){localStorage.setItem(STORE,JSON.stringify(s));}
   function ensureDurableState(s){
     s.customFoods=Array.isArray(s.customFoods)?s.customFoods:[];
@@ -91,102 +99,63 @@
     const next={...(i>=0?s.customFoods[i]:{}),...food,libraryVersion:'meal-contract-v1'};
     if(i>=0)s.customFoods[i]=next;else s.customFoods.push(next);
   }
+  function ruleFor(food){
+    const id=resolveFoodId(food?.id);
+    if(SOUP_BASIS[id])return SOUP_BASIS[id];
+    if(COMPLETE_MEAL_BASIS[id])return COMPLETE_MEAL_BASIS[id];
+    if(BASE_VARIANTS.some(x=>x.id===id))return {basis:'base-only'};
+    return null;
+  }
   function seedContract(){
     const s=readState();
     const before=JSON.stringify(s);
     ensureDurableState(s);
-
     for(const food of s.customFoods){
       if(!food||typeof food!=='object')continue;
+      const r=ruleFor(food);
+      if(r)Object.assign(food,r);
+      else if(['Soup','Complete meal'].includes(food.cat)&&!VALID_BASIS.has(food.basis))food.basis='unknown';
       const id=resolveFoodId(food.id);
-      const soupRule=SOUP_BASIS[id];
-      if(soupRule)Object.assign(food,soupRule);
-      else if(food.cat==='Complete meal'&&food.libraryVersion)food.basis='includes-protein';
-      else if(['Soup','Complete meal'].includes(food.cat)&&!food.libraryVersion&&!VALID_BASIS.has(food.basis))food.basis='unknown';
-
       if(food.cat==='Protein'&&!PLANT_PROTEIN_EXCEPTIONS.has(id))food.providesAnimalProtein=true;
     }
-
     BASE_VARIANTS.forEach(food=>upsertLibraryFood(s,food));
     EXTRA_PROTEINS.forEach(food=>upsertLibraryFood(s,food));
-
     const eventId='soup-basis-contract-2026-09-07';
-    if(!s.definitionEvents.some(e=>e&&e.id===eventId)){
-      s.definitionEvents.push({
-        id:eventId,
-        effectiveDate:'2026-09-07',
-        type:'nutrition-definition-update',
-        version:1,
-        note:'Soup and stew definitions were separated into base-only and includes-protein forms. Historical log nutrition remains unchanged.'
-      });
-    }
+    if(!s.definitionEvents.some(e=>e&&e.id===eventId))s.definitionEvents.push({id:eventId,effectiveDate:'2026-09-07',type:'nutrition-definition-update',version:1,note:'Soup and stew definitions were separated into base-only and includes-protein forms. Historical log nutrition remains unchanged.'});
     if(JSON.stringify(s)!==before)writeState(s);
   }
 
-  function staticBasisFor(food){
-    if(!food)return null;
-    const id=resolveFoodId(food.id);
-    if(SOUP_BASIS[id])return SOUP_BASIS[id];
-    if(BASE_VARIANTS.some(x=>x.id===id))return {basis:'base-only'};
-    if(food.cat==='Complete meal')return {basis:'includes-protein'};
-    return null;
-  }
+  function staticBasisFor(food){return ruleFor(food);}
   function animalFlagFor(food){
     if(!food)return false;
     const id=resolveFoodId(food.id);
-    if(food.providesAnimalProtein===true)return true;
-    if(BUILTIN_ANIMAL_IDS.has(id))return true;
-    return false;
+    return food.providesAnimalProtein===true||BUILTIN_ANIMAL_IDS.has(id);
   }
   function decorateFood(food){
     if(!food||typeof food!=='object')return food;
     const id=resolveFoodId(food.id);
     const out={...food,id};
-    const staticRule=staticBasisFor(out);
-    if(staticRule)Object.assign(out,staticRule);
+    const r=staticBasisFor(out);
+    if(r)Object.assign(out,r);
     else if(['Soup','Complete meal'].includes(out.cat)&&!VALID_BASIS.has(out.basis))out.basis='unknown';
     if(animalFlagFor(out))out.providesAnimalProtein=true;
     if(id==='banku')out.composition='Fermented corn dough + cassava dough';
     return out;
   }
 
-  function median(values){
-    const a=(values||[]).map(Number).filter(Number.isFinite).sort((x,y)=>x-y);
-    if(!a.length)return null;
-    const m=Math.floor(a.length/2);
-    return a.length%2?a[m]:(a[m-1]+a[m])/2;
-  }
-  function calibrationObservations(state,foodId,pieceKey){
-    const id=resolveFoodId(foodId);
-    return (state?.pieceCalibration?.observations||[]).filter(x=>resolveFoodId(x?.foodId)===id&&String(x?.pieceKey||'')===String(pieceKey||'')&&Number(x?.grams)>0);
-  }
-  function personalPieceWeight(state,foodId,pieceKey){
-    const rows=calibrationObservations(state,foodId,pieceKey);
-    if(rows.length<3)return null;
-    return median(rows.map(x=>x.grams));
-  }
+  function median(values){const a=(values||[]).map(Number).filter(Number.isFinite).sort((x,y)=>x-y);if(!a.length)return null;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
+  function calibrationObservations(state,foodId,pieceKey){const id=resolveFoodId(foodId);return (state?.pieceCalibration?.observations||[]).filter(x=>resolveFoodId(x?.foodId)===id&&String(x?.pieceKey||'')===String(pieceKey||'')&&Number(x?.grams)>0);}
+  function personalPieceWeight(state,foodId,pieceKey){const rows=calibrationObservations(state,foodId,pieceKey);if(rows.length<3)return null;return median(rows.map(x=>x.grams));}
   function pieceEstimate(state,foodId,pieceKey,count){
-    const id=resolveFoodId(foodId);
-    const n=Math.max(0,Number(count)||0);
-    const personal=personalPieceWeight(state,id,pieceKey);
-    const reference=PIECE_WEIGHTS[id]?.[pieceKey];
-    const basis=personal??reference??null;
+    const id=resolveFoodId(foodId),n=Math.max(0,Number(count)||0),personal=personalPieceWeight(state,id,pieceKey),reference=PIECE_WEIGHTS[id]?.[pieceKey],basis=personal??reference??null;
     if(!(basis>0)||!(n>0))return null;
-    return {
-      grams:n*basis,
-      estimatedGrams:n*basis,
-      estimateBasisGrams:basis,
-      amountQuality:'estimated',
-      estimateSource:personal!=null?'personal-piece-weight':'reference-piece-weight',
-      observationCount:calibrationObservations(state,id,pieceKey).length
-    };
+    return {grams:n*basis,estimatedGrams:n*basis,estimateBasisGrams:basis,amountQuality:'estimated',estimateSource:personal!=null?'personal-piece-weight':'reference-piece-weight',observationCount:calibrationObservations(state,id,pieceKey).length};
   }
 
   function deriveRecipeBasis(recipe,getFood){
     let sawUnknown=false;
     for(const ingredient of Array.isArray(recipe?.ingredients)?recipe.ingredients:[]){
-      const id=resolveFoodId(ingredient?.foodId);
-      const food=typeof getFood==='function'?getFood(id):null;
+      const id=resolveFoodId(ingredient?.foodId),food=typeof getFood==='function'?getFood(id):null;
       if(!food){sawUnknown=true;continue;}
       const f=decorateFood(food);
       if(f.providesAnimalProtein===true||f.basis==='includes-protein')return 'includes-protein';
@@ -200,7 +169,7 @@
     for(const raw of foods||[]){
       if(!raw||!['Soup','Complete meal'].includes(raw.cat))continue;
       const food=decorateFood(raw);
-      const isStatic=!!raw.libraryVersion||SOUP_BASIS[resolveFoodId(raw.id)]||BASE_VARIANTS.some(x=>x.id===resolveFoodId(raw.id))||String(raw.id||'').startsWith('world_')||!String(raw.id||'').startsWith('custom_');
+      const isStatic=!!raw.libraryVersion||!!raw.worldLibraryVersion||SOUP_BASIS[resolveFoodId(raw.id)]||COMPLETE_MEAL_BASIS[resolveFoodId(raw.id)]||BASE_VARIANTS.some(x=>x.id===resolveFoodId(raw.id))||!String(raw.id||'').startsWith('custom_');
       if(isStatic&&!STATIC_ALLOWED.has(food.basis))errors.push({id:food.id,name:food.name,cat:food.cat,basis:food.basis||null});
     }
     return errors;
@@ -212,15 +181,9 @@
     version:CONTRACT_VERSION,
     validBasis:Object.freeze([...VALID_BASIS]),
     soupBasis:SOUP_BASIS,
+    completeMealBasis:COMPLETE_MEAL_BASIS,
     baseVariants:BASE_VARIANTS,
     pieceWeights:PIECE_WEIGHTS,
-    resolveFoodId,
-    decorateFood,
-    deriveRecipeBasis,
-    validateStaticCatalogue,
-    calibrationObservations,
-    personalPieceWeight,
-    pieceEstimate,
-    readState
+    resolveFoodId,decorateFood,deriveRecipeBasis,validateStaticCatalogue,calibrationObservations,personalPieceWeight,pieceEstimate,readState
   });
 })();
