@@ -4,7 +4,7 @@
   const contract=window.OkelloMealDataContract;
   if(!contract)return;
 
-  const VERSION=2;
+  const VERSION=3;
   const LABELS=Object.freeze({
     small:'Small piece',
     medium:'Medium piece',
@@ -99,8 +99,20 @@
       enteredAmount:g,
       enteredUnit:'g',
       grams:g,
-      amountQuality:'weighed',
-      estimateSource:null
+      amountQuality:'weighed'
+    };
+  }
+
+  function estimatedGramAmount(foodId,grams){
+    const id=resolveFoodId(foodId);
+    const g=Number(grams);
+    if(!(g>0))return null;
+    return {
+      foodId:id,
+      enteredAmount:g,
+      enteredUnit:'g',
+      grams:g,
+      amountQuality:'estimated'
     };
   }
 
@@ -252,6 +264,7 @@
     preferredEntry,
     estimatePieces,
     weighedGrams,
+    estimatedGramAmount,
     effectiveGrams,
     pieceSuggestionForGrams,
     nutritionSnapshot,
