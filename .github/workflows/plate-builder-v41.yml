@@ -1,0 +1,25 @@
+name: Plate Builder v41 branch checks
+
+on:
+  push:
+    branches:
+      - feature/plate-builder-v41
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  migration-invariants:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run storage migration idempotence tests
+        run: node storage-migration-v3.test.js
