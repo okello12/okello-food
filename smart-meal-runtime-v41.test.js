@@ -4,6 +4,7 @@ const fs=require('fs');
 const runtime=fs.readFileSync('smart-meal-runtime-v41.js','utf8');
 const guard=fs.readFileSync('smart-meal-guard-v42.js','utf8');
 const legacy=fs.readFileSync('smart-v3.js','utf8');
+const app=fs.readFileSync('app.js','utf8');
 
 assert(runtime.includes('OkelloSmartMealFit'),'runtime must depend on governed Smart Meal fit contract');
 assert(runtime.includes('chooseSuggestion'),'runtime must choose full/reduced/minimum-over-budget meals through the fit contract');
@@ -23,6 +24,22 @@ assert(runtime.includes("okello:food-log-changed"),'runtime must emit a state-ch
 assert(runtime.includes('okello_smart_meal_last_trace_v42'),'selected meal maths must remain inspectable after the write');
 assert.equal(runtime.includes('location.reload()'),false,'governed runtime must not hide writes behind a page reload');
 
+// app.js owns a long-lived in-memory `state`. Any external writer must refresh
+// that closure immediately after persisting or a later app.js save could erase
+// the externally added logs. The hook also keeps the built-in export path honest.
+assert(app.includes('function syncFromStorage(){'),'app.js must expose a storage-to-closure synchronization function');
+assert(app.includes('state=loadState();\n    initAll();'),'state sync must reload durable state and rerender app-owned surfaces');
+assert(app.includes('window.OkelloAppState=Object.freeze({'),'app state synchronization API is not exposed');
+assert(app.includes('syncFromStorage,'),'app state API must expose syncFromStorage');
+assert(app.includes('getState:()=>state'),'app state API must expose the current closure for verification');
+
+const writeAt=runtime.indexOf('writeState(fresh);');
+const syncAt=runtime.indexOf('OkelloAppState?.syncFromStorage?.()');
+const refreshAt=runtime.indexOf('refreshVisibleToday();',writeAt);
+assert(writeAt>=0&&syncAt>writeAt,'governed runtime must synchronize app state after the durable write');
+assert(refreshAt>syncAt,'visible refresh must occur after the app closure has been synchronized');
+assert(runtime.includes('appStateSynchronized:appSynced'),'commit trace must record whether app closure synchronization succeeded');
+
 // The old shared writer still reloads. Do not remove that side effect until all
 // legacy callers are migrated. Runtime ownership makes those three UI callers
 // unreachable without changing the writer out from under any unseen consumer.
@@ -34,4 +51,4 @@ assert(guard.includes('[data-smartmeal],#plateAdd,#nlAdd'),'boot guard must cove
 assert(guard.includes('stopImmediatePropagation'),'boot guard must stop legacy handlers during the script-loading gap');
 assert(guard.includes('OkelloSmartMealRuntime'),'guard must release once governed runtime is ready');
 
-console.log('smart-meal-runtime-v41: ownership checks passed');
+console.log('smart-meal-runtime-v41: ownership and app-state synchronization checks passed');
