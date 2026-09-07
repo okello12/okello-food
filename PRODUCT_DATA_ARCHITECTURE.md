@@ -1,6 +1,6 @@
 # Product data architecture
 
-Okello Food uses barcode product data for two different jobs: filling the packaged-food form and helping with shopping decisions. These consumers must share one product-data boundary before the Personal Shelf is expanded.
+Okello Food uses barcode product data for two different jobs: filling the packaged-food form and helping with shopping decisions. These consumers share one product-data boundary before the Personal Shelf is expanded.
 
 ## Core rule
 
@@ -10,9 +10,9 @@ The product-data service must return `null` for an absent or unusable nutrient v
 
 A product assessment may say that the available data is incomplete. It must not manufacture a poor score from missing data.
 
-## Implementation status — v37
+## Implementation status — v38
 
-`product-data-v1.js` is now the shared normalisation and retrieval service for barcode product data.
+`product-data-v1.js` is the shared normalisation and retrieval service for barcode product data.
 
 It currently:
 
@@ -26,11 +26,16 @@ It currently:
 - keeps pack serving separate from product nutrient values;
 - carries source, checked-at, completeness and raw category evidence without promoting the crowd-sourced category to a trusted Okello category.
 
-`shopping-v1.js` is the first production consumer of this service and no longer owns its own Open Food Facts parser or request map.
+Both production barcode consumers now use this service:
 
-The legacy packaged-food form inside `app.js` has **not yet been migrated**. It still performs its older direct Open Food Facts lookup and still contains its older lossy `|| 0` parsing. Therefore v37 is the service landing, not the completion of the consumer migration. A scan/lookup can still make two requests while the form remains on the old path.
+- `shopping-v1.js` uses it for shopping assessment and durable shopping history;
+- the packaged-food form in `app.js` uses it to populate the editable label fields.
 
-Do not build the Personal Shelf until the form is moved onto `OkelloProductData` and that duplicate runtime path is retired.
+The old direct Open Food Facts request and lossy barcode nutrient parsing in `app.js` were retired in v38. The form no longer turns absent protein or fibre into zero. Missing values leave their form fields blank and the status tells the user which data is missing. Real numeric zero remains visible as zero.
+
+When the form and shopping layer ask for the same barcode during one lookup, both calls go through `OkelloProductData.get()`. The service's in-flight map therefore gives both consumers the same promise and one network request.
+
+Step 2 of the shopping sequence is complete. The Personal Shelf is no longer blocked on duplicate product retrieval/parsing.
 
 ## Executable missingness contract
 
@@ -54,7 +59,7 @@ The missingness and request-deduplication rules are executable tests, not just p
 
 ## Shared service contract
 
-`product-data-v1.js` is the runtime owner of Open Food Facts retrieval and normalisation for consumers that have migrated to it.
+`product-data-v1.js` is the runtime owner of Open Food Facts retrieval and normalisation.
 
 It must:
 
@@ -68,7 +73,7 @@ It must:
 - return pack serving data separately from personal portions;
 - avoid assigning a trusted product category unless the category source is dependable enough for the consumer using it.
 
-Both the packaged-food form and `shopping-v1.js` must ultimately consume this same normalised result. The form migration remains the unfinished part of step 2.
+Production consumers must use this service rather than adding another direct Open Food Facts parser or request path.
 
 ## Normalised product shape
 
@@ -104,6 +109,8 @@ A scanned product can expose three different amounts and they must never be conf
 3. **Your usual** — amount learned from the user's own logs after the normal Personal Food Memory threshold is met.
 
 For a new product, `Your usual` is blank. A pack serving must never seed personal memory.
+
+The packaged-food form may display 100 g as a neutral editable amount when no pack serving is known. That is a UI fallback only; the shared product object must continue to report `servingG: null`.
 
 ## Shopping comparison
 
@@ -230,10 +237,10 @@ A future transport/data cache may be introduced separately, but if it does not m
 ## Sequence
 
 1. Two-product comparison. **Implemented.**
-2. Shared product-data service and retirement of duplicate parsing/request logic.
+2. Shared product-data service and retirement of duplicate parsing/request logic. **Complete in v38.**
    - 2a. Shared service + executable contract tests. **Implemented in v37.**
-   - 2b. Move the packaged-food form onto the service and remove/bypass its lossy parser. **Still required.**
-3. Personal Shelf built on the shared service. **Blocked until 2b.**
+   - 2b. Packaged-food form moved onto the service; direct request and lossy barcode parser retired. **Implemented in v38.**
+3. Personal Shelf built on the shared service. **Next.**
 4. Small data-driven category rule table with explicit unknown-category and incomplete-data states.
 5. Exact UK front-of-pack traffic-light component, if implemented, using the official scheme rather than custom thresholds.
 6. Shelf-based `better choice` suggestions where a specific alternative is known.
