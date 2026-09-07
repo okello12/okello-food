@@ -1,34 +1,35 @@
 (() => {
   'use strict';
 
-  const VERSION = '38';
+  const VERSION = '39';
   const scripts = [
-    'storage-migration-v1.js?v=38',
-    'ghana-foods.js?v=38',
-    'world-foods.js?v=38',
-    'food-data-layer-v1.js?v=38',
-    'amount-quality-v2.js?v=38',
-    'product-data-v1.js?v=38',
-    'app.js?v=38',
-    'food-intelligence-v1.js?v=38',
-    'personal-food-memory-v1.js?v=38',
-    'scanner.js?v=38',
-    'ux-v2.js?v=38',
-    'scanner-launch-v1.js?v=38',
-    'shopping-v1.js?v=38',
-    'world-library-v1.js?v=38',
-    'features-v1.js?v=38',
-    'day-forecast-v1.js?v=38',
-    'smart-support.js?v=38',
-    'smart-v3.js?v=38',
-    'search-intelligence-v1.js?v=38',
-    'recipe-assistant-v1.js?v=38',
-    'activity-v1.js?v=38',
-    'backup-v2.js?v=38',
-    'update-v1.js?v=38',
-    'app-chrome-v1.js?v=38',
-    'ios-exit-v1.js?v=38',
-    'interaction-v1.js?v=38'
+    'storage-migration-v1.js?v=39',
+    'ghana-foods.js?v=39',
+    'world-foods.js?v=39',
+    'food-data-layer-v1.js?v=39',
+    'amount-quality-v2.js?v=39',
+    'product-data-v1.js?v=39',
+    'app.js?v=39',
+    'food-intelligence-v1.js?v=39',
+    'personal-food-memory-v1.js?v=39',
+    'scanner.js?v=39',
+    'ux-v2.js?v=39',
+    'scanner-launch-v1.js?v=39',
+    'shopping-v1.js?v=39',
+    'personal-shelf-v1.js?v=39',
+    'world-library-v1.js?v=39',
+    'features-v1.js?v=39',
+    'day-forecast-v1.js?v=39',
+    'smart-support.js?v=39',
+    'smart-v3.js?v=39',
+    'search-intelligence-v1.js?v=39',
+    'recipe-assistant-v1.js?v=39',
+    'activity-v1.js?v=39',
+    'backup-v2.js?v=39',
+    'update-v1.js?v=39',
+    'app-chrome-v1.js?v=39',
+    'ios-exit-v1.js?v=39',
+    'interaction-v1.js?v=39'
   ];
 
   function loadScript(src) {
@@ -81,7 +82,7 @@
     if (!('serviceWorker' in navigator)) return;
     try {
       let version = await controllerVersion();
-      const reg = await navigator.serviceWorker.register('./service-worker.js?v=38', {updateViaCache:'none'});
+      const reg = await navigator.serviceWorker.register('./service-worker.js?v=39', {updateViaCache:'none'});
       try { await reg.update(); } catch (_) {}
 
       const promote = worker => {
