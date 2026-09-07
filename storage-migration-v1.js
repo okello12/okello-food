@@ -9,6 +9,7 @@
   const MIGRATION_VERSION=3;
   const SCHEMA_VERSION=3;
   const FOOD_ID_ALIASES=Object.freeze({
+    okro:'ghana_okro_stew',
     ghana_okro_soup:'ghana_okro_stew'
   });
 
