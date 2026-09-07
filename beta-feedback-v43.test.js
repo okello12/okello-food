@@ -28,6 +28,8 @@ assert.ok(src.includes("context.input=cleanText($('nlInput')?.value"),'Quick Log
 assert.ok(src.includes("context.barcode=cleanText($('barcodeInput')?.value"),'barcode feedback must preserve the scanned/typed code');
 assert.ok(src.includes("context.query=cleanText($('foodSearch')?.value"),'food-search feedback must preserve the query');
 assert.ok(src.includes("slice(-MAX_RECORDS)"),'feedback retention must be bounded rather than grow without limit');
+assert.ok(src.includes("delete ctx.capturedAt"),'result signatures must ignore capture timestamps so unchanged results stay answered');
+assert.ok(src.includes("delete ctx.trace.at"),'Smart Meal signatures must ignore trace timestamps while preserving trace evidence');
 assert.ok(src.includes("window.confirm('Clear all saved beta feedback"),'feedback deletion must require explicit confirmation');
 
 console.log('beta-feedback-v43: PASS');
