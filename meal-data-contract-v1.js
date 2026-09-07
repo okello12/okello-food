@@ -32,10 +32,10 @@
     world_doro_wat:{basis:'includes-protein'}
   });
 
-  // Real-store verification showed that Complete meal is not synonymous with
-  // includes-protein. Waakye is explicitly "rice & beans only" and rice+stew
-  // explicitly says meat/fish are logged separately. Complete meals therefore
-  // require an explicit contract exactly like soups; no category fallback exists.
+  // Complete meal is a display category, not a nutrition contract. Real-store
+  // verification proved that some entries are deliberately protein-free bases
+  // (for example waakye and rice+stew), while others already include a named or
+  // assumed protein component. Every static Complete meal is therefore explicit.
   const COMPLETE_MEAL_BASIS=Object.freeze({
     ghana_waakye:{basis:'base-only'},
     ghana_red_red:{basis:'base-only'},
@@ -44,11 +44,64 @@
     ghana_mpotompoto:{basis:'base-only'},
     ghana_plantain_porridge:{basis:'base-only'},
     ghana_apapransa:{basis:'base-only'},
+    ghana_eto:{basis:'base-only'},
     ghana_tatale:{basis:'base-only'},
     ghana_rice_stew:{basis:'base-only'},
     ghana_koose:{basis:'base-only'},
     ghana_yam_egg_stew:{basis:'includes-protein'},
-    ghana_jollof_chicken:{basis:'includes-protein'}
+    ghana_jollof_chicken:{basis:'includes-protein'},
+
+    world_fish_chips:{basis:'includes-protein'},
+    world_shepherds_pie:{basis:'includes-protein'},
+    world_cottage_pie:{basis:'includes-protein'},
+    world_lasagne:{basis:'includes-protein'},
+    world_bolognese:{basis:'includes-protein'},
+    world_margherita_pizza:{basis:'includes-protein'},
+    world_pepperoni_pizza:{basis:'includes-protein'},
+    world_risotto:{basis:'includes-protein'},
+    world_paella:{basis:'includes-protein'},
+    world_spanish_omelette:{basis:'includes-protein'},
+    world_moussaka:{basis:'includes-protein'},
+    world_goulash:{basis:'includes-protein'},
+    world_pierogi:{basis:'includes-protein'},
+    world_biryani_chicken:{basis:'includes-protein'},
+    world_pulao:{basis:'base-only'},
+    world_saag_paneer:{basis:'includes-protein'},
+    world_fried_rice:{basis:'includes-protein'},
+    world_chow_mein:{basis:'includes-protein'},
+    world_sweet_sour_chicken:{basis:'includes-protein'},
+    world_stirfry_beef:{basis:'includes-protein'},
+    world_mapo_tofu:{basis:'includes-protein'},
+    world_sushi_salmon_roll:{basis:'includes-protein'},
+    world_ramen:{basis:'includes-protein'},
+    world_gyoza:{basis:'includes-protein'},
+    world_bibimbap:{basis:'includes-protein'},
+    world_pad_thai:{basis:'includes-protein'},
+    world_pho_beef:{basis:'includes-protein'},
+    world_banh_mi:{basis:'includes-protein'},
+    world_spring_roll_fresh:{basis:'includes-protein'},
+    world_nasi_goreng:{basis:'includes-protein'},
+    world_laksa:{basis:'includes-protein'},
+    world_shakshuka:{basis:'includes-protein'},
+    world_chicken_tagine:{basis:'includes-protein'},
+    world_moi_moi:{basis:'base-only'},
+    world_east_african_pilau:{basis:'includes-protein'},
+    world_bobotie:{basis:'includes-protein'},
+    world_bunny_chow:{basis:'includes-protein'},
+    world_taco_chicken:{basis:'includes-protein'},
+    world_taco_beef:{basis:'includes-protein'},
+    world_burrito_chicken:{basis:'includes-protein'},
+    world_quesadilla:{basis:'includes-protein'},
+    world_enchiladas:{basis:'includes-protein'},
+    world_empanada_beef:{basis:'includes-protein'},
+    world_arroz_con_pollo:{basis:'includes-protein'},
+    world_feijoada:{basis:'includes-protein'},
+    world_rice_peas:{basis:'base-only'},
+    world_cheeseburger:{basis:'includes-protein'},
+    world_grilled_chicken_burger:{basis:'includes-protein'},
+    world_hot_dog:{basis:'includes-protein'},
+    world_mac_cheese:{basis:'includes-protein'},
+    world_caesar_salad_chicken:{basis:'includes-protein'}
   });
 
   const BASE_VARIANTS=Object.freeze([
