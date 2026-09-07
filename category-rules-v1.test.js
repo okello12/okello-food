@@ -16,7 +16,9 @@
 
   async function run(){
     const api=window.OkelloCategoryRules;
+    const productApi=window.OkelloProductData;
     if(!api)throw new Error('OkelloCategoryRules is not loaded');
+    if(!productApi)throw new Error('OkelloProductData is not loaded');
 
     let result=api.assess({
       sourceCategories:{tags:['en:dairy-products','en:yogurts']},
@@ -27,6 +29,30 @@
     equal('yoghurt rule selected',result.ruleId,'yoghurt');
     equal('evidence tag retained',result.evidenceTag,'en:yogurts');
     ok('supported observations exist',result.observations.length===2);
+
+    // Cross-module contract: feed the category engine the exact object shape
+    // produced by OkelloProductData.normalise, not a hand-shaped approximation.
+    const normalisedYoghurt=productApi.normalise('4016241051066',{
+      product_name:'Integration yoghurt fixture',
+      brands:'Arla',
+      categories:'Yogurts',
+      categories_tags:['en:dairy-products','en:yogurts'],
+      serving_quantity:'200',
+      nutriments:{
+        'energy-kcal_100g':'65',
+        proteins_100g:'11',
+        sugars_100g:'4',
+        fat_100g:'0.2',
+        'saturated-fat_100g':'0.1',
+        salt_100g:'0.12'
+      }
+    });
+    equal('product-data canonical field is sugar100',normalisedYoghurt.sugar100,4);
+    equal('product-data canonical category tag survives normalise',normalisedYoghurt.sourceCategories.tags.includes('en:yogurts'),true);
+    result=api.assess(normalisedYoghurt);
+    equal('normalise to assess integration reaches supported state',result.state,'supported');
+    equal('normalise to assess integration selects yoghurt rule',result.ruleId,'yoghurt');
+    ok('integration result contains category observations',result.observations.length===2);
 
     result=api.assess({
       sourceCategories:{tags:['en:yogurt-drinks']},
