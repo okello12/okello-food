@@ -304,6 +304,7 @@
       if(logs.length!==resolved.length)return false;
       fresh.logs[key].push(...logs);
       writeState(fresh);
+      const appSynced=window.OkelloAppState?.syncFromStorage?.()===true;
       recordTrace({
         ...(lastTrace||{}),
         at:new Date().toISOString(),
@@ -312,6 +313,7 @@
         meal,
         plateId,
         candidateKind:candidate?.kind||null,
+        appStateSynchronized:appSynced,
         committed:logs.map(log=>({foodId:log.foodId,grams:log.grams,enteredUnit:log.enteredUnit||'g',pieceCount:log.pieceCount||null,pieceKey:log.pieceKey||null,kcal:log.kcal}))
       });
       refreshVisibleToday();
