@@ -34,6 +34,11 @@ function boot(){
   assert.equal(medium.grams,50);
   assert.equal(medium.estimateSource,'reference-piece-weight');
   assert.equal(medium.calibrated,false);
+  assert.equal(api.preferredEntry('goat',state).enteredUnit,'pieces');
+  assert.equal(api.preferredEntry('goat',state).pieceKey,'medium');
+  assert.equal(api.preferredEntry('banku',state).enteredUnit,'g');
+  assert.equal(api.preferredEntry('crab',state).pieceKey,'half');
+  assert.equal(api.preferredEntry('mackerel',state).pieceKey,'half');
 
   const amount=api.estimatePieces(state,'goat','medium',5);
   assert.equal(amount.foodId,'goat');
@@ -41,6 +46,7 @@ function boot(){
   assert.equal(amount.enteredUnit,'pieces');
   assert.equal(amount.pieceCount,5);
   assert.equal(amount.estimatedGrams,250);
+  assert.equal(amount.grams,amount.estimatedGrams,'piece amount grams diverged from estimatedGrams');
   assert.equal(amount.estimateBasisGrams,50);
   assert.equal(amount.amountQuality,'estimated');
   assert.equal(amount.estimateSource,'reference-piece-weight');
@@ -49,6 +55,8 @@ function boot(){
   const log=api.createLogDraft({food,amount,meal:'Dinner',plateId:'plate-1',ts:1000,id:'log-1'});
   assert.equal(log.foodId,'goat');
   assert.equal(log.grams,250);
+  assert.equal(log.estimatedGrams,250);
+  assert.equal(log.grams,log.estimatedGrams,'piece log grams diverged from estimatedGrams');
   assert.equal(log.kcal,357.5);
   assert.equal(log.protein,67.5);
   assert.equal(log.fibre,0);
@@ -56,6 +64,23 @@ function boot(){
   assert.equal(log.amountQuality,'estimated');
   assert.equal(log.estimateBasisGrams,50);
   assert.equal(log.estimateSource,'reference-piece-weight');
+})();
+
+(function testEstimatedGramsAreAuthoritativeForPieceEntries(){
+  const {api}=boot();
+  const food={id:'goat',name:'Goat',emoji:'🍖',kcal:143,protein:27,fibre:0};
+  const deliberatelyDivergent={
+    foodId:'goat',enteredUnit:'pieces',enteredAmount:4,pieceCount:4,pieceKey:'medium',
+    grams:999,estimatedGrams:200,estimateBasisGrams:50,amountQuality:'estimated',estimateSource:'reference-piece-weight'
+  };
+  assert.equal(api.effectiveGrams(deliberatelyDivergent),200);
+  const nutrition=api.nutritionSnapshot(food,deliberatelyDivergent);
+  assert.equal(nutrition.kcal,286);
+  assert.equal(nutrition.protein,54);
+  const log=api.createLogDraft({food,amount:deliberatelyDivergent,meal:'Dinner',id:'normalised',ts:2});
+  assert.equal(log.grams,200);
+  assert.equal(log.estimatedGrams,200);
+  assert.equal(log.kcal,286);
 })();
 
 (function testThreeWeighingsPromotePersonalPieceWeightWithoutRepricingHistory(){
@@ -84,9 +109,60 @@ function boot(){
 
   const amount=api.estimatePieces(state,'goat','medium',5);
   assert.equal(amount.estimatedGrams,280);
+  assert.equal(amount.grams,280);
   assert.equal(amount.estimateBasisGrams,56);
   assert.equal(amount.estimateSource,'personal-piece-weight');
   assert.equal(JSON.stringify(historical),historicalSnapshot,'later calibration repriced a historical draft');
+})();
+
+(function testCalibrationIsScopedToExactPieceSize(){
+  const {api}=boot();
+  let state={pieceCalibration:{observations:[]}};
+  const rows=[
+    api.calibrationObservation({foodId:'goat',pieceKey:'medium',grams:54,id:'m1',observedAt:1}),
+    api.calibrationObservation({foodId:'goat',pieceKey:'medium',grams:56,id:'m2',observedAt:2}),
+    api.calibrationObservation({foodId:'goat',pieceKey:'large',grams:80,id:'l1',observedAt:3})
+  ];
+  for(const row of rows)state=api.applyCalibrationObservation(state,row).state;
+
+  const mediumBefore=api.calibrationStatus(state,'goat','medium');
+  const largeBefore=api.calibrationStatus(state,'goat','large');
+  assert.equal(mediumBefore.observationCount,2);
+  assert.equal(mediumBefore.calibrated,false,'large observation leaked into medium calibration');
+  assert.equal(largeBefore.observationCount,1);
+  assert.equal(largeBefore.calibrated,false);
+
+  const m3=api.calibrationObservation({foodId:'goat',pieceKey:'medium',grams:58,id:'m3',observedAt:4});
+  state=api.applyCalibrationObservation(state,m3).state;
+  const mediumAfter=api.calibrationStatus(state,'goat','medium');
+  const largeAfter=api.calibrationStatus(state,'goat','large');
+  assert.equal(mediumAfter.observationCount,3);
+  assert.equal(mediumAfter.personalPieceWeight,56);
+  assert.equal(largeAfter.observationCount,1);
+  assert.equal(api.calibrationObservation({foodId:'goat',pieceKey:'not-a-size',grams:50}),null);
+})();
+
+(function testSmartPortionPieceProjectionUsesCurrentCalibrationAndNeverRoundsUp(){
+  const {api}=boot();
+  let state={pieceCalibration:{observations:[]}};
+  for(const [i,grams] of [54,56,58].entries()){
+    const obs=api.calibrationObservation({foodId:'goat',pieceKey:'medium',grams,id:`s${i}`,observedAt:i+1});
+    state=api.applyCalibrationObservation(state,obs).state;
+  }
+  const suggestion=api.pieceSuggestionForGrams(state,'goat',187);
+  assert.ok(suggestion);
+  assert.equal(suggestion.pieceCount,3);
+  assert.equal(suggestion.pieceKey,'medium');
+  assert.equal(suggestion.estimateBasisGrams,56);
+  assert.equal(suggestion.estimatedGrams,168);
+  assert.equal(suggestion.grams,168);
+  assert.equal(suggestion.targetGrams,187);
+  assert.equal(suggestion.deltaGrams,-19);
+  assert.equal(suggestion.estimateSource,'personal-piece-weight');
+  assert.ok(suggestion.estimatedGrams<=suggestion.targetGrams,'piece suggestion exceeded Smart Portion target');
+
+  assert.equal(api.pieceSuggestionForGrams(state,'goat',40),null,'sub-piece calorie room should stay as grams');
+  assert.equal(api.pieceSuggestionForGrams(state,'banku',187),null,'gram-native food gained a fake piece rendering');
 })();
 
 (function testDuplicateObservationIsIdempotent(){
@@ -104,6 +180,7 @@ function boot(){
   const state={pieceCalibration:{observations:[]}};
   const crab=api.estimatePieces(state,'crab','half',2);
   assert.equal(crab.estimatedGrams,50);
+  assert.equal(crab.grams,50);
   assert.equal(crab.estimateBasisGrams,25);
   assert.deepEqual(api.optionsFor('ghana_oxtail',state),[]);
   assert.equal(api.estimatePieces(state,'ghana_oxtail','piece',2),null);
@@ -118,6 +195,7 @@ function boot(){
   assert.equal(amount.grams,187);
   assert.equal(amount.amountQuality,'weighed');
   assert.equal('estimatedGrams' in amount,false);
+  assert.equal(api.effectiveGrams(amount),187);
 
   const log=api.createLogDraft({food:{id:'goat',name:'Goat',kcal:143,protein:27,fibre:0},amount,meal:'Lunch',id:'weighed',ts:5});
   assert.equal(log.amountQuality,'weighed');
