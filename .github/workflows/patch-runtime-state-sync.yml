@@ -1,0 +1,43 @@
+name: One-shot governed runtime state sync patch
+
+on:
+  push:
+    branches:
+      - fix/v41-smart-meal-minimums
+
+permissions:
+  contents: write
+
+jobs:
+  patch-runtime-state:
+    if: ${{ !contains(github.event.head_commit.message, '[runtime-sync-patched]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out fix branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/v41-smart-meal-minimums
+          fetch-depth: 0
+      - name: Synchronize app closure after governed writes
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const file='smart-meal-runtime-v41.js';
+          let src=fs.readFileSync(file,'utf8');
+          if(src.includes('OkelloAppState?.syncFromStorage')) process.exit(0);
+          const anchor='      writeState(fresh);\n      recordTrace({';
+          if(!src.includes(anchor)) throw new Error('governed write anchor not found');
+          src=src.replace(anchor,"      writeState(fresh);\n      const appSynced=window.OkelloAppState?.syncFromStorage?.()===true;\n      recordTrace({");
+          const traceAnchor="        candidateKind:candidate?.kind||null,\n        committed:";
+          if(!src.includes(traceAnchor)) throw new Error('commit trace anchor not found');
+          src=src.replace(traceAnchor,"        candidateKind:candidate?.kind||null,\n        appStateSynchronized:appSynced,\n        committed:");
+          fs.writeFileSync(file,src);
+          NODE
+      - name: Commit runtime sync hook
+        run: |
+          if git diff --quiet -- smart-meal-runtime-v41.js; then exit 0; fi
+          git config user.name "okello12"
+          git config user.email "56190257+okello12@users.noreply.github.com"
+          git add smart-meal-runtime-v41.js
+          git commit -m "[runtime-sync-patched] Synchronize app state after governed meal writes"
+          git push origin HEAD:fix/v41-smart-meal-minimums
