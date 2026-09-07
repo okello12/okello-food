@@ -1,6 +1,6 @@
 # Product data architecture
 
-Okello Food uses barcode product data for two different jobs: filling the packaged-food form and helping with shopping decisions. These consumers share one product-data boundary before the Personal Shelf is expanded.
+Okello Food uses barcode product data for two different jobs: filling the packaged-food form and helping with shopping decisions. These consumers share one product-data boundary before recommendation features are expanded.
 
 ## Core rule
 
@@ -10,7 +10,7 @@ The product-data service must return `null` for an absent or unusable nutrient v
 
 A product assessment may say that the available data is incomplete. It must not manufacture a poor score from missing data.
 
-## Implementation status — v38
+## Implementation status — v39
 
 `product-data-v1.js` is the shared normalisation and retrieval service for barcode product data.
 
@@ -26,7 +26,7 @@ It currently:
 - keeps pack serving separate from product nutrient values;
 - carries source, checked-at, completeness and raw category evidence without promoting the crowd-sourced category to a trusted Okello category.
 
-Both production barcode consumers now use this service:
+Both production barcode consumers use this service:
 
 - `shopping-v1.js` uses it for shopping assessment and durable shopping history;
 - the packaged-food form in `app.js` uses it to populate the editable label fields.
@@ -35,7 +35,7 @@ The old direct Open Food Facts request and lossy barcode nutrient parsing in `ap
 
 When the form and shopping layer ask for the same barcode during one lookup, both calls go through `OkelloProductData.get()`. The service's in-flight map therefore gives both consumers the same promise and one network request.
 
-Step 2 of the shopping sequence is complete. The Personal Shelf is no longer blocked on duplicate product retrieval/parsing.
+The Personal Shelf landed in v39. It is a view over the existing durable shopping-product store rather than a second product database. It can search products already scanned and put saved products back into the two-product comparison without requiring a fresh network request.
 
 ## Executable missingness contract
 
@@ -112,6 +112,8 @@ For a new product, `Your usual` is blank. A pack serving must never seed persona
 
 The packaged-food form may display 100 g as a neutral editable amount when no pack serving is known. That is a UI fallback only; the shared product object must continue to report `servingG: null`.
 
+The Personal Shelf must preserve that distinction visibly: a missing serving is shown as `No pack serving supplied`, never as a 100 g pack serving. A future scan-to-log sheet must do the same.
+
 ## Shopping comparison
 
 The first shopping feature deliberately compares two user-selected products without relying on category matching.
@@ -123,6 +125,8 @@ Primary visible density metrics are:
 - calories per 100 g for context.
 
 Dead bands should remain so trivial numeric differences are described as similar rather than forcing a winner.
+
+Saved Personal Shelf products may be selected into this comparison offline. Comparison does not promote raw Open Food Facts category evidence to a trusted category.
 
 ## Tie-break rule
 
@@ -137,6 +141,22 @@ A protein-oriented lean is allowed only when it is framed explicitly, for exampl
 > A has more protein per 100 kcal, while B has more fibre. For your current protein target, A is the better fit.
 
 Future versions can make this more contextual by using remaining protein relative to remaining calories, or by adding an explicit user goal/profile. Until then, the app should prefer an honest mixed verdict over an unexplained score.
+
+## Personal Shelf storage contract
+
+`okello_shopping_products_v1` is the durable source for the Personal Shelf. The shelf must not create a second flattened product store.
+
+Each saved record is the normalised product-data shape plus shelf metadata such as `lastScannedAt`. Storage rules are:
+
+- nutrient values are stored as numbers or `null`, never preformatted display strings;
+- a missing nutrient remains `null` through save, backup, restore and shelf rendering;
+- a genuine numeric zero remains zero;
+- `completeness` and `sourceCategories` are preserved with the record;
+- category evidence remains evidence only and is not upgraded into a trusted category;
+- reading a shelf product through `OkelloShopping.getProduct()` or `recent()` returns a frozen record, including frozen nested `completeness` and `sourceCategories` data, so downstream UI cannot quietly patch missing values;
+- shelf display formatting is derived at render time and is never written back into the canonical product record.
+
+The store remains capped to recent products and is already included in complete and encrypted backups. Personal Shelf adds no new durable storage key.
 
 ## Two separate colour systems
 
@@ -228,9 +248,11 @@ The first `better choice` implementation should therefore compare a newly scanne
 
 A wider UK-availability-aware search is an extension of this feature, not a replacement for the Personal Shelf recommendation path.
 
+The v39 shelf itself does not yet issue `better choice` recommendations. It stores and exposes the evidence safely and lets the user make explicit saved-product comparisons. Recommendation language remains gated on the later category rules.
+
 ## Local shopping store
 
-`okello_shopping_products_v1` is durable shopping history, not disposable cache. It supports repeated comparison and future Personal Shelf behaviour and is therefore included in complete and encrypted backups.
+`okello_shopping_products_v1` is durable shopping history, not disposable cache. It supports repeated comparison and Personal Shelf behaviour and is therefore included in complete and encrypted backups.
 
 A future transport/data cache may be introduced separately, but if it does not materially affect recommendations it should be documented as disposable rather than silently added to the backup contract.
 
@@ -240,8 +262,8 @@ A future transport/data cache may be introduced separately, but if it does not m
 2. Shared product-data service and retirement of duplicate parsing/request logic. **Complete in v38.**
    - 2a. Shared service + executable contract tests. **Implemented in v37.**
    - 2b. Packaged-food form moved onto the service; direct request and lossy barcode parser retired. **Implemented in v38.**
-3. Personal Shelf built on the shared service. **Next.**
-4. Small data-driven category rule table with explicit unknown-category and incomplete-data states.
+3. Personal Shelf built on the shared service and durable normalised product store. **Implemented in v39.**
+4. Small data-driven category rule table with explicit unknown-category and incomplete-data states. **Next.**
 5. Exact UK front-of-pack traffic-light component, if implemented, using the official scheme rather than custom thresholds.
 6. Shelf-based `better choice` suggestions where a specific alternative is known.
 7. Category and UK-availability validation for wider product search.
