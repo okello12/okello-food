@@ -43,8 +43,7 @@
     return new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short'}).format(d);
   }
 
-  function products(){
-    const recent=shopping.recent();
+  function filterProducts(recent){
     const q=searchEl.value.trim().toLowerCase();
     if(!q)return recent;
     return recent.filter(p=>(`${p.name||''} ${p.brands||''} ${p.code||''}`).toLowerCase().includes(q));
@@ -80,8 +79,9 @@
   }
 
   function render(){
-    const all=products();
-    countEl.textContent=`${shopping.recent().length} ${shopping.recent().length===1?'product':'products'}`;
+    const recent=shopping.recent();
+    const all=filterProducts(recent);
+    countEl.textContent=`${recent.length} ${recent.length===1?'product':'products'}`;
     if(!all.length){
       listEl.innerHTML=searchEl.value.trim()
         ? '<div class="personal-shelf-empty">No saved scans match that search.</div>'
