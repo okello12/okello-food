@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION=1;
+  const VERSION=2;
   const STEP_GRAMS=5;
   const EPSILON=1e-9;
 
@@ -46,19 +46,22 @@
     },{kcal:0,protein:0,fibre:0});
   }
 
-  function minimumTotalFor(foods,calc){
-    const items=foods.map(food=>{
-      const {min}=boundsFor(food);
-      return {food,grams:min};
+  function minimumItemsFor(foods){
+    return foods.map(food=>{
+      const {min,max}=boundsFor(food);
+      return {food,grams:min,min,max};
     });
-    return totalsFor(items,calc);
+  }
+
+  function minimumTotalFor(foods,calc){
+    return totalsFor(minimumItemsFor(foods),calc);
   }
 
   function fitFoods(foods,budget,calc){
     const resolved=(Array.isArray(foods)?foods:[]).filter(Boolean);
     const kcalBudget=Number(budget);
     if(resolved.length<2||!(kcalBudget>0)||typeof calc!=='function'){
-      return {fit:false,reason:'invalid-input',budget:Math.max(0,kcalBudget||0),items:[],trace:null};
+      return {fit:false,reason:'invalid-input',budget:Math.max(0,kcalBudget||0),items:[],kcal:0,protein:0,fibre:0,overByKcal:0,trace:null};
     }
 
     const weights=resolved.map(allocationWeight);
@@ -72,54 +75,135 @@
       return {food,grams,min,max};
     });
 
+    const minimumItems=minimumItemsFor(resolved);
+    const minimum=totalsFor(minimumItems,calc);
     const initial=totalsFor(items,calc);
-    const minimum=minimumTotalFor(resolved,calc);
     const trace={
       budget:kcalBudget,
       minimumKcal:minimum.kcal,
+      minimumGrams:minimumItems.map(x=>x.grams),
       initialKcal:initial.kcal,
-      scale:initial.kcal>0?kcalBudget/initial.kcal:null,
       initialGrams:items.map(x=>x.grams),
-      finalGrams:null,
-      finalKcal:null
+      scale:initial.kcal>0?kcalBudget/initial.kcal:null,
+      finalKcal:null,
+      finalGrams:null
     };
 
     if(initial.kcal<=kcalBudget+EPSILON){
       trace.finalGrams=items.map(x=>x.grams);
       trace.finalKcal=initial.kcal;
-      return {fit:true,reason:'fits',budget:kcalBudget,items,kcal:initial.kcal,protein:initial.protein,fibre:initial.fibre,trace};
+      return {fit:true,reason:'fits',budget:kcalBudget,items,kcal:initial.kcal,protein:initial.protein,fibre:initial.fibre,overByKcal:0,trace};
     }
 
     const scale=kcalBudget/initial.kcal;
-    items=items.map(item=>({
+    const scaled=items.map(item=>({
       ...item,
       grams:roundWithinBounds(item.grams*scale,item.min,item.max)
     }));
-    const final=totalsFor(items,calc);
-    trace.finalGrams=items.map(x=>x.grams);
+    const final=totalsFor(scaled,calc);
+    trace.finalGrams=scaled.map(x=>x.grams);
     trace.finalKcal=final.kcal;
 
-    if(final.kcal>kcalBudget+EPSILON){
-      return {fit:false,reason:'minimums-exceed-budget',budget:kcalBudget,items:[],kcal:0,protein:0,fibre:0,trace};
+    if(final.kcal<=kcalBudget+EPSILON){
+      return {fit:true,reason:'scaled-within-bounds',budget:kcalBudget,items:scaled,kcal:final.kcal,protein:final.protein,fibre:final.fibre,overByKcal:0,trace};
     }
 
-    return {fit:true,reason:'scaled-within-bounds',budget:kcalBudget,items,kcal:final.kcal,protein:final.protein,fibre:final.fibre,trace};
+    // Never fabricate token portions to satisfy a continuous budget. When the
+    // sensible floor is still too large, return that floor honestly so callers
+    // can either reduce the component set or show the real minimum cost.
+    const overByKcal=Math.max(0,minimum.kcal-kcalBudget);
+    return {
+      fit:false,
+      reason:minimum.kcal>kcalBudget+EPSILON?'minimums-exceed-budget':'clamped-scale-exceeds-budget',
+      budget:kcalBudget,
+      items:minimumItems,
+      kcal:minimum.kcal,
+      protein:minimum.protein,
+      fibre:minimum.fibre,
+      overByKcal,
+      minimumViable:true,
+      trace
+    };
   }
 
   function build(ids,budget,{resolve,calc}={}){
-    if(typeof resolve!=='function')return {fit:false,reason:'missing-resolver',budget:Number(budget)||0,items:[],trace:null};
+    if(typeof resolve!=='function')return {fit:false,reason:'missing-resolver',budget:Number(budget)||0,items:[],kcal:0,protein:0,fibre:0,overByKcal:0,trace:null};
     const foods=(Array.isArray(ids)?ids:[]).map(resolve).filter(Boolean);
     const result=fitFoods(foods,budget,calc);
-    if(result.fit){
-      result.items=result.items.map((item,index)=>({
-        id:item.food?.id||String(ids?.[index]??''),
-        food:item.food,
-        grams:item.grams,
-        min:item.min,
-        max:item.max
-      }));
-    }
+    result.items=(result.items||[]).map(item=>({
+      id:item.food?.id||'',
+      food:item.food,
+      grams:item.grams,
+      min:item.min,
+      max:item.max
+    }));
     return result;
+  }
+
+  function combinations(values,size,start=0,prefix=[],out=[]){
+    if(prefix.length===size){out.push(prefix.slice());return out;}
+    for(let i=start;i<=values.length-(size-prefix.length);i++){
+      prefix.push(values[i]);
+      combinations(values,size,i+1,prefix,out);
+      prefix.pop();
+    }
+    return out;
+  }
+
+  function hasBaseLike(foods){
+    return foods.some(food=>['Starch','Complete meal','Beans'].includes(food?.cat));
+  }
+
+  function hasProteinLike(foods){
+    return foods.some(food=>food?.cat==='Protein'||food?.providesAnimalProtein===true);
+  }
+
+  function subsetScore(result){
+    const foods=(result.items||[]).map(x=>x.food);
+    return (hasBaseLike(foods)?1000:0)+(hasProteinLike(foods)?1000:0)+(result.items?.length||0)*100+(Number(result.protein)||0);
+  }
+
+  function chooseSuggestion(ids,budget,{resolve,calc}={}){
+    const originalIds=Array.isArray(ids)?ids.filter(Boolean):[];
+    const full=build(originalIds,budget,{resolve,calc});
+    if(full.fit){
+      return {...full,kind:'full',droppedIds:[],fullTrace:full.trace};
+    }
+    if(!full.items.length){
+      return {...full,kind:'unavailable',droppedIds:originalIds.slice(),fullTrace:full.trace};
+    }
+
+    const resolvedFoods=originalIds.map(id=>({requestedId:id,food:resolve?.(id)})).filter(x=>x.food);
+    for(let size=resolvedFoods.length-1;size>=2;size--){
+      const fitting=[];
+      for(const subset of combinations(resolvedFoods,size)){
+        const result=fitFoods(subset.map(x=>x.food),budget,calc);
+        if(!result.fit)continue;
+        const keptIds=subset.map(x=>x.requestedId);
+        fitting.push({
+          ...result,
+          items:result.items.map(item=>({id:item.food?.id||'',food:item.food,grams:item.grams,min:item.min,max:item.max})),
+          keptIds,
+          droppedIds:originalIds.filter(id=>!keptIds.includes(id))
+        });
+      }
+      if(fitting.length){
+        fitting.sort((a,b)=>subsetScore(b)-subsetScore(a));
+        const chosen=fitting[0];
+        return {...chosen,kind:'reduced',fullTrace:full.trace,reducedTrace:chosen.trace};
+      }
+    }
+
+    // Nothing smaller can fit either. Return the full minimum-viable meal and
+    // tell the caller exactly how far over the planning budget it sits.
+    return {
+      ...full,
+      kind:'minimum-over-budget',
+      fit:false,
+      droppedIds:[],
+      overByKcal:Math.max(0,(Number(full.kcal)||0)-(Number(budget)||0)),
+      fullTrace:full.trace
+    };
   }
 
   const api=Object.freeze({
@@ -128,9 +212,11 @@
     boundsFor,
     allocationWeight,
     roundWithinBounds,
+    minimumItemsFor,
     minimumTotalFor,
     fitFoods,
-    build
+    build,
+    chooseSuggestion
   });
 
   if(typeof window!=='undefined')window.OkelloSmartMealFit=api;
