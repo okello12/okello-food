@@ -35,13 +35,28 @@ A suggested gram amount is not automatically an observed gram amount. Before a m
 
 The governed runtime writes the whole reviewed meal atomically with one `plateId`. Piece logs use `OkelloPieceEntry.createLogDraft`, so `grams`, `estimatedGrams`, `pieceCount`, `pieceKey`, estimate basis/source and nutrition snapshots stay coherent.
 
+## App state synchronization boundary
+
+`app.js` owns a long-lived in-memory `state` as well as the durable `okello_food_tracker_v3` store. A new runtime must not treat localStorage as the only state owner. If it writes a new meal to localStorage while the app closure still holds the older object, a later Quick Add, target save, recipe save or built-in export can operate on stale data and can overwrite or omit the newly added logs.
+
+`app.js` therefore exposes `OkelloAppState.syncFromStorage()`. Immediately after the governed Smart Meal runtime commits its atomic log batch, it calls that hook before any visible refresh. The hook reloads durable state into the app closure and runs the app-owned render path. The commit trace records whether synchronization succeeded as `appStateSynchronized`.
+
+The order is contractual:
+
+1. write the complete reviewed meal to durable state;
+2. synchronize the `app.js` closure from durable state;
+3. refresh Smart Meal and observer-owned surfaces;
+4. never allow a later app-owned save to reintroduce the pre-commit state.
+
+This also keeps the built-in export path consistent with what is visibly logged.
+
 ## Legacy writer boundary
 
 `smart-v3.js` still contains the older `logItems()` writer and three historical UI callers: Smart Meal Composer, natural-language Quick Log and the older Ghanaian Plate Builder. That writer also owns `location.reload()`.
 
 The v42 integration does **not** remove that reload in place. A capture-phase boot guard blocks those three controls until the governed runtime is ready, then the governed runtime captures all three controls before their legacy handlers can run. This avoids changing a shared low-level side effect before its callers are fully enumerated.
 
-The governed runtime itself does not reload after a write. It explicitly refreshes Today's calorie/protein/fibre totals, remaining gauges and log list. Updating `#todayLog` triggers the existing Day Forecast and feature observers. It also reuses the app's `mealSelect` change contract to refresh Quick Add Smart Portion and the food library, and emits `okello:food-log-changed` for future observers.
+The governed runtime itself does not reload after a write. After app-state synchronization it explicitly refreshes Today's calorie/protein/fibre totals, remaining gauges and log list. Updating `#todayLog` triggers the existing Day Forecast and feature observers. It also reuses the app's `mealSelect` change contract to refresh Quick Add Smart Portion and the food library, and emits `okello:food-log-changed` for future observers.
 
 ## Observability
 
@@ -57,6 +72,7 @@ Across tested budgets:
 - full and reduced suggestions stay within the planning budget;
 - minimum-over-budget suggestions explicitly report `overByKcal` and never masquerade as fitting;
 - piece-native components are reviewed before the atomic write;
+- the governed runtime synchronizes the app-owned in-memory state immediately after its durable write;
 - the governed runtime does not call `location.reload()`;
 - the boot guard prevents the legacy thin-record writers from running before runtime ownership is established.
 
