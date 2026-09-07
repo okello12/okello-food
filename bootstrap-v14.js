@@ -1,47 +1,50 @@
 (() => {
   'use strict';
 
-  const VERSION = '41';
+  const VERSION = '42';
   const scripts = [
-    'storage-migration-v1.js?v=41',
-    'ghana-foods.js?v=41',
-    'world-foods.js?v=41',
-    'smart-support.js?v=41',
-    'meal-data-contract-v1.js?v=41',
-    'food-data-layer-v1.js?v=41',
-    'amount-quality-v2.js?v=41',
-    'product-data-v1.js?v=41',
-    'category-rules-v1.js?v=41',
-    'app.js?v=41',
-    'meal-catalog-facade-v1.js?v=41',
-    'food-intelligence-v1.js?v=41',
-    'personal-food-memory-v1.js?v=41',
-    'piece-entry-v41.js?v=41',
-    'piece-usual-v41.js?v=41',
-    'smart-portion-output-v41.js?v=41',
-    'piece-sheet-contract-v41.js?v=41',
-    'piece-sheet-v41.js?v=41',
-    'scanner.js?v=41',
-    'ux-v2.js?v=41',
-    'scanner-launch-v1.js?v=41',
-    'shopping-v1.js?v=41',
-    'personal-shelf-v1.js?v=41',
-    'world-library-v1.js?v=41',
-    'template-engine-v41.js?v=41',
-    'features-v1.js?v=41',
-    'template-runtime-v41.js?v=41',
-    'quick-add-piece-v41.js?v=41',
-    'catalog-ui-v41.js?v=41',
-    'day-forecast-v1.js?v=41',
-    'smart-v3.js?v=41',
-    'search-intelligence-v1.js?v=41',
-    'recipe-assistant-v1.js?v=41',
-    'activity-v1.js?v=41',
-    'backup-v2.js?v=41',
-    'update-v1.js?v=41',
-    'app-chrome-v1.js?v=41',
-    'ios-exit-v1.js?v=41',
-    'interaction-v1.js?v=41'
+    'storage-migration-v1.js?v=42',
+    'ghana-foods.js?v=42',
+    'world-foods.js?v=42',
+    'smart-support.js?v=42',
+    'meal-data-contract-v1.js?v=42',
+    'food-data-layer-v1.js?v=42',
+    'amount-quality-v2.js?v=42',
+    'product-data-v1.js?v=42',
+    'category-rules-v1.js?v=42',
+    'app.js?v=42',
+    'meal-catalog-facade-v1.js?v=42',
+    'food-intelligence-v1.js?v=42',
+    'personal-food-memory-v1.js?v=42',
+    'piece-entry-v41.js?v=42',
+    'piece-usual-v41.js?v=42',
+    'smart-portion-output-v41.js?v=42',
+    'piece-sheet-contract-v41.js?v=42',
+    'piece-sheet-v41.js?v=42',
+    'scanner.js?v=42',
+    'ux-v2.js?v=42',
+    'scanner-launch-v1.js?v=42',
+    'shopping-v1.js?v=42',
+    'personal-shelf-v1.js?v=42',
+    'world-library-v1.js?v=42',
+    'template-engine-v41.js?v=42',
+    'features-v1.js?v=42',
+    'template-runtime-v41.js?v=42',
+    'quick-add-piece-v41.js?v=42',
+    'catalog-ui-v41.js?v=42',
+    'day-forecast-v1.js?v=42',
+    'smart-meal-fit-v41.js?v=42',
+    'smart-meal-guard-v42.js?v=42',
+    'smart-v3.js?v=42',
+    'smart-meal-runtime-v41.js?v=42',
+    'search-intelligence-v1.js?v=42',
+    'recipe-assistant-v1.js?v=42',
+    'activity-v1.js?v=42',
+    'backup-v2.js?v=42',
+    'update-v1.js?v=42',
+    'app-chrome-v1.js?v=42',
+    'ios-exit-v1.js?v=42',
+    'interaction-v1.js?v=42'
   ];
 
   function loadScript(src) {
@@ -94,7 +97,7 @@
     if (!('serviceWorker' in navigator)) return;
     try {
       let version = await controllerVersion();
-      const reg = await navigator.serviceWorker.register('./service-worker.js?v=41', {updateViaCache:'none'});
+      const reg = await navigator.serviceWorker.register('./service-worker.js?v=42', {updateViaCache:'none'});
       try { await reg.update(); } catch (_) {}
 
       const promote = worker => {
