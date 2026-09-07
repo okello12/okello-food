@@ -31,7 +31,11 @@ jobs:
         run: node catalog-basis-audit-v1.test.js
       - name: Run piece-entry provenance and calibration tests
         run: node piece-entry-v41.test.js
+      - name: Run direct piece-usual memory tests
+        run: node piece-usual-v41.test.js
       - name: Run Smart Portion output contract tests
         run: node smart-portion-output-v41.test.js
+      - name: Run piece-sheet state contract tests
+        run: node piece-sheet-contract-v41.test.js
       - name: Run future-template recalculation tests
         run: node template-engine-v41.test.js
