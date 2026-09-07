@@ -42,7 +42,7 @@
     {id:'light_soup_base',name:'Light soup base, no meat/fish',emoji:'🍲',cat:'Soup',basis:'base-only',kcal:30,protein:1.5,fibre:1,portion:350,min:250,max:450,note:'Base only. Add meat/fish separately.'},
     {id:'ghana_okro_stew_base',name:'Okro stew base, no meat/fish',emoji:'🥘',cat:'Soup',basis:'base-only',kcal:60,protein:1.5,fibre:2.8,portion:300,min:220,max:400,note:'Base only. Add goat, fish, crab or other proteins separately.'},
     {id:'ghana_groundnut_soup_base',name:'Groundnut soup base, no meat/fish',emoji:'🍲',cat:'Soup',basis:'base-only',kcal:110,protein:4,fibre:1.8,portion:350,min:250,max:450,note:'Base includes the real protein from groundnut paste; meat/fish are separate.'},
-    {id:'ghana_palmnut_soup_base',name:'Palm nut soup base, no meat/fish',emoji:'🍲',cat:'Soup',basis:'base-only',kcal:95,protein:2,fibre:1.5,portion:350,min:250,max:450,note:'Base only. Palm concentrate remains calorie dense; add meat/fish separately.'},
+    {id:'ghana_palmnut_soup_base',name:'Palm nut soup base, no meat/fish',emoji:'🍲',cat:'Soup',basis:'base-only',kcal:95,protein:1.5,fibre:1.5,portion:350,min:250,max:450,note:'Base only. Palm concentrate remains calorie dense; add meat/fish separately.'},
     {id:'ghana_kontomire_stew_base',name:'Kontomire stew base, no meat/fish',emoji:'🥬',cat:'Soup',basis:'base-only',kcal:110,protein:3.5,fibre:3.5,portion:220,min:150,max:300,note:'Base only. Kontomire/agushie may contribute protein; add egg, fish or meat separately.'}
   ]);
 
@@ -92,7 +92,9 @@
     if(i>=0)s.customFoods[i]=next;else s.customFoods.push(next);
   }
   function seedContract(){
-    const s=ensureDurableState(readState());
+    const s=readState();
+    const before=JSON.stringify(s);
+    ensureDurableState(s);
 
     for(const food of s.customFoods){
       if(!food||typeof food!=='object')continue;
@@ -118,7 +120,7 @@
         note:'Soup and stew definitions were separated into base-only and includes-protein forms. Historical log nutrition remains unchanged.'
       });
     }
-    writeState(s);
+    if(JSON.stringify(s)!==before)writeState(s);
   }
 
   function staticBasisFor(food){
