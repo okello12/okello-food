@@ -40,8 +40,10 @@ jobs:
         run: node piece-usual-v41.test.js
       - name: Run Smart Portion output contract tests
         run: node smart-portion-output-v41.test.js
-      - name: Run Smart Meal minimum-fit regression
+      - name: Run Smart Meal fit and fallback regression
         run: node smart-meal-fit-v41.test.js
+      - name: Run governed Smart Meal runtime ownership checks
+        run: node smart-meal-runtime-v41.test.js
       - name: Require Smart Meal runtime wiring
         run: node smart-meal-fit-wiring-v41.test.js
       - name: Run piece-sheet state contract tests
@@ -56,15 +58,17 @@ jobs:
         run: node template-engine-v41.test.js
       - name: Run template runtime wiring tests
         run: node template-runtime-v41.test.js
-      - name: Audit v41 bootstrap, service worker and update bundle
-        run: node bundle-v41.test.js
-      - name: Syntax-check v41 runtime modules
+      - name: Audit v42 bootstrap, service worker and update bundle
+        run: node bundle-v42.test.js
+      - name: Syntax-check governed runtime modules
         run: >-
           node --check meal-catalog-facade-v1.js &&
           node --check piece-entry-v41.js &&
           node --check piece-usual-v41.js &&
           node --check smart-portion-output-v41.js &&
           node --check smart-meal-fit-v41.js &&
+          node --check smart-meal-guard-v42.js &&
+          node --check smart-meal-runtime-v41.js &&
           node --check piece-sheet-contract-v41.js &&
           node --check piece-sheet-v41.js &&
           node --check quick-add-piece-v41.js &&
