@@ -13,6 +13,20 @@ Each new log can therefore carry `amountQuality` with one of two explicit values
 
 Older entries are deliberately left without this field and are displayed as unclassified. The app does not rewrite historical data by assumption.
 
+## General evidence-learning rule
+
+Learning follows the evidence the person actually supplied, not values the estimator manufactured from that evidence.
+
+**What the person directly observed is learnable. What the estimator derived from it is not independently learnable.**
+
+Examples:
+
+- `4 medium pieces` is a direct observation. The app may learn that the person's usual amount is 4 medium pieces.
+- `224 g` produced by multiplying those 4 pieces by a 56 g piece model is a derived estimate. It must not train usual-gram memory as though the person weighed 224 g.
+- a genuinely weighed `224 g` is a direct observation and may train usual-gram memory.
+
+This is a general provenance rule, not a special exception for pieces. Future input methods must preserve the same distinction between what the person directly supplied and what the application inferred or converted from it.
+
 ## Capture
 
 Quick Add asks the user whether the amount was weighed or estimated. Estimated is the conservative default.
