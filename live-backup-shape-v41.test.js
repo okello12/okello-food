@@ -56,8 +56,28 @@ vm.runInNewContext(MIGRATION,ctx,{filename:'storage-migration-v1.js'});
 let migrated=JSON.parse(storage.getItem(STORE));
 
 assert.equal(migrated.schemaVersion,3);
-assert.deepEqual(migrated.logs,originalLogs,'live historical snapshots changed during migration');
-assert.equal(migrated.logs['2026-09-06'].length,6);
+assert.equal(ctx.window.OkelloStorageMigration.resolveFoodId('okro'),'ghana_okro_stew');
+assert.equal(ctx.window.OkelloStorageMigration.resolveFoodId('ghana_okro_soup'),'ghana_okro_stew');
+
+const beforeRows=originalLogs['2026-09-06'];
+const afterRows=migrated.logs['2026-09-06'];
+assert.equal(afterRows.length,beforeRows.length);
+for(let i=0;i<beforeRows.length;i++){
+  const before={...beforeRows[i]};
+  const after={...afterRows[i]};
+  const expectedId=before.foodId==='okro'?'ghana_okro_stew':before.foodId;
+  assert.equal(after.foodId,expectedId,`unexpected food identity change at log ${i}`);
+  delete before.foodId;
+  delete after.foodId;
+  assert.deepEqual(after,before,`historical snapshot fields changed at log ${i}`);
+}
+const migratedOkro=afterRows.find(x=>x.id==='log_c57d6a3b-7f2f-4986-b522-d45502c40f19');
+assert.equal(migratedOkro.foodId,'ghana_okro_stew');
+assert.equal(migratedOkro.kcal,315);
+assert.equal(migratedOkro.protein,24.5);
+assert.equal(migratedOkro.fibre,8.75);
+assert.equal(migratedOkro.grams,350);
+
 assert.equal(migrated.customFoods.filter(x=>x.id==='ghana_okro_soup').length,0,'legacy runtime okro duplicate survived');
 assert.equal(migrated.customFoods.filter(x=>x.id==='ghana_okro_stew').length,1,'canonical okro missing or duplicated');
 assert.deepEqual(migrated.recipes,[]);
@@ -74,7 +94,8 @@ assert.equal(storage.writes.length,0,'second pass on live-store shape was not a 
 assert.equal(storage.removes.length,0);
 
 // Contract seeding is allowed to decorate future food definitions, but it must
-// still leave every historic log snapshot byte-equivalent.
+// still leave every historic log snapshot byte-equivalent after the one-time id
+// canonicalisation has already happened.
 const beforeContractLogs=JSON.stringify(JSON.parse(storage.getItem(STORE)).logs);
 ctx=context(storage);
 vm.runInNewContext(MIGRATION,ctx,{filename:'storage-migration-v1.js'});
