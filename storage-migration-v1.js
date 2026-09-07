@@ -10,6 +10,7 @@
   const SCHEMA_VERSION=3;
   const FOOD_ID_ALIASES=Object.freeze({
     okro:'ghana_okro_stew',
+    okro_base:'ghana_okro_stew_base',
     ghana_okro_soup:'ghana_okro_stew'
   });
 
@@ -126,12 +127,12 @@
       for(const item of state.shelfEntries) if(rewriteFoodId(item))changed=true;
     }
 
-    // smart-support historically injected ghana_okro_soup as a second generated
-    // library identity for ghana_okro_stew. Once durable references are rewritten,
-    // remove that generated duplicate. No log nutrition is changed and no user id
-    // beginning custom_ is removed.
+    // Remove generated legacy okro catalogue identities after all durable
+    // references have been rewritten. okro remains accepted as an input alias via
+    // resolveFoodId, but it is no longer a distinct learned or selectable identity.
+    const retiredGeneratedIds=new Set(['ghana_okro_soup','okro_base']);
     const beforeCustom=state.customFoods.length;
-    state.customFoods=state.customFoods.filter(food=>String(food?.id||'')!=='ghana_okro_soup');
+    state.customFoods=state.customFoods.filter(food=>!retiredGeneratedIds.has(String(food?.id||'')));
     if(state.customFoods.length!==beforeCustom)changed=true;
 
     // Runtime user-created soups/composites may legitimately be unclassified.
