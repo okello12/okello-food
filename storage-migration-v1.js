@@ -4,6 +4,8 @@
   const CURRENT='okello_food_tracker_v3';
   const LEGACY='okello_food_tracker_v2';
   const QUARANTINE='okello_food_tracker_v3_quarantine_v1';
+  const FAVOURITES='okello_food_favourites_v1';
+  const SHOPPING='okello_shopping_products_v1';
   const MIGRATION_VERSION=3;
   const SCHEMA_VERSION=3;
   const FOOD_ID_ALIASES=Object.freeze({
@@ -18,7 +20,8 @@
     recipes:[],
     mealTemplates:[],
     definitionEvents:[],
-    pieceCalibration:{observations:[]}
+    pieceCalibration:{observations:[]},
+    coOccurrencePairs:[]
   });
 
   function isObject(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
@@ -46,56 +49,89 @@
     holder[key]=after;
     return true;
   }
-  function normalisePieceCalibration(value){
-    const src=isObject(value)?value:{};
-    return {
-      ...src,
-      observations:Array.isArray(src.observations)?src.observations:[]
-    };
+  function rewriteIdArray(holder,key){
+    if(!holder||!Array.isArray(holder[key]))return false;
+    let changed=false;
+    holder[key]=holder[key].map(value=>{
+      const before=String(value??'');
+      const after=resolveFoodId(before);
+      if(after!==before)changed=true;
+      return after;
+    });
+    return changed;
   }
-  function normalise(state){
-    const base=defaultState();
-    const src=isObject(state)?state:{};
-    return {
-      ...base,
-      ...src,
-      schemaVersion:SCHEMA_VERSION,
-      targets:{...base.targets,...(isObject(src.targets)?src.targets:{})},
-      logs:isObject(src.logs)?src.logs:{},
-      customFoods:Array.isArray(src.customFoods)?src.customFoods:[],
-      recipes:Array.isArray(src.recipes)?src.recipes:[],
-      mealTemplates:Array.isArray(src.mealTemplates)?src.mealTemplates:[],
-      definitionEvents:Array.isArray(src.definitionEvents)?src.definitionEvents:[],
-      pieceCalibration:normalisePieceCalibration(src.pieceCalibration)
-    };
+  function ensureArray(state,key){
+    if(Array.isArray(state[key]))return false;
+    state[key]=[];
+    return true;
+  }
+  function ensureObject(state,key,fallback={}){
+    if(isObject(state[key]))return false;
+    state[key]={...fallback};
+    return true;
   }
 
-  // Current-state schema upgrades are deliberately owned here. Nutrition and
-  // amount snapshots are never recalculated: only identifiers and durable schema
-  // containers are normalised. This keeps historical kcal/protein/fibre and
-  // estimatedGrams exactly as they were written.
+  // Mutate only fields that genuinely require a schema or identifier change.
+  // We do not reconstruct or reorder an otherwise valid state object. This is
+  // important because app.js may serialise the same keys in a different order;
+  // property order alone must never cause a migration write on every launch.
   function upgradeState(input){
-    const state=normalise(input);
+    const state=isObject(input)?input:defaultState();
+    let changed=!isObject(input);
 
+    const existingSchema=Number(state.schemaVersion)||0;
+    if(existingSchema<SCHEMA_VERSION){state.schemaVersion=SCHEMA_VERSION;changed=true;}
+
+    if(ensureObject(state,'targets',{calories:2300,protein:150}))changed=true;
+    if(!(Number(state.targets.calories)>0)){state.targets.calories=2300;changed=true;}
+    if(!(Number(state.targets.protein)>0)){state.targets.protein=150;changed=true;}
+    if(ensureObject(state,'logs'))changed=true;
+    if(ensureArray(state,'customFoods'))changed=true;
+    if(ensureArray(state,'recipes'))changed=true;
+    if(ensureArray(state,'mealTemplates'))changed=true;
+    if(ensureArray(state,'definitionEvents'))changed=true;
+    if(ensureArray(state,'coOccurrencePairs'))changed=true;
+    if(ensureObject(state,'pieceCalibration'))changed=true;
+    if(!Array.isArray(state.pieceCalibration.observations)){state.pieceCalibration.observations=[];changed=true;}
+
+    // Logs are canonicalised by id, but their nutrition and amount snapshots are
+    // not recalculated or touched. Personal food memory derives from these logs,
+    // so leaving the old id here would split one food into two learned identities.
     for(const entries of Object.values(state.logs||{})){
-      for(const entry of Array.isArray(entries)?entries:[]) rewriteFoodId(entry);
+      for(const entry of Array.isArray(entries)?entries:[]) if(rewriteFoodId(entry))changed=true;
     }
 
     for(const recipe of state.recipes){
-      for(const ingredient of Array.isArray(recipe?.ingredients)?recipe.ingredients:[]) rewriteFoodId(ingredient);
+      for(const ingredient of Array.isArray(recipe?.ingredients)?recipe.ingredients:[]) if(rewriteFoodId(ingredient))changed=true;
     }
 
     for(const template of state.mealTemplates){
-      for(const item of Array.isArray(template?.items)?template.items:[]) rewriteFoodId(item);
-      for(const component of Array.isArray(template?.components)?template.components:[]) rewriteFoodId(component);
+      for(const item of Array.isArray(template?.items)?template.items:[]) if(rewriteFoodId(item))changed=true;
+      for(const component of Array.isArray(template?.components)?template.components:[]) if(rewriteFoodId(component))changed=true;
+      if(rewriteIdArray(template,'foodIds'))changed=true;
     }
 
-    for(const obs of state.pieceCalibration.observations) rewriteFoodId(obs);
+    for(const pair of state.coOccurrencePairs){
+      for(const key of ['foodAId','foodBId','leftFoodId','rightFoodId']) if(rewriteFoodId(pair,key))changed=true;
+      if(rewriteIdArray(pair,'foodIds'))changed=true;
+    }
 
-    // smart-support historically injected ghana_okro_soup as a second runtime
-    // identity for ghana_okro_stew. Remove that generated duplicate after all
-    // durable references have been canonicalised. User-created foods are untouched.
+    for(const obs of state.pieceCalibration.observations) if(rewriteFoodId(obs))changed=true;
+
+    // Optional/future state-backed shelf entries are canonicalised only if the
+    // field already exists. The current barcode Personal Shelf is keyed by product
+    // code and has no food identity to rewrite.
+    if(Array.isArray(state.shelfEntries)){
+      for(const item of state.shelfEntries) if(rewriteFoodId(item))changed=true;
+    }
+
+    // smart-support historically injected ghana_okro_soup as a second generated
+    // library identity for ghana_okro_stew. Once durable references are rewritten,
+    // remove that generated duplicate. No log nutrition is changed and no user id
+    // beginning custom_ is removed.
+    const beforeCustom=state.customFoods.length;
     state.customFoods=state.customFoods.filter(food=>String(food?.id||'')!=='ghana_okro_soup');
+    if(state.customFoods.length!==beforeCustom)changed=true;
 
     // Runtime user-created soups/composites may legitimately be unclassified.
     // Static library records are classified by the meal data contract later in boot.
@@ -104,12 +140,55 @@
       const cat=food.cat;
       const valid=food.basis==='base-only'||food.basis==='includes-protein'||food.basis==='unknown';
       if(!food.libraryVersion&&['Soup','Complete meal'].includes(cat)&&!valid){
+        changed=true;
         return {...food,basis:'unknown'};
       }
       return food;
     });
 
-    return state;
+    return {state,changed};
+  }
+
+  // Auxiliary stores are rewritten only when they actually contain a food id.
+  // Corrupt auxiliary data is left byte-for-byte untouched; it never triggers the
+  // v3 corrupt-state quarantine path.
+  function upgradeAuxiliaryStores(){
+    const writes=[];
+    try{
+      const raw=localStorage.getItem(FAVOURITES);
+      if(raw!=null){
+        try{
+          const list=JSON.parse(raw);
+          if(Array.isArray(list)){
+            const next=[];
+            const seen=new Set();
+            let changed=false;
+            for(const value of list){
+              const before=String(value??'');
+              const after=resolveFoodId(before);
+              if(after!==before)changed=true;
+              if(!seen.has(after)){seen.add(after);next.push(after);}else changed=true;
+            }
+            if(changed){localStorage.setItem(FAVOURITES,JSON.stringify(next));writes.push(FAVOURITES);}
+          }
+        }catch(_){}
+      }
+    }catch(_){}
+
+    try{
+      const raw=localStorage.getItem(SHOPPING);
+      if(raw!=null){
+        try{
+          const shelf=JSON.parse(raw);
+          let changed=false;
+          if(isObject(shelf)&&isObject(shelf.products)){
+            for(const product of Object.values(shelf.products)) if(rewriteFoodId(product))changed=true;
+          }
+          if(changed){localStorage.setItem(SHOPPING,JSON.stringify(shelf));writes.push(SHOPPING);}
+        }catch(_){}
+      }
+    }catch(_){}
+    return writes;
   }
 
   function readQuarantine(){
@@ -169,7 +248,7 @@
   }
 
   let volatileRecoveryRaw=null;
-  let result={version:MIGRATION_VERSION,status:'storage-unavailable',migrated:false,created:false,upgraded:false,legacyRetained:true,recoveryPending:false,quarantined:false};
+  let result={version:MIGRATION_VERSION,status:'storage-unavailable',migrated:false,created:false,upgraded:false,legacyRetained:true,recoveryPending:false,quarantined:false,auxiliaryWrites:[]};
 
   try{
     const currentRaw=localStorage.getItem(CURRENT);
@@ -177,18 +256,19 @@
       const current=parseObject(currentRaw);
       if(current){
         const upgraded=upgradeState(current);
-        const changed=JSON.stringify(upgraded)!==JSON.stringify(current);
-        if(changed)localStorage.setItem(CURRENT,JSON.stringify(upgraded));
+        if(upgraded.changed)localStorage.setItem(CURRENT,JSON.stringify(upgraded.state));
+        const auxiliaryWrites=upgradeAuxiliaryStores();
         const q=readQuarantine();
         result={
           version:MIGRATION_VERSION,
-          status:q?(changed?'current-upgraded-with-quarantine':'current-with-quarantine'):(changed?'current-upgraded':'current'),
+          status:q?(upgraded.changed?'current-upgraded-with-quarantine':'current-with-quarantine'):(upgraded.changed?'current-upgraded':'current'),
           migrated:false,
           created:false,
-          upgraded:changed,
+          upgraded:upgraded.changed,
           legacyRetained:true,
           recoveryPending:!!q,
-          quarantined:!!q
+          quarantined:!!q,
+          auxiliaryWrites
         };
       }else{
         volatileRecoveryRaw=currentRaw;
@@ -204,7 +284,8 @@
             legacyRetained:true,
             recoveryPending:true,
             quarantined:true,
-            quarantineCreated:q.created
+            quarantineCreated:q.created,
+            auxiliaryWrites:[]
           };
         }else{
           result={
@@ -216,7 +297,8 @@
             legacyRetained:true,
             recoveryPending:true,
             quarantined:false,
-            quarantineCreated:false
+            quarantineCreated:false,
+            auxiliaryWrites:[]
           };
         }
       }
@@ -224,8 +306,10 @@
       const legacyRaw=localStorage.getItem(LEGACY);
       const legacy=parseObject(legacyRaw);
       if(legacy){
-        localStorage.setItem(CURRENT,JSON.stringify(upgradeState(legacy)));
-        result={version:MIGRATION_VERSION,status:'migrated-v2-to-v3',migrated:true,created:true,upgraded:true,legacyRetained:true,recoveryPending:false,quarantined:false};
+        const upgraded=upgradeState(legacy);
+        localStorage.setItem(CURRENT,JSON.stringify(upgraded.state));
+        const auxiliaryWrites=upgradeAuxiliaryStores();
+        result={version:MIGRATION_VERSION,status:'migrated-v2-to-v3',migrated:true,created:true,upgraded:true,legacyRetained:true,recoveryPending:false,quarantined:false,auxiliaryWrites};
       }else{
         localStorage.setItem(CURRENT,JSON.stringify(defaultState()));
         result={
@@ -236,12 +320,13 @@
           upgraded:false,
           legacyRetained:true,
           recoveryPending:false,
-          quarantined:false
+          quarantined:false,
+          auxiliaryWrites:[]
         };
       }
     }
   }catch(_){
-    result={version:MIGRATION_VERSION,status:'storage-unavailable',migrated:false,created:false,upgraded:false,legacyRetained:true,recoveryPending:false,quarantined:false};
+    result={version:MIGRATION_VERSION,status:'storage-unavailable',migrated:false,created:false,upgraded:false,legacyRetained:true,recoveryPending:false,quarantined:false,auxiliaryWrites:[]};
   }
 
   function readCurrent(){
@@ -289,9 +374,11 @@
     currentKey:CURRENT,
     legacyKey:LEGACY,
     quarantineKey:QUARANTINE,
+    favouritesKey:FAVOURITES,
+    shoppingKey:SHOPPING,
     foodIdAliases:FOOD_ID_ALIASES,
     resolveFoodId,
-    result:Object.freeze({...result}),
+    result:Object.freeze({...result,auxiliaryWrites:Object.freeze([...(result.auxiliaryWrites||[])])}),
     readCurrent,
     readQuarantine,
     downloadRecovery,
