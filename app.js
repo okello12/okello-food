@@ -126,7 +126,7 @@
     }
   });
 
-  function escapeHtml(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function escapeHtml(s){ return String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c])); }
   function safeImage(url){ return /^https:\/\//i.test(String(url||'')) ? String(url) : ''; }
   function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(showToast.t); showToast.t=setTimeout(()=>t.classList.remove('show'),1800); }
 
@@ -290,25 +290,37 @@
   async function lookupBarcode(){
     const code=$('barcodeInput').value.replace(/\D/g,'');
     if(code.length<8){$('barcodeStatus').textContent='Enter a valid barcode first.';return;}
+    const api=window.OkelloProductData;
+    if(!api?.get){$('barcodeStatus').textContent='Product lookup is not available yet. Refresh the app and try again.';return;}
     $('lookupBarcodeBtn').disabled=true; $('barcodeStatus').textContent='Looking up product…'; $('barcodePreview').hidden=true;
     try{
-      const fields='product_name,brands,nutriments,image_front_small_url,serving_quantity,serving_size';
-      const res=await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${fields}`);
-      if(!res.ok) throw new Error('lookup failed');
-      const data=await res.json();
-      if(!data || data.status!==1 || !data.product){$('barcodeStatus').textContent='Product not found. You can still enter the label values manually.';return;}
-      const p=data.product, n=p.nutriments||{};
-      const kcal=Number(n['energy-kcal_100g']) || (Number(n.energy_100g)>0?Number(n.energy_100g)/4.184:0);
-      const protein=Number(n.proteins_100g)||0; const fibre=Number(n.fiber_100g ?? n.fibre_100g)||0;
-      $('customName').value=[p.product_name,p.brands].filter(Boolean).join(' · ') || 'Scanned product';
-      if(kcal>0) $('customKcal').value=round1(kcal); $('customProtein').value=round1(protein); $('customFibre').value=round1(fibre);
-      if(Number(p.serving_quantity)>0) $('customPortion').value=Math.round(Number(p.serving_quantity));
-      pendingCustomImage=safeImage(p.image_front_small_url); pendingCustomBarcode=code;
-      $('barcodeStatus').textContent=kcal>0?'Nutrition found. Check the label if anything looks wrong.':'Product found, but calorie data is incomplete. Please copy the label values.';
-      $('barcodePreview').innerHTML=`${pendingCustomImage?`<img src="${escapeHtml(pendingCustomImage)}" alt="">`:''}<div><strong>${escapeHtml($('customName').value)}</strong><small>${kcal>0?Math.round(kcal)+' kcal per 100 g':'No calorie value'}${protein?` · ${round1(protein)} g protein`:''}</small></div>`;
+      const product=await api.get(code);
+      $('customName').value=[product.name,product.brands].filter(Boolean).join(' · ') || 'Scanned product';
+      $('customKcal').value=product.kcal100===null?'':round1(product.kcal100);
+      $('customProtein').value=product.protein100===null?'':round1(product.protein100);
+      $('customFibre').value=product.fibre100===null?'':round1(product.fibre100);
+      $('customPortion').value=product.servingG===null?100:Math.round(product.servingG);
+      pendingCustomImage=safeImage(product.image); pendingCustomBarcode=code;
+
+      const missing=[];
+      if(product.kcal100===null)missing.push('calories');
+      if(product.protein100===null)missing.push('protein');
+      if(product.fibre100===null)missing.push('fibre');
+      $('barcodeStatus').textContent=missing.length
+        ? `Product found. ${missing.join(', ')} ${missing.length===1?'is':'are'} missing from the database; check the packet label before saving.`
+        : 'Nutrition found. Check the label if anything looks wrong.';
+
+      const facts=[];
+      facts.push(product.kcal100===null?'Calories missing':Math.round(product.kcal100)+' kcal per 100 g');
+      if(product.protein100!==null)facts.push(round1(product.protein100)+' g protein');
+      if(product.fibre100!==null)facts.push(round1(product.fibre100)+' g fibre');
+      $('barcodePreview').innerHTML=`${pendingCustomImage?`<img src="${escapeHtml(pendingCustomImage)}" alt="">`:''}<div><strong>${escapeHtml($('customName').value)}</strong><small>${escapeHtml(facts.join(' · '))}</small></div>`;
       $('barcodePreview').hidden=false; updateCustomSuggestion();
-    }catch(e){ $('barcodeStatus').textContent='Could not reach the food database. You can enter the nutrition label manually.'; }
-    finally{ $('lookupBarcodeBtn').disabled=false; }
+    }catch(e){
+      $('barcodeStatus').textContent=e?.code==='product-not-found'
+        ? 'Product not found. You can still enter the label values manually.'
+        : 'Could not reach the food database. You can enter the nutrition label manually.';
+    }finally{ $('lookupBarcodeBtn').disabled=false; }
   }
 
   function renderIngredients(){
