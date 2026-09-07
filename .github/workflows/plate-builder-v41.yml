@@ -25,5 +25,7 @@ jobs:
         run: node storage-migration-v3.test.js
       - name: Run meal data contract tests
         run: node meal-data-contract-v1.test.js
+      - name: Audit full shipped catalogue basis classifications
+        run: node catalog-basis-audit-v1.test.js
       - name: Run future-template recalculation tests
         run: node template-engine-v41.test.js
