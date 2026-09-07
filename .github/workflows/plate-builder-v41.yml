@@ -1,4 +1,4 @@
-name: BalancePlate v43 branch checks
+name: Okello Food v44 branch checks
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
       - feature/plate-builder-v41
       - fix/v41-smart-meal-minimums
       - feature/v43-beta-feedback
+      - feature/v44-first-30-seconds
   pull_request:
     branches:
       - main
@@ -61,8 +62,10 @@ jobs:
         run: node template-runtime-v41.test.js
       - name: Run local beta feedback contract checks
         run: node beta-feedback-v43.test.js
-      - name: Audit v43 bootstrap, service worker and update bundle
-        run: node bundle-v43.test.js
+      - name: Run first-30-seconds UX contract checks
+        run: node first-run-v44.test.js
+      - name: Audit v44 bootstrap, service worker and update bundle
+        run: node bundle-v44.test.js
       - name: Syntax-check governed runtime modules
         run: >-
           node --check meal-catalog-facade-v1.js &&
@@ -78,4 +81,5 @@ jobs:
           node --check catalog-ui-v41.js &&
           node --check template-engine-v41.js &&
           node --check template-runtime-v41.js &&
-          node --check beta-feedback-v43.js
+          node --check beta-feedback-v43.js &&
+          node --check first-run-v44.js
