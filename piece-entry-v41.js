@@ -4,7 +4,7 @@
   const contract=window.OkelloMealDataContract;
   if(!contract)return;
 
-  const VERSION=1;
+  const VERSION=2;
   const LABELS=Object.freeze({
     small:'Small piece',
     medium:'Medium piece',
@@ -14,6 +14,7 @@
     half:'Half',
     claw:'Claw'
   });
+  const PIECE_KEY_PRIORITY=Object.freeze(['medium','piece','half','whole','small','large','claw']);
 
   const resolveFoodId=id=>contract.resolveFoodId?.(id)||String(id??'');
   const cloneState=state=>JSON.parse(JSON.stringify(state&&typeof state==='object'?state:{}));
@@ -39,20 +40,49 @@
     });
   }
 
+  function preferredPieceKey(foodId,state={}){
+    const options=optionsFor(foodId,state);
+    if(!options.length)return null;
+    for(const key of PIECE_KEY_PRIORITY){
+      if(options.some(x=>x.pieceKey===key))return key;
+    }
+    return options[0].pieceKey;
+  }
+
+  function preferredEntry(foodId,state={}){
+    const id=resolveFoodId(foodId);
+    const pieceKey=preferredPieceKey(id,state);
+    if(!pieceKey)return {foodId:id,enteredUnit:'g',pieceKey:null};
+    const option=optionsFor(id,state).find(x=>x.pieceKey===pieceKey);
+    return {
+      foodId:id,
+      enteredUnit:'pieces',
+      pieceKey,
+      label:option?.label||LABELS[pieceKey]||pieceKey,
+      estimateBasisGrams:Number(option?.grams)||null,
+      estimateSource:option?.estimateSource||null
+    };
+  }
+
   function estimatePieces(state,foodId,pieceKey,count){
     const id=resolveFoodId(foodId);
     const n=Number(count);
     if(!(n>0))return null;
     const estimate=contract.pieceEstimate?.(state||{},id,String(pieceKey||''),n);
     if(!estimate)return null;
+    const estimatedGrams=Number(estimate.estimatedGrams);
+    if(!(estimatedGrams>0))return null;
     return {
       foodId:id,
       enteredAmount:n,
       enteredUnit:'pieces',
       pieceCount:n,
       pieceKey:String(pieceKey||''),
-      grams:estimate.grams,
-      estimatedGrams:estimate.estimatedGrams,
+      // Piece entries snapshot the converted gram estimate. `estimatedGrams`
+      // is authoritative; `grams` is kept equal for compatibility with the
+      // existing log/totals surfaces.
+      grams:estimatedGrams,
+      estimatedGrams,
       estimateBasisGrams:estimate.estimateBasisGrams,
       amountQuality:'estimated',
       estimateSource:estimate.estimateSource,
@@ -74,9 +104,53 @@
     };
   }
 
-  function nutritionSnapshot(food,amount){
-    if(!food||!amount||!(Number(amount.grams)>0))return null;
+  function effectiveGrams(amount){
+    if(!amount||typeof amount!=='object')return 0;
+    if(amount.enteredUnit==='pieces'){
+      const estimated=Number(amount.estimatedGrams);
+      return estimated>0?estimated:0;
+    }
     const grams=Number(amount.grams);
+    return grams>0?grams:0;
+  }
+
+  function pieceSuggestionForGrams(state,foodId,targetGrams,pieceKey=null){
+    const id=resolveFoodId(foodId);
+    const target=Number(targetGrams);
+    if(!(target>0))return null;
+    const key=pieceKey||preferredPieceKey(id,state);
+    if(!key)return null;
+    const option=optionsFor(id,state).find(x=>x.pieceKey===key);
+    const basis=Number(option?.grams);
+    if(!(basis>0))return null;
+
+    // Smart Portion must never round a discrete piece suggestion above the
+    // continuous calorie budget. If even one piece does not fit, callers keep
+    // the continuous gram suggestion and pieceSuggestion remains null.
+    const pieceCount=Math.floor((target+1e-9)/basis);
+    if(pieceCount<1)return null;
+    const amount=estimatePieces(state,id,key,pieceCount);
+    if(!amount)return null;
+    return {
+      foodId:id,
+      pieceCount,
+      pieceKey:key,
+      label:option?.label||LABELS[key]||key,
+      enteredAmount:pieceCount,
+      enteredUnit:'pieces',
+      grams:amount.estimatedGrams,
+      estimatedGrams:amount.estimatedGrams,
+      estimateBasisGrams:amount.estimateBasisGrams,
+      estimateSource:amount.estimateSource,
+      calibrated:amount.estimateSource==='personal-piece-weight',
+      targetGrams:target,
+      deltaGrams:round(amount.estimatedGrams-target)
+    };
+  }
+
+  function nutritionSnapshot(food,amount){
+    const grams=effectiveGrams(amount);
+    if(!food||!(grams>0))return null;
     return {
       kcal:round((Number(food.kcal)||0)*grams/100),
       protein:round((Number(food.protein)||0)*grams/100),
@@ -87,7 +161,8 @@
   function createLogDraft({food,amount,meal='Other',plateId=null,source='piece-entry',ts=Date.now(),id=null}={}){
     if(!food||!amount)return null;
     const canonicalId=resolveFoodId(amount.foodId||food.id);
-    if(!canonicalId||!(Number(amount.grams)>0))return null;
+    const grams=effectiveGrams(amount);
+    if(!canonicalId||!(grams>0))return null;
     const nutrition=nutritionSnapshot(food,amount);
     if(!nutrition)return null;
     const logId=id||((globalThis.crypto&&typeof globalThis.crypto.randomUUID==='function')?globalThis.crypto.randomUUID():`log_${ts}_${Math.random().toString(36).slice(2)}`);
@@ -96,7 +171,7 @@
       foodId:canonicalId,
       name:food.name||canonicalId,
       emoji:food.emoji||'🍽️',
-      grams:Number(amount.grams),
+      grams,
       meal,
       kcal:nutrition.kcal,
       protein:nutrition.protein,
@@ -110,7 +185,7 @@
     if(amount.enteredUnit)out.enteredUnit=String(amount.enteredUnit);
     if(amount.pieceCount!=null)out.pieceCount=Number(amount.pieceCount);
     if(amount.pieceKey)out.pieceKey=String(amount.pieceKey);
-    if(amount.estimatedGrams!=null)out.estimatedGrams=Number(amount.estimatedGrams);
+    if(amount.enteredUnit==='pieces')out.estimatedGrams=grams;
     if(amount.estimateBasisGrams!=null)out.estimateBasisGrams=Number(amount.estimateBasisGrams);
     if(amount.estimateSource)out.estimateSource=String(amount.estimateSource);
     if(amount.observationCount!=null)out.pieceCalibrationObservationCount=Number(amount.observationCount)||0;
@@ -170,10 +245,15 @@
   window.OkelloPieceEntry=Object.freeze({
     version:VERSION,
     labels:LABELS,
+    pieceKeyPriority:PIECE_KEY_PRIORITY,
     resolveFoodId,
     optionsFor,
+    preferredPieceKey,
+    preferredEntry,
     estimatePieces,
     weighedGrams,
+    effectiveGrams,
+    pieceSuggestionForGrams,
     nutritionSnapshot,
     createLogDraft,
     calibrationObservation,
