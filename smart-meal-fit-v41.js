@@ -108,19 +108,27 @@
       return {fit:true,reason:'scaled-within-bounds',budget:kcalBudget,items:scaled,kcal:final.kcal,protein:final.protein,fibre:final.fibre,overByKcal:0,trace};
     }
 
+    // Rounding/reclamping can leave the proportional attempt slightly high even
+    // when the true minimum meal fits. In that case the minimum itself is a
+    // truthful in-budget answer. No second scaling pass is needed.
+    if(minimum.kcal<=kcalBudget+EPSILON){
+      trace.finalGrams=minimumItems.map(x=>x.grams);
+      trace.finalKcal=minimum.kcal;
+      return {fit:true,reason:'minimums-fit',budget:kcalBudget,items:minimumItems,kcal:minimum.kcal,protein:minimum.protein,fibre:minimum.fibre,overByKcal:0,trace};
+    }
+
     // Never fabricate token portions to satisfy a continuous budget. When the
     // sensible floor is still too large, return that floor honestly so callers
     // can either reduce the component set or show the real minimum cost.
-    const overByKcal=Math.max(0,minimum.kcal-kcalBudget);
     return {
       fit:false,
-      reason:minimum.kcal>kcalBudget+EPSILON?'minimums-exceed-budget':'clamped-scale-exceeds-budget',
+      reason:'minimums-exceed-budget',
       budget:kcalBudget,
       items:minimumItems,
       kcal:minimum.kcal,
       protein:minimum.protein,
       fibre:minimum.fibre,
-      overByKcal,
+      overByKcal:minimum.kcal-kcalBudget,
       minimumViable:true,
       trace
     };
