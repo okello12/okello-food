@@ -33,6 +33,21 @@ The person may enter `4 medium pieces`; the estimator resolves that to grams usi
 
 Calibration evidence is scoped to the exact `foodId` and `pieceKey`. Three medium-piece observations may promote a medium personal reference; a large-piece observation cannot contribute to that threshold.
 
+### Piece count is direct evidence even when grams are estimated
+
+A piece entry has two different evidence layers:
+
+- `pieceCount` and `pieceKey` record what the person directly counted/selected;
+- `estimatedGrams` records the estimator's current conversion of that discrete amount into nutrition-engine grams.
+
+Therefore `amountQuality: "estimated"` on a piece entry describes the gram conversion. It does **not** mean the directly entered count should be discarded.
+
+Gram-based Personal Food Memory remains strict: estimated gram amounts do not train a learned usual gram portion. Piece-based Personal Food Memory may separately learn a usual discrete amount from repeated direct piece entries. For example, three or more logs of `4 medium pieces` may establish `4 medium pieces` as the usual piece amount even though the resolved gram values remain estimated.
+
+Piece-size evidence never crosses keys. Medium-piece logs train a medium-piece usual; large-piece logs do not count toward the medium threshold.
+
+If the user switches from pieces to grams before confirming, the active amount becomes a plain gram entry. The current converted gram value may prefill the field, but persisted piece provenance is cleared. Unless the user explicitly marks the gram amount as weighed, the resulting entry is a plain estimated gram amount and does not train piece-count memory.
+
 ## Smart Portion and discrete units
 
 Smart Portion calculates a continuous calorie-compatible target in grams first. For foods that are normally eaten in pieces, the estimator may project that target into an actionable piece amount.
@@ -65,9 +80,11 @@ The Weekly Intelligence view and Settings show weighed, estimated and unclassifi
 
 ## Personal Food Memory
 
-Explicitly estimated amounts do not train the learned usual portion.
+The existing gram-usual model and the new piece-usual model answer different questions and must not be collapsed into one number.
 
-To preserve continuity for existing users, older unclassified logs can temporarily support the learned portion. Once at least three weighed observations exist for a food, weighed observations become the sole basis for its learned portion.
+For grams, explicitly estimated amounts do not train the learned usual portion. To preserve continuity for existing users, older unclassified logs can temporarily support the learned gram portion. Once at least three weighed observations exist for a food, weighed observations become the sole basis for its learned gram portion.
+
+For piece-native foods, direct `pieceCount` + `pieceKey` observations may train a separate usual piece amount because the person directly supplied those discrete values even though the gram conversion is estimated. The current v41 rule requires at least three observations of the same `pieceKey` before that piece size can produce a usual amount. Meal-specific piece memory wins when it has enough evidence; otherwise the app may fall back to the overall usual piece amount.
 
 Food frequency, recency, favourites and preferred meal can still use all logs because those signals do not depend on the accuracy of the gram amount.
 
@@ -79,6 +96,10 @@ Satiety feedback also remains independent of amount-quality classification.
 
 Piece provenance, including entered count, `pieceKey`, frozen `estimatedGrams`, estimate source and calibration basis, belongs to the log snapshot for the same reason: later changes to reference or personal piece weights must not resize historical meals.
 
+Piece-usual memory is derived from those durable log snapshots. It does not create a second authoritative store.
+
 ## Guardrail
 
-Amount quality describes the evidence behind the gram amount. It must not be confused with the food-source trust tier, and an estimated amount must not silently become a learned usual portion simply because it was logged repeatedly.
+Amount quality describes the evidence behind the gram amount. It must not be confused with the food-source trust tier.
+
+An estimated gram amount must not silently become a learned usual gram portion simply because it was logged repeatedly. Conversely, a directly entered piece count must not be thrown away merely because its gram conversion is estimated. The application should preserve those two evidence layers rather than forcing them into one confidence flag.
