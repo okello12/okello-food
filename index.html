@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="icon" href="assets/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=43">
+  <link rel="stylesheet" href="styles.css?v=44">
 </head>
 <body>
   <div class="app-shell">
@@ -20,7 +20,7 @@
       <div>
         <p class="eyebrow">PERSONAL FOOD TRACKER</p>
         <h1>Okello Food</h1>
-        <p class="standfirst">Food from Ghana and around the world, measured properly. Log the grams and let the app do the arithmetic.</p>
+        <p class="standfirst">Food from Ghana and around the world, understood in portions that make sense. Search what you ate and let the app do the arithmetic.</p>
       </div>
       <button id="installBtn" class="ghost-btn install-btn" hidden type="button">Add to Home Screen</button>
     </header>
@@ -43,19 +43,19 @@
         <div class="score-grid">
           <article class="score-card hero-score"><span>Calories</span><strong id="todayCalories">0</strong><small id="calRemainText">2,300 kcal left</small></article>
           <article class="score-card"><span>Protein</span><strong id="todayProtein">0 g</strong><small id="proteinRemainText">150 g left</small></article>
-          <article class="score-card"><span>Fibre</span><strong id="todayFibre">0 g</strong><small>Approximate</small></article>
+          <article class="score-card"><span>Fibre</span><strong id="todayFibre">0 g</strong><small>From logged foods</small></article>
         </div>
         <div class="progress-wrap" aria-label="Calorie target progress"><div id="calorieBar" class="progress-bar"></div></div>
 
         <section class="card quick-add-card">
-          <div class="section-heading"><div><p class="eyebrow">QUICK ADD</p><h3>Log a meal</h3></div><span id="selectedFoodBadge" class="pill">White rice</span></div>
-          <div class="food-search-wrap"><input id="foodSearch" type="search" placeholder="Search rice, curry, sushi, tacos, kenkey..." autocomplete="off" aria-label="Search foods"><div id="foodSuggestions" class="suggestions" hidden></div></div>
+          <div class="section-heading"><div><p class="eyebrow">QUICK ADD</p><h3>Log a meal</h3></div><span id="selectedFoodBadge" class="pill">Choose a food</span></div>
+          <div class="food-search-wrap"><input id="foodSearch" type="search" placeholder="Search food or dish…" autocomplete="off" aria-label="Search foods"><div id="foodSuggestions" class="suggestions" hidden></div></div>
           <div class="form-grid">
             <label>Food<select id="foodSelect"></select></label>
             <label>Amount<div class="input-with-unit"><input id="gramsInput" type="number" inputmode="decimal" min="1" max="5000" value="200"><span>g</span></div></label>
             <label>Meal<select id="mealSelect"><option>Lunch</option><option>Dinner</option><option>Snack</option><option>Other</option></select></label>
           </div>
-          <div class="smart-box" aria-live="polite"><div><span class="smart-label">SMART PORTION</span><strong id="smartPortion">200 g</strong><small id="smartPortionNote">Suggested from your target and what you have already eaten.</small></div><button id="useSmartPortionBtn" class="secondary-btn mini" type="button">Use suggestion</button></div>
+          <div class="smart-box" aria-live="polite"><div><span class="smart-label">SMART PORTION</span><strong id="smartPortion">—</strong><small id="smartPortionNote">Choose a food first.</small></div><button id="useSmartPortionBtn" class="secondary-btn mini" type="button">Use suggestion</button></div>
           <div id="quickCalc" class="calc-readout" aria-live="polite"></div>
           <button id="addFoodBtn" class="primary-btn" type="button">Add to today</button>
         </section>
@@ -89,7 +89,7 @@
       </section>
 
       <section id="tab-recipes" class="panel" aria-labelledby="recipesTitle">
-        <div class="section-heading top-gap"><div><p class="eyebrow">RECIPE CALCULATOR</p><h2 id="recipesTitle">Cost the whole pot once</h2></div></div>
+        <div class="section-heading top-gap"><div><p class="eyebrow">RECIPE CALCULATOR</p><h2 id="recipesTitle">Calculate the whole pot once</h2></div></div>
         <p class="lede">Use this for jollof, curries, soups, stews, pasta sauces, biryani, chilli and any home-cooked dish where oil and ingredients vary.</p>
         <section class="card">
           <div class="form-grid two-col"><label>Recipe name<input id="recipeName" type="text" placeholder="e.g. Sunday okro soup"></label><label>Finished pot weight (g)<input id="recipeFinalWeight" type="number" min="1" inputmode="decimal" placeholder="e.g. 3200"></label></div>
@@ -109,13 +109,13 @@
         <div class="section-heading top-gap"><div><p class="eyebrow">SETTINGS</p><h2 id="settingsTitle">Your targets</h2></div></div>
         <section class="card"><div class="form-grid two-col"><label>Daily calorie target<input id="targetCalories" type="number" min="1200" max="6000" value="2300"></label><label>Daily protein target (g)<input id="targetProtein" type="number" min="50" max="400" value="150"></label></div><button id="saveTargetsBtn" class="primary-btn" type="button">Save targets</button></section>
         <section class="card"><p class="eyebrow">SMART PORTIONS</p><h3>Built around your eating pattern</h3><p class="muted">The suggestion engine reserves roughly 30% of your calories for lunch, 45% for dinner, 15% for a snack and 10% as flexibility. It also respects what you have already logged that day and the type of food you are adding.</p><p class="tiny-note">A smart portion is a practical starting suggestion, not a requirement. Your scale entry always wins.</p></section>
-        <section class="card"><p class="eyebrow">BACKUP</p><h3>Keep your history safe</h3><p class="muted">Your data stays on this device. Export a backup occasionally, especially before changing phones or clearing Safari website data.</p><div class="button-row"><button id="exportBtn" class="secondary-btn" type="button">Export backup</button><label class="secondary-btn file-label">Import backup<input id="importInput" type="file" accept="application/json" hidden></label></div></section>
-        <section class="card install-help"><p class="eyebrow">IPHONE INSTALL</p><h3>Put it on your Home Screen</h3><ol><li>Open the hosted app in Safari.</li><li>Tap <strong>Share</strong>.</li><li>Choose <strong>Add to Home Screen</strong>.</li><li>Open it from the new Okello Food icon.</li></ol><p class="tiny-note">Once installed, the app can work offline. Your logs and saved recipes remain on this device.</p></section>
+        <section class="card"><p class="eyebrow">BACKUP</p><h3>Keep your history safe</h3><p class="muted">Your data stays on this device. Export a backup occasionally, especially before changing phones or clearing browser website data.</p><div class="button-row"><button id="exportBtn" class="secondary-btn" type="button">Export backup</button><label class="secondary-btn file-label">Import backup<input id="importInput" type="file" accept="application/json" hidden></label></div></section>
+        <section class="card install-help"><p class="eyebrow">INSTALL</p><h3>Keep Okello Food on your Home Screen</h3><p class="muted"><strong>iPhone:</strong> open in Safari, tap Share, then Add to Home Screen.</p><p class="muted"><strong>Android:</strong> open in Chrome, open the menu, then choose Install app or Add to Home screen.</p><p class="tiny-note">Once installed, the app can work offline. Your logs and saved recipes remain on this device.</p></section>
         <section class="card disclaimer"><p class="eyebrow">NOTE</p><p>Nutrition figures are practical estimates, not laboratory measurements. Mixed dishes from every cuisine can vary sharply by recipe, especially oil-heavy meals, curries, soups, stews, rice dishes and takeaways. Use packet labels, barcode data or your own recipe calculator where you can.</p></section>
       </section>
     </main>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="bootstrap-v14.js?v=43" defer></script>
+  <script src="bootstrap-v14.js?v=44" defer></script>
 </body>
 </html>
