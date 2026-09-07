@@ -47,14 +47,43 @@
     return {version:1,products:{},order:[]};
   }
   function writeStore(store){try{localStorage.setItem(STORE,JSON.stringify(store));}catch(_){}}
-  function cached(code){return readStore().products[String(code)]||null;}
+
+  // Stored shelf records are the normalised product shape plus shelf metadata.
+  // No formatted display strings are persisted, and null nutrient values remain null.
+  function freezeStoredProduct(value){
+    if(!value||typeof value!=='object')return null;
+    const completeness=value.completeness&&typeof value.completeness==='object'
+      ? Object.freeze({...value.completeness})
+      : Object.freeze({});
+    const sourceCategories=value.sourceCategories&&typeof value.sourceCategories==='object'
+      ? Object.freeze({
+          ...value.sourceCategories,
+          tags:Object.freeze(Array.isArray(value.sourceCategories.tags)?[...value.sourceCategories.tags]:[])
+        })
+      : Object.freeze({text:'',tags:Object.freeze([])});
+    return Object.freeze({...value,completeness,sourceCategories});
+  }
+
+  function cached(code){
+    const raw=readStore().products[String(code)]||null;
+    return freezeStoredProduct(raw);
+  }
+
   function saveProduct(product){
+    if(!product||typeof product!=='object'||!product.code)return;
     const store=readStore();
     const code=String(product.code);
-    store.products[code]={...product,lastScannedAt:new Date().toISOString()};
+    const sourceCategories=product.sourceCategories&&typeof product.sourceCategories==='object'
+      ? {...product.sourceCategories,tags:Array.isArray(product.sourceCategories.tags)?[...product.sourceCategories.tags]:[]}
+      : {text:'',tags:[]};
+    const completeness=product.completeness&&typeof product.completeness==='object'
+      ? {...product.completeness}
+      : {};
+    store.products[code]={...product,completeness,sourceCategories,lastScannedAt:new Date().toISOString()};
     store.order=[code,...store.order.filter(x=>x!==code)].slice(0,MAX_PRODUCTS);
     for(const key of Object.keys(store.products))if(!store.order.includes(key))delete store.products[key];
     writeStore(store);
+    try{document.dispatchEvent(new CustomEvent('okello:shopping-product-saved',{detail:{code}}));}catch(_){}
   }
 
   function esc(s){return String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]||c));}
@@ -108,7 +137,7 @@
   function renderComparison(){
     const products=compareCodes.map(c=>cached(c)).filter(Boolean).slice(-2);
     if(products.length<2){
-      compare.innerHTML='<p class="shopping-note">Scan a second product to compare them side by side. No category guess is used.</p>';
+      compare.innerHTML='<p class="shopping-note">Scan a second product or choose one from your Personal Shelf to compare side by side. No category guess is used.</p>';
       return;
     }
     const [a,b]=products;
@@ -119,6 +148,17 @@
     const c=String(code);
     compareCodes=[...compareCodes.filter(x=>x!==c),c].slice(-2);
     renderComparison();
+  }
+
+  function compareSaved(code){
+    const product=cached(code);
+    if(!product)return false;
+    card.hidden=false;
+    renderCurrent(product,true);
+    addToComparison(product.code);
+    status.className='shopping-status';
+    status.textContent='Saved product added to comparison. Choose another shelf product or scan one.';
+    return true;
   }
 
   function fetchProduct(code){
@@ -162,15 +202,19 @@
     }
   }
 
-  // The shopping layer no longer parses Open Food Facts itself. It consumes the
-  // shared product-data service and only owns durable shelf/history state + UI.
+  // The shopping layer consumes the shared product-data service and owns only
+  // durable shopping history, comparison state and shopping UI.
   lookupBtn.addEventListener('click',()=>assess(input.value));
 
   window.OkelloShopping=Object.freeze({
-    version:2,
+    version:3,
     storeKey:STORE,
     assess,
+    compareSaved,
     getProduct:code=>cached(String(code||'')),
-    recent(){const s=readStore();return s.order.map(c=>s.products[c]).filter(Boolean);}
+    recent(){
+      const s=readStore();
+      return s.order.map(c=>freezeStoredProduct(s.products[c])).filter(Boolean);
+    }
   });
 })();
