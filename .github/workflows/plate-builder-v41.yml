@@ -25,10 +25,14 @@ jobs:
         run: node storage-migration-v3.test.js
       - name: Run actual-phone-backup shape regression
         run: node live-backup-shape-v41.test.js
+      - name: Run smart-support alias and idempotence regression
+        run: node smart-support-v41.test.js
       - name: Run meal data contract tests
         run: node meal-data-contract-v1.test.js
       - name: Audit full shipped catalogue basis classifications
         run: node catalog-basis-audit-v1.test.js
+      - name: Run canonical catalog facade tests
+        run: node meal-catalog-facade-v1.test.js
       - name: Run piece-entry provenance and calibration tests
         run: node piece-entry-v41.test.js
       - name: Run direct piece-usual memory tests
@@ -39,5 +43,25 @@ jobs:
         run: node piece-sheet-contract-v41.test.js
       - name: Run piece-sheet rendering contract tests
         run: node piece-sheet-v41.test.js
+      - name: Run delegated Quick Add piece routing tests
+        run: node quick-add-piece-v41.test.js
+      - name: Run legacy UI alias retirement checks
+        run: node catalog-ui-v41.test.js
       - name: Run future-template recalculation tests
         run: node template-engine-v41.test.js
+      - name: Run template runtime wiring tests
+        run: node template-runtime-v41.test.js
+      - name: Audit v41 bootstrap, service worker and update bundle
+        run: node bundle-v41.test.js
+      - name: Syntax-check v41 runtime modules
+        run: >-
+          node --check meal-catalog-facade-v1.js &&
+          node --check piece-entry-v41.js &&
+          node --check piece-usual-v41.js &&
+          node --check smart-portion-output-v41.js &&
+          node --check piece-sheet-contract-v41.js &&
+          node --check piece-sheet-v41.js &&
+          node --check quick-add-piece-v41.js &&
+          node --check catalog-ui-v41.js &&
+          node --check template-engine-v41.js &&
+          node --check template-runtime-v41.js
