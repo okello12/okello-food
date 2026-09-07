@@ -29,5 +29,7 @@ jobs:
         run: node meal-data-contract-v1.test.js
       - name: Audit full shipped catalogue basis classifications
         run: node catalog-basis-audit-v1.test.js
+      - name: Run piece-entry provenance and calibration tests
+        run: node piece-entry-v41.test.js
       - name: Run future-template recalculation tests
         run: node template-engine-v41.test.js
