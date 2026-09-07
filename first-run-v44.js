@@ -48,7 +48,7 @@
     toast.timer = setTimeout(() => node.classList.remove('show'), 1900);
   }
   function clickTab(name){
-    const tab = qs(`.tab[data-tab="${CSS.escape(name)}"]`);
+    const tab = qs(`.tab[data-tab="${String(name||'').replace(/"/g,'')}" ]`) || qs(`.tab[data-tab="${String(name||'').replace(/"/g,'')}"]`);
     if(!tab) return false;
     tab.click();
     return true;
@@ -338,9 +338,13 @@
       const rows = qsa('.log-row', logNode);
       const entries = readState().logs?.[todayKey()] || [];
       rows.forEach((row, index) => {
-        qs('.v44-estimate-badge', row)?.remove();
+        const existing = qs('.v44-estimate-badge', row);
         const label = estimateLabel(entries[index]);
-        if(!label) return;
+        if(!label){ existing?.remove(); return; }
+        if(existing){
+          if(existing.textContent !== label) existing.textContent = label;
+          return;
+        }
         const strong = qs('strong', row);
         if(!strong) return;
         const badge = document.createElement('span');
@@ -427,6 +431,15 @@
   }, true);
 
   $('foodSelect')?.addEventListener('change', () => setTimeout(refreshRoughControls, 0));
+  $('gramsInput')?.addEventListener('input', event => {
+    if(!event.isTrusted || !roughSelection) return;
+    roughSelection = null;
+    qsa('[data-rough]', $('v44Rough') || document).forEach(button => button.classList.remove('active'));
+  });
+  $('useSmartPortionBtn')?.addEventListener('click', () => {
+    roughSelection = null;
+    qsa('[data-rough]', $('v44Rough') || document).forEach(button => button.classList.remove('active'));
+  }, true);
   window.addEventListener('okello:food-log-changed', () => {
     renderStarterShelf();
     qs('.v44-demo')?.remove();
