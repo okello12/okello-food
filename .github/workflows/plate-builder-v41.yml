@@ -42,6 +42,8 @@ jobs:
         run: node smart-portion-output-v41.test.js
       - name: Run Smart Meal minimum-fit regression
         run: node smart-meal-fit-v41.test.js
+      - name: Require Smart Meal runtime wiring
+        run: node smart-meal-fit-wiring-v41.test.js
       - name: Run piece-sheet state contract tests
         run: node piece-sheet-contract-v41.test.js
       - name: Run piece-sheet rendering contract tests
