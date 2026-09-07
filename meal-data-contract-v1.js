@@ -8,7 +8,6 @@
   const resolveFoodId=id=>window.OkelloStorageMigration?.resolveFoodId?.(id)||String(id??'');
 
   const SOUP_BASIS=Object.freeze({
-    okro:{basis:'includes-protein',baseFoodId:'okro_base'},
     light_soup:{basis:'includes-protein',baseFoodId:'light_soup_base'},
     beef_stew:{basis:'includes-protein',baseFoodId:'ghana_tomato_stew'},
     ghana_groundnut_soup:{basis:'includes-protein',baseFoodId:'ghana_groundnut_soup_base'},
@@ -104,8 +103,9 @@
     world_caesar_salad_chicken:{basis:'includes-protein'}
   });
 
+  // There is one okro base identity. Legacy okro_base is resolved to
+  // ghana_okro_stew_base by storage-migration-v1 and is not seeded here.
   const BASE_VARIANTS=Object.freeze([
-    {id:'okro_base',name:'Okro soup base, no meat/fish',emoji:'🥘',cat:'Soup',basis:'base-only',kcal:60,protein:1.5,fibre:2.5,portion:300,min:220,max:450,note:'Base only: okro, tomato/onion, seasoning and cooking fat. Add meat/fish separately.'},
     {id:'light_soup_base',name:'Light soup base, no meat/fish',emoji:'🍲',cat:'Soup',basis:'base-only',kcal:30,protein:1.5,fibre:1,portion:350,min:250,max:450,note:'Base only. Add meat/fish separately.'},
     {id:'ghana_okro_stew_base',name:'Okro stew base, no meat/fish',emoji:'🥘',cat:'Soup',basis:'base-only',kcal:60,protein:1.5,fibre:2.8,portion:300,min:220,max:400,note:'Base only. Add goat, fish, crab or other proteins separately.'},
     {id:'ghana_groundnut_soup_base',name:'Groundnut soup base, no meat/fish',emoji:'🍲',cat:'Soup',basis:'base-only',kcal:110,protein:4,fibre:1.8,portion:350,min:250,max:450,note:'Base includes the real protein from groundnut paste; meat/fish are separate.'},
