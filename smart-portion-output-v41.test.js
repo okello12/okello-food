@@ -46,6 +46,13 @@ function boot(){
   assert.equal(out.pieceSuggestion.estimateSource,'personal-piece-weight');
   assert.equal(out.pieceSuggestion.estimatedGrams,168);
   assert.ok(out.grams<=out.targetGrams,'Smart Portion rounded a piece suggestion above the calorie target');
+
+  const log=piece.createLogDraft({food,amount:out.pieceSuggestion,meal:'Dinner',id:'smart-piece',ts:10});
+  assert.equal(log.grams,168);
+  assert.equal(log.estimatedGrams,168);
+  assert.equal(log.kcal,240.24,'logged kcal must use actionable piece grams');
+  assert.equal(log.protein,45.36,'logged protein must use actionable piece grams');
+  assert.notEqual(log.kcal,267.41,'logged kcal incorrectly used targetGrams');
 })();
 
 (function testReferencePieceWeightWorksBeforeCalibration(){
