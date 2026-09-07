@@ -182,6 +182,11 @@
 
   function signatureFor(surface){
     const ctx=contextFor(surface);
+    delete ctx.capturedAt;
+    if(ctx.trace&&typeof ctx.trace==='object'){
+      ctx.trace={...ctx.trace};
+      delete ctx.trace.at;
+    }
     return cleanText(JSON.stringify(ctx),1600);
   }
 
