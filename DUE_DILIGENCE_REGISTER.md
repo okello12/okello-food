@@ -38,9 +38,23 @@ These are not engineering tickets. They stay open even if every v46 test is gree
 | 30-50 target-user retention evidence | Founder/beta ops | 7 Dec 2026 | Predeclared beta metrics, week-4 repeat-use evidence, correction patterns and qualitative outcomes |
 | Laboratory commissioning decision | Founder + nutrition reviewer | After licensed-source gap analysis, not before | Written gap list, supplier quotes, sample/recipe protocol and data-rights terms |
 
+## v46 pre-merge evidence gates
+
+The following are release gates, not product-roadmap aspirations.
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| Bundle/version/cache alignment | Passed | v46 full regression confirms the branch bundle, service worker and runtime manifest agree |
+| Historical real-device migration | Passed | Actual 17:52 phone export: 3 entries in / 3 entries out, historical fields unchanged, duplicate okro catalogue identity removed, second pass byte-identical with no writes |
+| v45 `countUnit` retirement | Synthetic pass; real case desirable | Synthetic migration covers matching, missing and conflicting `countUnit`/`pieceKey` cases. The available real export predates v45 and therefore contains no `countUnit` records. If a fresh post-v45 device export with an egg/slice/tin log exists, it must be run before merge; otherwise merge requires explicit acceptance that this path is synthetic-only evidence. |
+| Backup v3 restore/rollback | Pending final focused review | Complete-store manifest, staging, verification and rollback must remain green against representative backups |
+| State revision/conflict behaviour | Pending final focused review | Stale-state rejection and compatibility writes must be verified under expected legacy/runtime paths |
+
 ## Source licensing rule
 
 A scientific source does not enter the production review queue until commercial reuse rights have been checked. Two independent reviews recommended WAFCT 2019 before the non-commercial licence was checked; the process now treats licence suitability as a gate before extraction effort.
+
+For the Top-75 review, source selection is type-specific rather than one flat table hierarchy: culturally distinctive Ghanaian/West African composite foods are checked against commercially reusable African analytical literature first; CoFID is the reference lane for matching generic UK foods and ingredients; packet labels govern exact branded products; user recipes govern the user's own variable composite dishes.
 
 See `FOOD_SOURCE_OF_RECORD_DECISION.md` and `FOOD_EVIDENCE_POLICY.md`.
 
