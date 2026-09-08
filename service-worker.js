@@ -8,7 +8,7 @@ const ASSETS=[
   './beta-terms.html',
   './third-party-notices.html',
   './styles.css?v=47',
-  './bootstrap-v14.js?v=47',
+  './bootstrap-v14.js?v=47-safe2',
   './storage-migration-v1.js?v=47',
   './state-repository-v46.js?v=47',
   './count-unit-migration-v46.js?v=47',
