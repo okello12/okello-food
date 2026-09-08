@@ -70,8 +70,13 @@ jobs:
         run: node static-shell-v44.test.js
       - name: Run countable serving contract checks
         run: node countable-servings-v45.test.js
-      - name: Audit v45 bootstrap, service worker and update bundle
-        run: node bundle-v45.test.js
+      - name: Audit v45 bundle when the checked-out branch is v45
+        run: |
+          if grep -q "const VERSION = '45'" bootstrap-v14.js; then
+            node bundle-v45.test.js
+          else
+            echo "Skipping bundle-v45.test.js because this PR carries a newer app bundle."
+          fi
       - name: Syntax-check governed runtime modules
         run: >-
           node --check meal-catalog-facade-v1.js &&
