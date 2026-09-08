@@ -1,11 +1,10 @@
 name: Okello Food Pages artifact and public audit
 
 on:
-  workflow_run:
-    workflows:
-      - pages build and deployment
-    types:
-      - completed
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   actions: read
@@ -13,21 +12,75 @@ permissions:
 
 jobs:
   verify-pages-artifact-and-public-shell:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the exact Pages source SHA
+      - name: Check out the exact pushed source SHA
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.sha }}
 
-      - name: Download the exact Pages artifact from the completed run
+      - name: Locate the exact completed Pages run for this SHA
+        id: pages
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs?branch=main&per_page=30"
+          found=''
+
+          for attempt in $(seq 1 36); do
+            json=$(curl --fail --silent --show-error --location \
+              --retry 3 --retry-delay 1 \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H 'Accept: application/vnd.github+json' \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              "$api")
+
+            row=$(jq -r --arg sha "$GITHUB_SHA" '
+              .workflow_runs[]
+              | select(.name == "pages build and deployment" and .head_sha == $sha)
+              | [.id, .status, (.conclusion // "")]
+              | @tsv
+            ' <<<"$json" | head -n 1)
+
+            if [ -z "$row" ]; then
+              echo "Pages run for ${GITHUB_SHA} not visible yet (attempt ${attempt}/36)."
+              sleep 5
+              continue
+            fi
+
+            IFS=$'\t' read -r run_id status conclusion <<<"$row"
+            echo "Pages run ${run_id}: status=${status} conclusion=${conclusion:-pending}"
+
+            if [ "$status" = 'completed' ]; then
+              if [ "$conclusion" != 'success' ]; then
+                echo "Pages run ${run_id} completed with ${conclusion}, not success." >&2
+                exit 1
+              fi
+              found="$run_id"
+              break
+            fi
+
+            sleep 5
+          done
+
+          if [ -z "$found" ]; then
+            echo "Timed out locating a successful Pages deployment for ${GITHUB_SHA}." >&2
+            exit 1
+          fi
+
+          echo "run_id=$found" >> "$GITHUB_OUTPUT"
+          echo "PAGES_RUN_ID=$found"
+          echo "SOURCE_SHA=$GITHUB_SHA"
+
+      - name: Download the exact Pages artifact from that run
         uses: actions/download-artifact@v4
         with:
           name: github-pages
           path: pages-download
           github-token: ${{ github.token }}
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: ${{ steps.pages.outputs.run_id }}
 
       - name: Unpack and verify the Pages artifact
         shell: bash
@@ -61,8 +114,6 @@ jobs:
             exit 1
           }
 
-          echo "SOURCE_SHA=${{ github.event.workflow_run.head_sha }}"
-          echo "PAGES_RUN_ID=${{ github.event.workflow_run.id }}"
           sha256sum index.html pages-site/index.html
 
       - name: Verify canonical and cache-busted public HTML
@@ -71,7 +122,7 @@ jobs:
           set -euo pipefail
           base='https://okello12.github.io/okello-food/'
           build_marker='okello-build-id" content="v47-static-20260908-pages-audit-1'
-          audit_token='${{ github.event.workflow_run.head_sha }}-${{ github.run_id }}'
+          audit_token="${GITHUB_SHA}-${GITHUB_RUN_ID}"
 
           check_public() {
             local label="$1"
