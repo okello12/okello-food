@@ -64,10 +64,11 @@ jobs:
             node bundle-v46.test.js
           fi
 
-      - name: Run v47 global and backup hardening regressions
+      - name: Run v47 global, evidence and backup hardening regressions
         run: |
           if [ -f global-first-v47.js ]; then
             node global-first-v47.test.js
+            node evidence-review-v47.test.js
             node backup-hardening-v47.test.js
           fi
 
