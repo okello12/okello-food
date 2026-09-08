@@ -7,6 +7,7 @@ on:
       - feature/v47-global-first-beta-readiness
       - hotfix/v47-blank-screen-recovery
       - hotfix/v47-static-entry
+      - hotfix/v47-target-safety-entry
   pull_request:
     branches:
       - main
@@ -75,6 +76,7 @@ jobs:
           fi
           if [ -f recovery-v47.test.js ]; then node recovery-v47.test.js; fi
           if [ -f static-entry-v47.test.js ]; then node static-entry-v47.test.js; fi
+          if [ -f target-safety-v47.test.js ]; then node target-safety-v47.test.js; fi
 
       - name: Syntax-check governed modules
         run: |
@@ -89,6 +91,7 @@ jobs:
           node --check beta-metrics-v46.js
           node --check backup-v3.js
           node --check target-safety-v46.js
+          if [ -f target-safety-bridge-v47.js ]; then node --check target-safety-bridge-v47.js; fi
           node --check countable-servings-v46.js
           node --check nutrition-integrity-v46.js
           node --check evidence-review-v46.js

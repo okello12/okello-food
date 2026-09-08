@@ -1,14 +1,14 @@
 const VERSION='47';
-const CACHE='okello-food-v47';
+const CACHE='okello-food-v47-safe2';
 const SCANNER_LIB='https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
 const ASSETS=[
-  './',
   './index.html',
+  './app-v47-safe.html',
   './privacy.html',
   './beta-terms.html',
   './third-party-notices.html',
   './styles.css?v=47',
-  './bootstrap-v14.js?v=47',
+  './bootstrap-v14.js?v=47-safe2',
   './storage-migration-v1.js?v=47',
   './state-repository-v46.js?v=47',
   './count-unit-migration-v46.js?v=47',
@@ -22,6 +22,8 @@ const ASSETS=[
   './product-data-v2.js?v=47',
   './category-rules-v1.js?v=47',
   './app.js?v=47',
+  './target-safety-v46.js?v=47',
+  './target-safety-bridge-v47.js?v=47',
   './meal-catalog-facade-v1.js?v=47',
   './food-intelligence-v1.js?v=47',
   './personal-food-memory-v1.js?v=47',
@@ -59,7 +61,6 @@ const ASSETS=[
   './ios-exit-v1.js?v=47',
   './interaction-v1.js?v=47',
   './first-run-v44.js?v=47',
-  './target-safety-v46.js?v=47',
   './countable-servings-v46.js?v=47',
   './nutrition-integrity-v46.js?v=47',
   './evidence-review-v46.js?v=47',
@@ -135,7 +136,7 @@ self.addEventListener('fetch',e=>{
   const isCode=/\.(?:js|css)$/.test(url.pathname);
 
   if(isNavigation){
-    e.respondWith(networkFirst(e.request,'./index.html'));
+    e.respondWith(networkFirst(e.request,'./app-v47-safe.html'));
     return;
   }
   if(isCode){

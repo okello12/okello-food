@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en-GB" class="targets-unconfirmed">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,12 +8,13 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Okello Food">
   <meta name="format-detection" content="telephone=no">
-  <meta name="okello-build-id" content="v47-static-20260908-pages-audit-1">
+  <meta name="okello-build-id" content="v47-static-20260908-target-safety-2">
   <title>Okello Food Tracker</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="icon" href="assets/icon-192.png">
   <link rel="stylesheet" href="styles.css?v=47">
+  <style id="target-safety-first-paint">html.targets-unconfirmed .progress-wrap,html.targets-unconfirmed .smart-box{display:none!important}</style>
 </head>
 <body>
   <div class="app-shell">
@@ -113,7 +114,7 @@
 
       <section id="tab-settings" class="panel" aria-labelledby="settingsTitle">
         <div class="section-heading top-gap"><div><p class="eyebrow">SETTINGS</p><h2 id="settingsTitle">Your targets</h2></div></div>
-        <section class="card"><div class="form-grid two-col"><label>Daily calorie target<input id="targetCalories" type="number" min="1200" max="6000" value="2300"></label><label>Daily protein target (g)<input id="targetProtein" type="number" min="20" max="400" value="150"></label></div><button id="saveTargetsBtn" class="primary-btn" type="button">Save targets</button><p class="tiny-note">For new users, target-based guidance stays off until you choose and confirm your own targets.</p></section>
+        <section class="card"><div class="form-grid two-col"><label>Daily calorie target<input id="targetCalories" type="number" min="1200" max="6000" placeholder="Enter your target"></label><label>Daily protein target (g)<input id="targetProtein" type="number" min="20" max="400" placeholder="Enter your target"></label></div><button id="saveTargetsBtn" class="primary-btn" type="button">Save targets</button><p class="tiny-note">For new users, target-based guidance stays off until you choose and confirm your own targets.</p></section>
         <section class="card"><p class="eyebrow">SMART PORTIONS</p><h3>Built around your eating pattern</h3><p class="muted">If you have confirmed your own targets, the suggestion engine uses them as a practical budget and keeps habit learning separate from recommendation.</p><p class="tiny-note">A Smart Portion is a starting estimate, not a requirement. Your direct amount entry always wins.</p></section>
         <section class="card"><p class="eyebrow">BACKUP</p><h3>Keep your history safe</h3><p class="muted">Your data stays on this device. Export a backup occasionally, especially before changing phones or clearing browser website data.</p><div class="button-row"><button id="exportBtn" class="secondary-btn" type="button">Export backup</button><label class="secondary-btn file-label">Import backup<input id="importInput" type="file" accept="application/json" hidden></label></div></section>
         <section class="card install-help"><p class="eyebrow">INSTALL</p><h3>Keep Okello Food on your Home Screen</h3><p class="muted"><strong>iPhone:</strong> open in Safari, tap Share, then Add to Home Screen.</p><p class="muted"><strong>Android:</strong> open in Chrome, open the menu, then choose Install app or Add to Home screen.</p><p class="tiny-note">Once installed, core logging can work offline. Online packaged-product search and new barcode lookups still need a connection.</p></section>
@@ -147,6 +148,6 @@
       setTimeout(() => observer.disconnect(), 10000);
     })();
   </script>
-  <script src="bootstrap-v14.js?v=47" defer></script>
+  <script src="bootstrap-v14.js?v=47-safe2" defer></script>
 </body>
 </html>

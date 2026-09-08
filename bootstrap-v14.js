@@ -16,6 +16,8 @@
     'product-data-v2.js?v=47',
     'category-rules-v1.js?v=47',
     'app.js?v=47',
+    'target-safety-v46.js?v=47',
+    'target-safety-bridge-v47.js?v=47',
     'meal-catalog-facade-v1.js?v=47',
     'food-intelligence-v1.js?v=47',
     'personal-food-memory-v1.js?v=47',
@@ -53,7 +55,6 @@
     'ios-exit-v1.js?v=47',
     'interaction-v1.js?v=47',
     'first-run-v44.js?v=47',
-    'target-safety-v46.js?v=47',
     'countable-servings-v46.js?v=47',
     'nutrition-integrity-v46.js?v=47',
     'evidence-review-v46.js?v=47',
@@ -113,7 +114,7 @@
     if (!('serviceWorker' in navigator)) return;
     try {
       let version = await controllerVersion();
-      const reg = await navigator.serviceWorker.register('./service-worker.js?v=47', {updateViaCache:'none'});
+      const reg = await navigator.serviceWorker.register('./service-worker.js?v=47-safe2', {updateViaCache:'none'});
       try { await reg.update(); } catch (_) {}
 
       const promote = worker => {
