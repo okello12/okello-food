@@ -19,7 +19,7 @@ function boot({initial={},onSet=null}={}){
       map.set(key,value);
     },
     removeItem:key=>map.delete(String(key)),
-    key(index)=>Array.from(map.keys())[index]??null,
+    key(index){return Array.from(map.keys())[index]??null;},
     get length(){return map.size;}
   };
   const repo={
