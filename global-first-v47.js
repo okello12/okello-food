@@ -41,6 +41,7 @@
   function validRegion(value){return REGIONS.some(([key])=>key===value)?value:'mixed';}
   function regionLabel(value){return REGIONS.find(([key])=>key===validRegion(value))?.[1]||'Mixed / from anywhere';}
   function currentRegion(){return validRegion(profile().culture||'mixed');}
+  function setText(node,value){if(node&&node.textContent!==value)node.textContent=value;}
   function resolve(term){
     const direct=catalog.findByName?.(term);if(direct)return direct;
     const q=String(term||'').toLowerCase();
@@ -51,17 +52,15 @@
     if(!Array.from(select.options).some(option=>option.value===food.id))return false;
     select.value=food.id;select.dispatchEvent(new Event('change',{bubbles:true}));
     document.body.classList.remove('v44-unconfirmed');
-    const badge=$('selectedFoodBadge');if(badge)badge.textContent=food.name;
+    setText($('selectedFoodBadge'),food.name);
     setTimeout(()=>qs('.quick-add-card')?.scrollIntoView({behavior:'smooth',block:'start'}),40);
     return true;
   }
 
   function patchPositioning(){
-    const masthead=qs('.masthead .standfirst');
-    if(masthead)masthead.textContent='Food from around the world, understood in portions that make sense. West African depth, global usefulness, and your own foods when the library does not know them yet.';
-    const foodsTitle=$('foodsTitle');if(foodsTitle)foodsTitle.textContent='Foods from around the world';
-    const foodsPanel=$('tab-foods');const lede=qs('.lede',foodsPanel);
-    if(lede)lede.textContent='Search everyday staples and dishes across regions. West African foods have deeper coverage today; every region remains searchable, and packet labels or your own recipes are preferred when they are better evidence.';
+    setText(qs('.masthead .standfirst'),'Food from around the world, understood in portions that make sense. West African depth, global usefulness, and your own foods when the library does not know them yet.');
+    setText($('foodsTitle'),'Foods from around the world');
+    setText(qs('.lede',$('tab-foods')),'Search everyday staples and dishes across regions. West African foods have deeper coverage today; every region remains searchable, and packet labels or your own recipes are preferred when they are better evidence.');
   }
 
   function patchOnboarding(){
@@ -73,7 +72,7 @@
     const label=select.closest('label');
     if(label){
       for(const node of Array.from(label.childNodes)){
-        if(node.nodeType===Node.TEXT_NODE&&/What foods feel like home/i.test(node.textContent||''))node.textContent='What foods feel familiar to you?';
+        if(node.nodeType===3&&/What foods feel like home/i.test(node.textContent||''))node.textContent='What foods feel familiar to you?';
       }
       if(!qs('.v47-onboarding-note',label)){
         const note=document.createElement('small');note.className='v47-onboarding-note';note.style.cssText='display:block;margin-top:6px;color:var(--muted);font-weight:500;line-height:1.4';
@@ -81,7 +80,7 @@
         label.appendChild(note);
       }
     }
-    const title=$('v44OnboardingTitle');if(title)title.textContent='Make the first log feel familiar, wherever you eat';
+    setText($('v44OnboardingTitle'),'Make the first log feel familiar, wherever you eat');
     return true;
   }
 
@@ -92,7 +91,10 @@
     if(!shelf){shelf=document.createElement('section');shelf.className='v44-starter-shelf';quick.insertAdjacentElement('beforebegin',shelf);}
     const region=currentRegion();
     const items=(STARTERS[region]||STARTERS.mixed).map(([term,label])=>({food:resolve(term),label})).filter(x=>x.food).slice(0,7);
+    const signature=[region,...items.map(x=>`${x.food.id}:${x.label}`)].join('|');
+    if(shelf.dataset.v47Signature===signature)return;
     shelf.dataset.v47Global='1';
+    shelf.dataset.v47Signature=signature;
     shelf.innerHTML=`<div class="v44-starter-head"><strong>${esc(regionLabel(region))} starters</strong><span>shortcuts only · search everything</span></div><div class="v44-starter-chips">${items.map(({food,label})=>`<button class="v44-starter-chip" type="button" data-v47-food="${esc(food.id)}">${esc(food.emoji||'🍽️')} ${esc(label)}<small>${esc(food.name)}</small></button>`).join('')}</div>`;
     qsa('[data-v47-food]',shelf).forEach(button=>button.addEventListener('click',()=>setSelectedFood(catalog.getById?.(button.dataset.v47Food))));
   }
@@ -102,6 +104,7 @@
     const ok=writeJson(PROFILE_KEY,p);
     if(ok){
       window.OkelloBetaMetricsV46?.record?.('familiar-food-region',{region:next});
+      const shelf=qs('.v44-starter-shelf');if(shelf)delete shelf.dataset.v47Signature;
       renderStarterShelf();
     }
     return ok;
