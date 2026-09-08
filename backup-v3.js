@@ -17,6 +17,9 @@
     {key:'okello_shopping_products_v1',field:'shoppingProducts',type:'object-null',durability:'durable'},
     {key:'okello_first_run_v44',field:'firstRunProfile',type:'object-null',durability:'durable'},
     {key:'okello_beta_feedback_v1',field:'betaFeedback',type:'array',durability:'durable'},
+    {key:'okello_adult_beta_v46',field:'adultBeta',type:'object-null',durability:'durable'},
+    {key:'okello_remote_lookup_notice_v46',field:'remoteLookupNotice',type:'object-null',durability:'durable'},
+    {key:'okello_beta_metrics_v1',field:'betaMetrics',type:'array',durability:'durable'},
     {key:'okello_recipe_voice_draft_v1',field:'recipeDraft',type:'string-null',durability:'draft'}
   ]);
   const DISPOSABLE=Object.freeze([
@@ -71,12 +74,12 @@
     if(!Array.isArray(out.favourites))out.favourites=[];
     if(!isObject(out.satiety))out.satiety={};
     if(!Array.isArray(out.betaFeedback))out.betaFeedback=[];
+    if(!Array.isArray(out.betaMetrics))out.betaMetrics=[];
     return out;
   }
   function normaliseLegacy(input){
     if(!isObject(input))throw new Error('backup-not-object');
     if(isObject(input.state))return input;
-    // Pre-wrapper exports stored the main state as the root object.
     return {format:'legacy-main-state',version:0,state:input};
   }
   function validateBundle(input){
@@ -160,12 +163,7 @@
         }
       }
       cleanupStage(stageKeys);
-      return {
-        ok:true,
-        legacy:bundle.version<3,
-        restored:plan.map(x=>x.spec.key),
-        deliberatelyExcluded:[...DISPOSABLE]
-      };
+      return {ok:true,legacy:bundle.version<3,restored:plan.map(x=>x.spec.key),deliberatelyExcluded:[...DISPOSABLE]};
     }catch(err){
       restoreSnapshot(snapshot);
       cleanupStage(stageKeys);
@@ -241,8 +239,7 @@
   document.addEventListener('click',event=>{
     const target=event.target?.closest?.('#exportBtn,#encryptedExportBtn');
     if(!target)return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
+    event.preventDefault();event.stopImmediatePropagation();
     const job=target.id==='exportBtn'?exportPlain():exportEncrypted();
     Promise.resolve(job).catch(err=>{console.error(err);toast('Could not create backup');});
   },true);
@@ -259,21 +256,12 @@
   function updateCopy(){
     const backupCard=$('exportBtn')?.closest('.card');
     const note=backupCard?.querySelector('.muted');
-    if(note)note.textContent='Complete backup v3 includes food and weight history, recipes, favourites, satiety, activity, photo notes, saved shopping scans, first-run preferences, beta feedback and the current recipe draft. Restore validates and stages the bundle before replacing live data.';
+    if(note)note.textContent='Complete backup v3 includes food and weight history, recipes, favourites, satiety, activity, photo notes, shopping scans, first-run preferences, adult-beta/network choices, beta feedback, local beta metrics and the current recipe draft. Restore validates and stages the bundle before replacing live data.';
     const secure=$('encryptedExportBtn')?.closest('.secure-transfer');
     const secureNote=secure?.querySelector('.secure-note');
     if(secureNote)secureNote.textContent='Encrypted backups use your passphrase locally. Scanner diagnostics, temporary runtime traces and touch-debug counters are deliberately excluded.';
   }
   updateCopy();
 
-  window.OkelloBackup=Object.freeze({
-    version:VERSION,
-    format:PLAIN_FORMAT,
-    encryptedFormat:ENCRYPTED_FORMAT,
-    stores:STORES.map(x=>({...x})),
-    deliberatelyExcluded:[...DISPOSABLE],
-    bundle:completeBundle,
-    validate:validateBundle,
-    restore:restoreBundle
-  });
+  window.OkelloBackup=Object.freeze({version:VERSION,format:PLAIN_FORMAT,encryptedFormat:ENCRYPTED_FORMAT,stores:STORES.map(x=>({...x})),deliberatelyExcluded:[...DISPOSABLE],bundle:completeBundle,validate:validateBundle,restore:restoreBundle});
 })();
