@@ -1,0 +1,81 @@
+name: Okello Food v46 due-diligence checks
+
+on:
+  push:
+    branches:
+      - feature/v46-due-diligence-remediation
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  full-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run historical storage and meal invariants
+        run: |
+          node storage-migration-v3.test.js
+          node live-backup-shape-v41.test.js
+          node smart-support-v41.test.js
+          node meal-data-contract-v1.test.js
+          node catalog-basis-audit-v1.test.js
+          node meal-catalog-facade-v1.test.js
+          node piece-entry-v41.test.js
+          node piece-usual-v41.test.js
+          node smart-portion-output-v41.test.js
+          node smart-meal-fit-v41.test.js
+          node smart-meal-runtime-v41.test.js
+          node smart-meal-fit-wiring-v41.test.js
+          node piece-sheet-contract-v41.test.js
+          node piece-sheet-v41.test.js
+          node quick-add-piece-v41.test.js
+          node catalog-ui-v41.test.js
+          node template-engine-v41.test.js
+          node template-runtime-v41.test.js
+          node beta-feedback-v43.test.js
+          node first-run-v44.test.js
+          node static-shell-v44.test.js
+
+      - name: Run v45 compatibility regression
+        run: |
+          node countable-servings-v45.test.js
+
+      - name: Run v46 migration and bundle regressions
+        run: |
+          node count-unit-migration-v46.test.js
+          node bundle-v46.test.js
+
+      - name: Syntax-check v46 governed modules
+        run: |
+          node --check state-repository-v46.js
+          node --check count-unit-migration-v46.js
+          node --check catalog-storage-v46.js
+          node --check food-data-layer-v2.js
+          node --check amount-quality-v3.js
+          node --check product-data-v2.js
+          node --check speech-guard-v46.js
+          node --check activity-safety-v46.js
+          node --check beta-metrics-v46.js
+          node --check backup-v3.js
+          node --check target-safety-v46.js
+          node --check countable-servings-v46.js
+          node --check nutrition-integrity-v46.js
+          node --check evidence-review-v46.js
+          node --check build-my-meal-v46.js
+          node --check meal-text-preprocessor-v46.js
+          node --check trust-v46.js
+
+      - name: Verify no v45 countUnit writer remains in v46 runtime
+        run: |
+          ! grep -R "draft.countUnit" countable-servings-v46.js build-my-meal-v46.js
+          grep -q "delete entry.countUnit" count-unit-migration-v46.js
