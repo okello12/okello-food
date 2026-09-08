@@ -1,6 +1,6 @@
 # Okello Food network and storage inventory
 
-Version 1 · 8 September 2026
+Version 2 · 8 September 2026
 
 This register is the source of truth for the pre-launch beta's device-storage and network boundary. New network destinations or durable stores require an explicit update to this file and the v46 due-diligence regression tests.
 
@@ -21,15 +21,20 @@ The in-app Web Speech Recognition feature is disabled in v46. Users may still us
 
 | Key | Classification | Backup v3 |
 | --- | --- | --- |
-| `okello_food_tracker_v3` | Durable: food diary, recipes, custom foods, weight history, templates, learning state | Included |
+| `okello_food_tracker_v3` | Durable: food diary, recipes, user custom foods, weight history, templates, learning state | Included |
 | `okello_food_favourites_v1` | Durable preference | Included |
 | `okello_satiety_v1` | Durable feedback linked to meals | Included |
 | `okello_activity_v1` | Durable activity history and goals | Included |
 | `okello_photo_notes_v1` | Durable user note data if present | Included |
 | `okello_shopping_products_v1` | Durable saved shopping/product data | Included |
-| `okello_first_run_v44` | Durable first-run/profile preference | Included |
+| `okello_first_run_v44` | Durable first-run/profile and target-mode preference | Included |
 | `okello_beta_feedback_v1` | Durable local beta evidence | Included |
-| `okello_recipe_voice_draft_v1` | Recoverable draft | Included |
+| `okello_adult_beta_v46` | Durable adult-beta confirmation | Included |
+| `okello_remote_lookup_notice_v46` | Durable acknowledgement of Open Food Facts network disclosure | Included |
+| `okello_beta_metrics_v1` | Durable local-only beta adoption metrics | Included |
+| `okello_recipe_voice_draft_v1` | Recoverable recipe-text draft | Included |
+
+The shipped Ghana/world managed catalogue is deliberately **not** user data in v46. `catalog-storage-v46.js` separates managed `ghana_`/`world_` records from the durable main-state document and provides a temporary compatibility view to older runtime modules. Backup v3 therefore backs up the user's custom foods and history, not a duplicate of the shipped catalogue.
 
 ## Deliberately disposable / diagnostic state
 
