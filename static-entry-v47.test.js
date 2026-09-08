@@ -8,7 +8,7 @@ const entry=fs.readFileSync('app-v47.html','utf8');
 const recovery=fs.readFileSync('recovery.html','utf8');
 
 assert.strictEqual(entry,index,'app-v47.html must remain byte-identical to the current static index shell');
-for(const marker of ['What did you eat?','Clear log','BROWSE FOODS','Target not set yet','Foods from around the world']){
+for(const marker of ['What did you eat?','Clear log','BROWSE FOODS','Target not set yet','Foods from around the world','bootstrap-v14.js?v=47','okello-build-id\" content=\"v47-static-20260908-pages-audit-1']){
   assert.ok(entry.includes(marker),`static v47 entry missing ${marker}`);
 }
 for(const retired of ['Clear today','WORLD FOOD LIBRARY']){
