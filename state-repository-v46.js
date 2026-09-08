@@ -50,7 +50,7 @@
     finally{bypass=false;}
   }
   function commitObject(input,{source='unknown',expectedRevision=null,force=false}={}){
-    if(!input||typeof input!=='object'||Array.isArray(input))return {ok:false,reason:'invalid-state'};
+    if(!input||typeof input!=='object'||Array.isArray(input))return {ok:false,reason:'invalid-state',source};
     const live=current();
     const liveRevision=revisionOf(live);
     const incomingRevision=revisionOf(input);
@@ -79,7 +79,11 @@
     next[SOURCE_FIELD]=String(source||'unknown');
     let prepared;
     try{prepared=applyMiddleware(next,{current:live,source,revision});}
-    catch(_){return {ok:false,reason:'middleware-failed',source};}
+    catch(_){
+      const result={ok:false,reason:'middleware-failed',source};
+      event('okello:state-write-failed',result);
+      return result;
+    }
     prepared[REVISION_FIELD]=revision;
     prepared[UPDATED_FIELD]=next[UPDATED_FIELD];
     prepared[SOURCE_FIELD]=next[SOURCE_FIELD];
@@ -101,13 +105,14 @@
   function writeSerialized(raw,source='legacy-direct'){
     const incoming=parse(raw);
     if(!incoming){
-      event('okello:state-write-failed',{reason:'invalid-json',source});
-      return {ok:false,reason:'invalid-json'};
+      const result={ok:false,reason:'invalid-json',source};
+      event('okello:state-write-failed',result);
+      return result;
     }
     return commitObject(incoming,{source});
   }
   function mutate(mutator,{source='repository-mutate'}={}){
-    if(typeof mutator!=='function')return {ok:false,reason:'invalid-mutator'};
+    if(typeof mutator!=='function')return {ok:false,reason:'invalid-mutator',source};
     const live=current();
     const expected=revisionOf(live);
     const draft=clone(live);
@@ -129,6 +134,12 @@
     finally{bypass=false;}
     event('okello:state-removed',{});
   }
+  function rejectionError(result){
+    const err=new Error(`Okello state write rejected: ${result?.reason||'unknown'}`);
+    err.name=result?.reason==='quota'?'QuotaExceededError':'InvalidStateError';
+    err.okelloWriteResult=result||{ok:false,reason:'unknown'};
+    return err;
+  }
 
   // Establish a revision before later runtime modules take their first state
   // snapshot. This makes stale snapshots detectable without changing the
@@ -143,9 +154,12 @@
 
   // Compatibility gateway for older modules. Their direct writes now pass
   // through revision checks instead of replacing the durable state blindly.
+  // A rejected write deliberately throws, matching native storage failure
+  // semantics, so legacy callers cannot continue into a false-success UI.
   Storage.prototype.setItem=function(key,value){
     if(!bypass&&this===window.localStorage&&String(key)===MAIN_STORE){
-      writeSerialized(value,'legacy-direct');
+      const result=writeSerialized(value,'legacy-direct');
+      if(!result?.ok)throw rejectionError(result);
       return;
     }
     return nativeSet.call(this,key,value);
