@@ -56,6 +56,9 @@ jobs:
           node v45-countunit-backup-upgrade.test.js
           node bundle-v46.test.js
 
+      - name: Run write-rejection safety regression
+        run: node write-rejection-v46.test.js
+
       - name: Syntax-check v46 governed modules
         run: |
           node --check state-repository-v46.js
