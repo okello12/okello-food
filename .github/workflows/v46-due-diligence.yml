@@ -1,9 +1,10 @@
-name: Okello Food v46 due-diligence checks
+name: Okello Food due-diligence checks
 
 on:
   push:
     branches:
       - feature/v46-due-diligence-remediation
+      - feature/v47-global-first-beta-readiness
   pull_request:
     branches:
       - main
@@ -47,19 +48,30 @@ jobs:
           node static-shell-v44.test.js
 
       - name: Run v45 compatibility regression
-        run: |
-          node countable-servings-v45.test.js
+        run: node countable-servings-v45.test.js
 
-      - name: Run v46 migration and bundle regressions
+      - name: Run v46 migration and write-safety regressions
         run: |
           node count-unit-migration-v46.test.js
           node v45-countunit-backup-upgrade.test.js
-          node bundle-v46.test.js
+          node write-rejection-v46.test.js
 
-      - name: Run write-rejection safety regression
-        run: node write-rejection-v46.test.js
+      - name: Run current bundle regression
+        run: |
+          if grep -q "const VERSION = '47'" bootstrap-v14.js; then
+            node bundle-v47.test.js
+          else
+            node bundle-v46.test.js
+          fi
 
-      - name: Syntax-check v46 governed modules
+      - name: Run v47 global and backup hardening regressions
+        run: |
+          if [ -f global-first-v47.js ]; then
+            node global-first-v47.test.js
+            node backup-hardening-v47.test.js
+          fi
+
+      - name: Syntax-check governed modules
         run: |
           node --check state-repository-v46.js
           node --check count-unit-migration-v46.js
@@ -78,8 +90,9 @@ jobs:
           node --check build-my-meal-v46.js
           node --check meal-text-preprocessor-v46.js
           node --check trust-v46.js
+          if [ -f global-first-v47.js ]; then node --check global-first-v47.js; fi
 
-      - name: Verify no v45 countUnit writer remains in v46 runtime
+      - name: Verify retired countUnit writer stays retired
         run: |
           ! grep -R "draft.countUnit" countable-servings-v46.js build-my-meal-v46.js
           grep -q "delete entry.countUnit" count-unit-migration-v46.js
