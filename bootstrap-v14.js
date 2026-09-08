@@ -5,6 +5,7 @@
   const scripts = [
     'storage-migration-v1.js?v=46',
     'state-repository-v46.js?v=46',
+    'count-unit-migration-v46.js?v=46',
     'ghana-foods.js?v=46',
     'world-foods.js?v=46',
     'smart-support.js?v=46',
