@@ -5,6 +5,7 @@ on:
     branches:
       - feature/v46-due-diligence-remediation
       - feature/v47-global-first-beta-readiness
+      - hotfix/v47-blank-screen-recovery
   pull_request:
     branches:
       - main
@@ -71,6 +72,7 @@ jobs:
             node evidence-review-v47.test.js
             node backup-hardening-v47.test.js
           fi
+          if [ -f recovery-v47.test.js ]; then node recovery-v47.test.js; fi
 
       - name: Syntax-check governed modules
         run: |
