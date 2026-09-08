@@ -9,7 +9,32 @@
 
   function readJson(key,fallback=null){try{const raw=localStorage.getItem(key);return raw==null?fallback:JSON.parse(raw);}catch(_){return fallback;}}
   function writeJson(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(_){return false;}}
-  function toast(message){const node=$('toast');if(!node)return;node.textContent=message;node.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>node.classList.remove('show'),2200);}
+  function toast(message){const node=$('toast');if(!node)return;node.textContent=message;node.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>node.classList.remove('show'),2600);}
+
+  function writeFailureMessage(detail={}){
+    if(detail.reason==='quota')return 'That change was not saved because browser storage is full. Your existing diary was kept.';
+    if(detail.reason==='revision-conflict'||detail.reason==='stale-state')return 'That change was not saved because your diary changed at the same time. The latest saved copy will be reloaded.';
+    if(detail.reason==='middleware-failed')return 'That change was blocked by a data-integrity check. Your existing diary was kept.';
+    if(detail.reason==='invalid-json'||detail.reason==='invalid-state')return 'That change was not saved because its data was invalid. Your existing diary was kept.';
+    return 'That change was not saved. Your existing diary was kept.';
+  }
+  function handleWriteFailure(event){
+    const detail=event?.detail||{};
+    // These governed flows already present a purpose-specific failure message.
+    if(['build-my-meal-v46','custom-food-v46'].includes(detail.source))return;
+    const message=writeFailureMessage(detail);
+    toast(message);
+    // Legacy modules may already have mutated an in-memory snapshot before the
+    // repository rejects their write. Reloading discards that stale snapshot so
+    // the screen cannot drift from the durable diary after a rejection.
+    if(detail.source==='legacy-direct'){
+      try{sessionStorage.setItem('okello_flash',message);}catch(_){}
+      clearTimeout(handleWriteFailure.reloadTimer);
+      handleWriteFailure.reloadTimer=setTimeout(()=>location.reload(),1200);
+    }
+  }
+  window.addEventListener('okello:state-write-conflict',handleWriteFailure);
+  window.addEventListener('okello:state-write-failed',handleWriteFailure);
 
   function ensureAdultGate(){
     if(readJson(ADULT_KEY)?.confirmed===true)return;
@@ -74,5 +99,5 @@
   ensureSettingsCard();
   setTimeout(disableBrowserSpeech,700);setTimeout(ensureSettingsCard,700);
 
-  window.OkelloTrustV46=Object.freeze({version:VERSION,adultKey:ADULT_KEY,remoteNoticeKey:REMOTE_ACK_KEY,deleteLocalData,networkDestinations:Object.freeze(['GitHub Pages','Open Food Facts','Open Food Facts product images','jsDelivr'])});
+  window.OkelloTrustV46=Object.freeze({version:VERSION,adultKey:ADULT_KEY,remoteNoticeKey:REMOTE_ACK_KEY,deleteLocalData,writeFailureMessage,networkDestinations:Object.freeze(['GitHub Pages','Open Food Facts','Open Food Facts product images','jsDelivr'])});
 })();
