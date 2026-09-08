@@ -53,6 +53,7 @@ jobs:
       - name: Run v46 migration and bundle regressions
         run: |
           node count-unit-migration-v46.test.js
+          node v45-countunit-backup-upgrade.test.js
           node bundle-v46.test.js
 
       - name: Syntax-check v46 governed modules
