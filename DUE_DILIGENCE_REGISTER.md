@@ -18,7 +18,7 @@ Status meanings: **Open**, **Mitigated**, **Closed**, **Accepted**, **Deferred**
 | DD-F08 | Sodium/salt absent from diary | Medium | Mixed | Builder + nutrition reviewer | v46-v48 | Mitigated | Salt field and partial-total UI added; licensed source coverage and nutrition review remain ongoing |
 | DD-F09 | Open Food Facts licence/API governance incomplete | Medium | Engineering + legal/IP | Builder | v46 | Mitigated | API v3, visible attribution and third-party notices; browser identification constraints documented |
 | DD-F10 | Activity calories use 158 kg default fallback | Medium | Engineering | Builder | v46 | Mitigated | Active-kcal output suppressed unless a user weight is available |
-| DD-F11 | Important invariants rely on interception/runtime ownership | Medium | Engineering | Builder | v47 | Open | Move amount-quality provenance into governed repository write contract and retire global amount-quality storage interception |
+| DD-F11 | Important invariants rely on interception/runtime ownership | Medium | Engineering | Builder | v47 | Open | Move remaining compatibility paths fully into governed domain writes; amount-quality provenance is already repository middleware in v46 |
 | DD-F12 | First meal still cognitively heavy | Medium | Product + engineering | Builder + beta users | v48 / real-device beta | Open | One coherent Build My Meal path verified on small-screen real devices |
 | DD-F13 | UI precision exceeds evidence precision | Medium | Product + nutrition | Builder | v46-v48 | Mitigated | Estimate/evidence badges and approximate remaining wording where logged evidence is uncertain |
 | DD-F14 | Children-access position unresolved | Medium | Privacy/product | Founder/privacy | Before broader public launch | External blocker | Adult-only beta gate in product plus proportionate Children’s Code/age-access assessment for broader launch |
@@ -44,11 +44,16 @@ The following are release gates, not product-roadmap aspirations.
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Bundle/version/cache alignment | Passed | v46 full regression confirms the branch bundle, service worker and runtime manifest agree |
-| Historical real-device migration | Passed | Actual 17:52 phone export: 3 entries in / 3 entries out, historical fields unchanged, duplicate okro catalogue identity removed, second pass byte-identical with no writes |
+| Bundle/version/cache alignment | **Passed** | v46 full regression confirms the branch bundle, service worker and runtime manifest agree |
+| Historical real-device migration | **Passed** | Actual 17:52 phone export: 3 entries in / 3 entries out, historical fields unchanged, duplicate okro catalogue identity removed, second pass byte-identical with no writes |
 | v45 `countUnit` retirement | **Accepted residual risk; exact shipped-code integration pass** | No physical post-v45 device export is available. `v45-countunit-backup-upgrade.test.js` executes the byte-identical shipped v45 `countable-servings-v45.js`, `piece-entry-v41.js` and `backup-v2.js` blobs from production commit `8e6765f`, creates a three-egg backup through the real v45 writer/backup code, then proves v46 removes only `countUnit` and the second pass performs no write. Synthetic matching/missing/conflict coverage also remains. This is not represented as a physical-device test. |
-| Backup v3 restore/rollback | Pending final focused review | Complete-store manifest, staging, verification and rollback must remain green against representative backups |
-| State revision/conflict behaviour | Pending final focused review | Stale-state rejection and compatibility writes must be verified under expected legacy/runtime paths |
+| Backup v3 restore/rollback | **Passed** | Whole bundle validates first; every planned key stages under the v3 prefix with read-back verification; current values are snapshotted before commit; written values are verified; failure restores the snapshot and removes staging keys; the main store restores through the state repository rather than bypassing revisioning. |
+| State revision/conflict behaviour | **Passed** | Explicit expected-revision compare-and-swap and stale-incoming-revision guards reject stale writes and emit conflict events; successful writes are re-read to verify revision; middleware runs inside commit; revision is established before later modules read state. |
+| Rejected-write user experience | **Passed** | Build My Meal already checks `ok:false`. v46 compatibility writes now throw on repository rejection so legacy callers cannot continue into false-success UI; trust-v46 surfaces conflict/quota/integrity failures, and legacy rejection reloads the durable copy to discard stale in-memory state. `write-rejection-v46.test.js` executes this path and is required by CI. |
+
+### Non-blocking backup hardening follow-up
+
+Two failure messages can be made more diagnostic in a later maintenance change without altering the passed rollback contract: distinguish a staging `QuotaExceededError` from a corrupt backup, and surface an explicit mixed-state warning if rollback itself ever reports that one or more keys could not be restored. These are recorded as UX/diagnostic hardening, not as evidence that the current commit path is unsafe.
 
 ## Standing trust rule
 
