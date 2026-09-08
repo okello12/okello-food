@@ -46,9 +46,21 @@ The following are release gates, not product-roadmap aspirations.
 | --- | --- | --- |
 | Bundle/version/cache alignment | Passed | v46 full regression confirms the branch bundle, service worker and runtime manifest agree |
 | Historical real-device migration | Passed | Actual 17:52 phone export: 3 entries in / 3 entries out, historical fields unchanged, duplicate okro catalogue identity removed, second pass byte-identical with no writes |
-| v45 `countUnit` retirement | Synthetic pass; real case desirable | Synthetic migration covers matching, missing and conflicting `countUnit`/`pieceKey` cases. The available real export predates v45 and therefore contains no `countUnit` records. If a fresh post-v45 device export with an egg/slice/tin log exists, it must be run before merge; otherwise merge requires explicit acceptance that this path is synthetic-only evidence. |
+| v45 `countUnit` retirement | **Accepted residual risk; exact shipped-code integration pass** | No physical post-v45 device export is available. `v45-countunit-backup-upgrade.test.js` executes the byte-identical shipped v45 `countable-servings-v45.js`, `piece-entry-v41.js` and `backup-v2.js` blobs from production commit `8e6765f`, creates a three-egg backup through the real v45 writer/backup code, then proves v46 removes only `countUnit` and the second pass performs no write. Synthetic matching/missing/conflict coverage also remains. This is not represented as a physical-device test. |
 | Backup v3 restore/rollback | Pending final focused review | Complete-store manifest, staging, verification and rollback must remain green against representative backups |
 | State revision/conflict behaviour | Pending final focused review | Stale-state rejection and compatibility writes must be verified under expected legacy/runtime paths |
+
+## Standing trust rule
+
+**Licence before extraction. Evidence before recommendation. Invariant before convenience.**
+
+Each clause records a failure already encountered in this project rather than an abstract principle:
+
+- **Licence before extraction:** two independent reviews recommended WAFCT 2019 before its non-commercial licence was checked. Source review now gates on commercial reuse rights before extraction effort.
+- **Evidence before recommendation:** unsupported product claims and inferred evidence, including an earlier `#hubScanBtn` guess and personas being treated as testers, showed that plausible inference must not be presented as observed product evidence.
+- **Invariant before convenience:** coercions such as `Number(f.kcal)||0` made implementation convenient while violating the stated rule that missing data remains missing. Data-contract invariants now take precedence over convenience defaults.
+
+These rules apply to code, product claims, research and diligence material.
 
 ## Source licensing rule
 
