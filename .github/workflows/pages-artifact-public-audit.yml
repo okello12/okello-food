@@ -1,0 +1,141 @@
+name: Okello Food Pages artifact and public audit
+
+on:
+  workflow_run:
+    workflows:
+      - pages build and deployment
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  verify-pages-artifact-and-public-shell:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the exact Pages source SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download the exact Pages artifact from the completed run
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: pages-download
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Unpack and verify the Pages artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir pages-site
+          tar -xf pages-download/artifact.tar -C pages-site
+
+          required=(
+            'What did you eat?'
+            'Clear log'
+            'BROWSE FOODS'
+            'bootstrap-v14.js?v=47'
+            'okello-build-id" content="v47-static-20260908-pages-audit-1'
+          )
+          retired=(
+            'Clear today'
+            'WORLD FOOD LIBRARY'
+          )
+
+          for marker in "${required[@]}"; do
+            grep -Fq "$marker" pages-site/index.html || { echo "Pages artifact missing required marker: $marker" >&2; exit 1; }
+          done
+          for marker in "${retired[@]}"; do
+            ! grep -Fq "$marker" pages-site/index.html || { echo "Pages artifact contains retired marker: $marker" >&2; exit 1; }
+          done
+
+          cmp -s index.html pages-site/index.html || {
+            echo 'Pages artifact index.html differs from source index.html' >&2
+            sha256sum index.html pages-site/index.html
+            exit 1
+          }
+
+          echo "SOURCE_SHA=${{ github.event.workflow_run.head_sha }}"
+          echo "PAGES_RUN_ID=${{ github.event.workflow_run.id }}"
+          sha256sum index.html pages-site/index.html
+
+      - name: Verify canonical and cache-busted public HTML
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://okello12.github.io/okello-food/'
+          build_marker='okello-build-id" content="v47-static-20260908-pages-audit-1'
+          audit_token='${{ github.event.workflow_run.head_sha }}-${{ github.run_id }}'
+
+          check_public() {
+            local label="$1"
+            local url="$2"
+            local out="$3"
+            local attempt
+            for attempt in 1 2 3 4 5 6; do
+              curl --fail --silent --show-error --location \
+                --connect-timeout 10 --max-time 30 \
+                "$url" -o "$out"
+              if grep -Fq "$build_marker" "$out"; then
+                echo "$label current on attempt $attempt"
+                return 0
+              fi
+              echo "$label did not contain current build marker on attempt $attempt" >&2
+              sha256sum "$out" >&2 || true
+              if [ "$attempt" -lt 6 ]; then sleep 10; fi
+            done
+            return 1
+          }
+
+          canonical_ok=0
+          busted_ok=0
+          entry_ok=0
+          check_public canonical "$base" public-canonical.html || canonical_ok=$?
+          check_public cache-busted "${base}?pages-audit=${audit_token}" public-busted.html || busted_ok=$?
+          check_public immutable-entry "${base}app-v47.html?pages-audit=${audit_token}" public-entry.html || entry_ok=$?
+
+          echo 'Public response SHA-256:'
+          sha256sum public-canonical.html public-busted.html public-entry.html pages-site/index.html
+
+          if [ "$canonical_ok" -ne 0 ] && [ "$busted_ok" -eq 0 ]; then
+            echo 'DIAGNOSIS: canonical Pages URL is stale while a cache-busted request is current.' >&2
+            exit 1
+          fi
+          if [ "$canonical_ok" -ne 0 ] && [ "$busted_ok" -ne 0 ] && [ "$entry_ok" -eq 0 ]; then
+            echo 'DIAGNOSIS: root Pages object is stale or misrouted while immutable app-v47.html is current.' >&2
+            exit 1
+          fi
+          if [ "$canonical_ok" -ne 0 ] || [ "$busted_ok" -ne 0 ] || [ "$entry_ok" -ne 0 ]; then
+            echo 'DIAGNOSIS: one or more public Pages responses do not contain the deployed build marker.' >&2
+            exit 1
+          fi
+
+          for file in public-canonical.html public-busted.html public-entry.html; do
+            for marker in 'What did you eat?' 'Clear log' 'BROWSE FOODS' 'bootstrap-v14.js?v=47'; do
+              grep -Fq "$marker" "$file" || { echo "$file missing required marker: $marker" >&2; exit 1; }
+            done
+            for marker in 'Clear today' 'WORLD FOOD LIBRARY'; do
+              ! grep -Fq "$marker" "$file" || { echo "$file contains retired marker: $marker" >&2; exit 1; }
+            done
+          done
+
+          cmp -s pages-site/index.html public-canonical.html || {
+            echo 'Canonical public HTML contains the current marker but is not byte-identical to the deployed artifact.' >&2
+            exit 1
+          }
+          cmp -s pages-site/index.html public-busted.html || {
+            echo 'Cache-busted public HTML contains the current marker but is not byte-identical to the deployed artifact.' >&2
+            exit 1
+          }
+          cmp -s pages-site/index.html public-entry.html || {
+            echo 'Immutable public entry contains the current marker but is not byte-identical to the deployed artifact.' >&2
+            exit 1
+          }
+
+          echo 'PAGES_PUBLIC_AUDIT=PASS'
