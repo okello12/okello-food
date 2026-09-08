@@ -1,4 +1,4 @@
-name: Okello Food v44 branch checks
+name: Okello Food v45 branch checks
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
       - feature/v43-beta-feedback
       - feature/v44-first-30-seconds
       - fix/v44-1-static-shell
+      - feature/v45-countable-servings
   pull_request:
     branches:
       - main
@@ -67,8 +68,10 @@ jobs:
         run: node first-run-v44.test.js
       - name: Run static first-paint shell regression
         run: node static-shell-v44.test.js
-      - name: Audit v44 bootstrap, service worker and update bundle
-        run: node bundle-v44.test.js
+      - name: Run countable serving contract checks
+        run: node countable-servings-v45.test.js
+      - name: Audit v45 bootstrap, service worker and update bundle
+        run: node bundle-v45.test.js
       - name: Syntax-check governed runtime modules
         run: >-
           node --check meal-catalog-facade-v1.js &&
@@ -85,4 +88,5 @@ jobs:
           node --check template-engine-v41.js &&
           node --check template-runtime-v41.js &&
           node --check beta-feedback-v43.js &&
-          node --check first-run-v44.js
+          node --check first-run-v44.js &&
+          node --check countable-servings-v45.js
