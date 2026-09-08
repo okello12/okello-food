@@ -1,52 +1,53 @@
 (() => {
   'use strict';
 
-  const VERSION = '44';
+  const VERSION = '45';
   const scripts = [
-    'storage-migration-v1.js?v=44',
-    'ghana-foods.js?v=44',
-    'world-foods.js?v=44',
-    'smart-support.js?v=44',
-    'meal-data-contract-v1.js?v=44',
-    'food-data-layer-v1.js?v=44',
-    'amount-quality-v2.js?v=44',
-    'product-data-v1.js?v=44',
-    'category-rules-v1.js?v=44',
-    'app.js?v=44',
-    'meal-catalog-facade-v1.js?v=44',
-    'food-intelligence-v1.js?v=44',
-    'personal-food-memory-v1.js?v=44',
-    'piece-entry-v41.js?v=44',
-    'piece-usual-v41.js?v=44',
-    'smart-portion-output-v41.js?v=44',
-    'piece-sheet-contract-v41.js?v=44',
-    'piece-sheet-v41.js?v=44',
-    'scanner.js?v=44',
-    'ux-v2.js?v=44',
-    'scanner-launch-v1.js?v=44',
-    'shopping-v1.js?v=44',
-    'personal-shelf-v1.js?v=44',
-    'world-library-v1.js?v=44',
-    'template-engine-v41.js?v=44',
-    'features-v1.js?v=44',
-    'template-runtime-v41.js?v=44',
-    'quick-add-piece-v41.js?v=44',
-    'catalog-ui-v41.js?v=44',
-    'day-forecast-v1.js?v=44',
-    'smart-meal-fit-v41.js?v=44',
-    'smart-meal-guard-v42.js?v=44',
-    'smart-v3.js?v=44',
-    'smart-meal-runtime-v41.js?v=44',
-    'search-intelligence-v1.js?v=44',
-    'recipe-assistant-v1.js?v=44',
-    'activity-v1.js?v=44',
-    'beta-feedback-v43.js?v=44',
-    'backup-v2.js?v=44',
-    'update-v1.js?v=44',
-    'app-chrome-v1.js?v=44',
-    'ios-exit-v1.js?v=44',
-    'interaction-v1.js?v=44',
-    'first-run-v44.js?v=44'
+    'storage-migration-v1.js?v=45',
+    'ghana-foods.js?v=45',
+    'world-foods.js?v=45',
+    'smart-support.js?v=45',
+    'meal-data-contract-v1.js?v=45',
+    'food-data-layer-v1.js?v=45',
+    'amount-quality-v2.js?v=45',
+    'product-data-v1.js?v=45',
+    'category-rules-v1.js?v=45',
+    'app.js?v=45',
+    'meal-catalog-facade-v1.js?v=45',
+    'food-intelligence-v1.js?v=45',
+    'personal-food-memory-v1.js?v=45',
+    'piece-entry-v41.js?v=45',
+    'piece-usual-v41.js?v=45',
+    'smart-portion-output-v41.js?v=45',
+    'piece-sheet-contract-v41.js?v=45',
+    'piece-sheet-v41.js?v=45',
+    'scanner.js?v=45',
+    'ux-v2.js?v=45',
+    'scanner-launch-v1.js?v=45',
+    'shopping-v1.js?v=45',
+    'personal-shelf-v1.js?v=45',
+    'world-library-v1.js?v=45',
+    'template-engine-v41.js?v=45',
+    'features-v1.js?v=45',
+    'template-runtime-v41.js?v=45',
+    'quick-add-piece-v41.js?v=45',
+    'catalog-ui-v41.js?v=45',
+    'day-forecast-v1.js?v=45',
+    'smart-meal-fit-v41.js?v=45',
+    'smart-meal-guard-v42.js?v=45',
+    'smart-v3.js?v=45',
+    'smart-meal-runtime-v41.js?v=45',
+    'search-intelligence-v1.js?v=45',
+    'recipe-assistant-v1.js?v=45',
+    'activity-v1.js?v=45',
+    'beta-feedback-v43.js?v=45',
+    'backup-v2.js?v=45',
+    'update-v1.js?v=45',
+    'app-chrome-v1.js?v=45',
+    'ios-exit-v1.js?v=45',
+    'interaction-v1.js?v=45',
+    'first-run-v44.js?v=45',
+    'countable-servings-v45.js?v=45'
   ];
 
   function loadScript(src) {
@@ -99,7 +100,7 @@
     if (!('serviceWorker' in navigator)) return;
     try {
       let version = await controllerVersion();
-      const reg = await navigator.serviceWorker.register('./service-worker.js?v=44', {updateViaCache:'none'});
+      const reg = await navigator.serviceWorker.register('./service-worker.js?v=45', {updateViaCache:'none'});
       try { await reg.update(); } catch (_) {}
 
       const promote = worker => {
