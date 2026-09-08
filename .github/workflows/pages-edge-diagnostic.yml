@@ -1,0 +1,97 @@
+name: Okello Food Pages edge diagnostic
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  edge-probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        probe: [1, 2, 3, 4, 5, 6]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for exact Pages deployment
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs?branch=main&per_page=30"
+          for attempt in $(seq 1 36); do
+            json=$(curl --fail --silent --show-error --location \
+              --retry 3 --retry-delay 1 \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H 'Accept: application/vnd.github+json' \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              "$api")
+            row=$(jq -r --arg sha "$GITHUB_SHA" '
+              .workflow_runs[]
+              | select(.name == "pages build and deployment" and .head_sha == $sha)
+              | [.id, .status, (.conclusion // "")]
+              | @tsv
+            ' <<<"$json" | head -n 1)
+            if [ -n "$row" ]; then
+              IFS=$'\t' read -r run_id status conclusion <<<"$row"
+              echo "Pages run ${run_id}: status=${status} conclusion=${conclusion:-pending}"
+              if [ "$status" = completed ]; then
+                test "$conclusion" = success
+                echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            fi
+            sleep 5
+          done
+          echo "Timed out waiting for Pages deployment for ${GITHUB_SHA}" >&2
+          exit 1
+
+      - name: Probe root variants with route and cache evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          host='okello12.github.io'
+          base='https://okello12.github.io/okello-food'
+          marker='okello-build-id" content="v47-static-20260908-pages-audit-1'
+
+          echo '=== DNS ==='
+          getent ahosts "$host" || true
+          echo '=== runner public IPv4 ==='
+          curl -4 --silent --show-error --max-time 10 https://api.ipify.org || true
+          echo
+
+          probe() {
+            label="$1"
+            url="$2"
+            body="${label}.body"
+            hdr="${label}.headers"
+            meta="${label}.meta"
+            echo "=== ${label}: ${url} ==="
+            curl --fail --silent --show-error --location \
+              --connect-timeout 10 --max-time 30 \
+              --dump-header "$hdr" \
+              --output "$body" \
+              --write-out $'url_effective=%{url_effective}\nhttp_code=%{http_code}\nremote_ip=%{remote_ip}\nremote_port=%{remote_port}\nlocal_ip=%{local_ip}\nhttp_version=%{http_version}\nnum_redirects=%{num_redirects}\ntime_total=%{time_total}\nsize_download=%{size_download}\n' \
+              "$url" | tee "$meta"
+            echo '-- response headers --'
+            cat "$hdr"
+            echo '-- body sha256 --'
+            sha256sum "$body"
+            echo '-- markers --'
+            for s in 'What did you eat?' 'Clear log' 'BROWSE FOODS' 'Clear today' 'WORLD FOOD LIBRARY'; do
+              if grep -Fq "$s" "$body"; then echo "present: $s"; else echo "absent: $s"; fi
+            done
+            if grep -Fq "$marker" "$body"; then echo 'build_marker=current'; else echo 'build_marker=missing'; fi
+          }
+
+          token="${GITHUB_SHA}-${GITHUB_RUN_ID}-${{ matrix.probe }}"
+          probe no_slash "$base"
+          probe slash "$base/"
+          probe index "$base/index.html"
+          probe busted "$base/?edge-probe=$token"
+          probe immutable "$base/app-v47.html?edge-probe=$token"
