@@ -1,7 +1,7 @@
 # Current → Future Architecture Map
 
-Version 1 · 13 September 2026  
-Repository snapshot reviewed: `main` at `891e3162e4dee132c69d22220b0739dc7d3494d7`
+Version 2 · 13 September 2026  
+Repository snapshot reviewed: `main` at `9cd028dd12014e5c7af7b5284b83ee6eb6cdf994`
 
 ## Why this document exists
 
@@ -132,6 +132,14 @@ Historical records are observations. Catalogue updates, reviewer corrections and
 
 There must be **one published food knowledge source for the consumer app**. Reviewer tooling, spreadsheets or future portals may stage proposed changes, but they must not create an independent production catalogue.
 
+### Knowledge-plane publication boundary
+
+Today the shared catalogue is implemented as JavaScript/data files shipped inside the consumer application. That is appropriate while it serves one product.
+
+If external buyer evidence later supports food intelligence as an independently distributed asset, crossing that boundary is a deliberate architecture/licensing decision. The canonical knowledge artefact would then need to be independently versionable, publishable and licensable while the consumer app becomes one downstream client of it.
+
+Do **not** extract or build that separate distribution layer merely because it is architecturally imaginable. It is blocked by Gate C below.
+
 ---
 
 ## D. Packaged-product knowledge
@@ -155,8 +163,8 @@ These modules exist and must be classified carefully. Their presence does **not*
 | Current module | Current role | Classification | Future role / action |
 |---|---|---|---|
 | `target-safety-v46.js` | Tracking-only / own-target / confirmed-target safety | KEEP | Governing safety layer for current target-dependent features. |
-| `target-safety-bridge-v47.js` | Compatibility protection against legacy starter targets | TECHNICAL DEBT | Remove only after starter defaults are deleted directly from `first-run-v44.js` and regression coverage proves target-mode preservation. |
-| `first-run-v44.js` | Onboarding/profile/legacy target defaults | EVOLVE + TECHNICAL DEBT | Remove unsafe legacy starter values at source; keep first-run preference/profile boundary. |
+| `target-safety-bridge-v47.js` | Compatibility protection against legacy starter targets | TECHNICAL DEBT | Compatibility-only; active removal work is tracked outside this strategic document. |
+| `first-run-v44.js` | Onboarding/profile/legacy target defaults | EVOLVE + TECHNICAL DEBT | Keep first-run preference/profile boundary; operational remediation belongs in the release issue tracker. |
 | `smart-support.js`, `smart-portion-output-v41.js` | Support/portion output helpers | KEEP WITH BOUNDARY | General food-literacy calculations only; provenance must remain visible. |
 | `day-forecast-v1.js`, `FORECAST_ARCHITECTURE.md` | Habit/day projection | KEEP WITH BOUNDARY | Descriptive general-wellbeing projection; do not repurpose as clinical forecast. |
 | `smart-meal-fit-v41.js`, `smart-meal-guard-v42.js`, `smart-meal-runtime-v41.js`, `smart-v3.js`, `build-my-meal-v46.js` | Target/context-driven meal/portion assistance | KEEP ONLY WITH CURRENT SAFETY BOUNDARY; REVIEW BEFORE EXPANSION | Do not let these become the hidden engine for condition-specific or clinician-directed recommendations. Professional/clinical use is BLOCKED BEFORE REGULATORY GATE. |
@@ -174,7 +182,7 @@ Existing recommendation code is **not** a shortcut around future regulatory asse
 | Current artefact/module | Classification | Future role / action |
 |---|---|---|
 | `INTENDED_PURPOSE.md` | GOVERNANCE / KEEP | Top-level red-line document. Change only through explicit product/regulatory decision. |
-| `FOOD_EVIDENCE_POLICY.md` | GOVERNANCE / KEEP | Extend reviewer workflow to apply the same source/licence rules. |
+| `FOOD_EVIDENCE_POLICY.md` | GOVERNANCE / KEEP | Reviewer workflow must apply the same source/licence rules; reviewer input does not bypass them. |
 | `FOOD_SOURCE_OF_RECORD_DECISION.md` | GOVERNANCE / KEEP | Production evidence hierarchy. Reviewer suggestions do not bypass licence gate. |
 | `COMMERCIAL_FOOD_SOURCE_REGISTER.md` | GOVERNANCE / EVOLVE | Track commercial usability of proposed sources before extraction. |
 | `DUE_DILIGENCE_REGISTER.md` | GOVERNANCE / KEEP | Continue to track unresolved external/legal/clinical evidence. |
@@ -184,35 +192,19 @@ Existing recommendation code is **not** a shortcut around future regulatory asse
 
 ---
 
-# 4. Technical debt and compatibility inventory
+# 4. Technical-debt boundary
 
-Technical debt must be retired deliberately; it must not become future architecture by accident.
+This strategic document classifies technical debt so that compatibility code is not mistaken for future product design. It is **not** the operational backlog.
 
-## Priority debt
+Release-sensitive remediation must live in the issue/release tracker where it is visible before the next release. The active starter-target/bridge remediation is tracked in **GitHub issue #12**. Future concrete debt should be tracked the same way.
 
-1. **Legacy starter targets in `first-run-v44.js`.**
-   - Remove the old defaults directly.
-   - Add/retain tests proving tracking-only and existing confirmed target modes survive.
-   - Then remove `target-safety-bridge-v47.js` from bootstrap/cache.
+Versioned predecessor modules and superseded handlers may remain for tests, recovery or compatibility, but new functionality must go into the current runtime owner rather than an older predecessor.
 
-2. **Versioned predecessor modules still present in the repository.**
-   Examples include `amount-quality-v1.js`, `amount-quality-v2.js`, `backup-v2.js`, `product-data-v1.js` and older bootstrap variants.
-   - Keep while needed for tests/recovery/history.
-   - Do not load or extend a predecessor when a newer runtime owner exists.
-   - Remove only with explicit compatibility evidence.
-
-3. **Legacy handlers superseded by dedicated owners.**
-   Backup/export logic still exists in older modules even though `backup-v3.js` is runtime owner.
-   - Consolidate when safe.
-   - Avoid adding new behaviour to legacy handlers.
-
-4. **GitHub Pages production-specific diagnostics.**
-   - Keep only while old origin remains a migration/recovery concern.
-   - Do not spend product engineering effort trying to make Pages the long-term production architecture.
+GitHub Pages-specific diagnostics remain temporary while the old origin is still a migration/recovery concern; they are not long-term production architecture.
 
 ---
 
-# 5. The two hard future gates
+# 5. The three hard future gates
 
 ## Gate A — cloud/account/sync economics + privacy gate
 
@@ -248,6 +240,23 @@ Before building professional-set treatment targets, condition-specific guidance,
 
 **Current status: gate not passed.**
 
+## Gate C — independent knowledge publication/licensing gate
+
+The current catalogue remains an internal product asset shipped with the app until external evidence justifies independent distribution.
+
+Before creating an API, downloadable database, separately licensed dataset or other independent knowledge product, record:
+
+- external buyer/user evidence showing a real workflow need;
+- intended distribution and commercial model;
+- canonical data format and versioning policy;
+- complete rights/licence chain for included sources and derived records;
+- attribution obligations;
+- update/correction policy;
+- separation from all personal/user-authored data;
+- what remains app-specific versus part of the independently published knowledge asset.
+
+**Current status: gate not passed.**
+
 ---
 
 # 6. Reviewer/evidence network: build only when manual workflow hurts
@@ -269,6 +278,28 @@ published catalogue change
 ```
 
 This should remain spreadsheet/manual until evidence proves the workflow itself is a problem.
+
+## Reviewer source-use rule
+
+The source/licence gate binds reviewers as well as the product team.
+
+A reviewer may consult any credible source to **challenge** an existing value or identify an evidence gap. That does not automatically make that source eligible to supply a production value.
+
+For every recommendation intended to become production evidence, record at minimum:
+
+- exact source title/database/article;
+- source identifier, DOI, URL, table/code or other stable locator where available;
+- licence/reuse status;
+- exact food/preparation represented by the source;
+- nutrient basis and units;
+- any conversion, averaging, recipe derivation or other transformation performed;
+- reviewer identity and review date.
+
+The production source must pass `FOOD_EVIDENCE_POLICY.md` and `FOOD_SOURCE_OF_RECORD_DECISION.md` before acceptance. WAFCT may be used for scientific comparison/mapping but must not become a commercial production source unless appropriate commercial permission is confirmed. Sources already identified as potentially commercially reusable still require identity/preparation and attribution checks; a permissive licence does not make a poor food match valid.
+
+If a reviewer cannot identify the source or its reuse position, the finding remains a **challenge** or **unresolved recommendation**, not a clean production correction.
+
+Reviewer instructions and spreadsheets should state this rule up front so provenance problems do not enter the dataset invisibly.
 
 ## What must be measured with Edem and the next reviewers
 
@@ -332,7 +363,8 @@ The following are architectural placeholders, not backlog commitments:
 | Condition-specific recommendations | BLOCKED BY GATE B |
 | Clinic multi-tenancy | FUTURE ONLY; not a consumer-beta dependency |
 | Appointment/video/payment marketplace | FUTURE ONLY; plug-in concern, not core food engine |
-| Commercial food-data API/licensing product | FUTURE ONLY — requires buyer validation and clean rights chain |
+| Independently published/versioned food dataset | BLOCKED BY GATE C |
+| Commercial food-data API/licensing product | BLOCKED BY GATE C |
 
 ---
 
@@ -363,14 +395,14 @@ This model is **future-only** until the relevant gate is passed.
 
 Do these before creating new platform layers:
 
-1. **Finish target-safety debt**: remove legacy starter defaults from `first-run-v44.js`; then remove the compatibility bridge when tests prove it safe.
-2. **Complete real Backup v3 migration test** across origins/profiles, including reload persistence and failed-import rollback.
-3. **Keep the evidence review manual** with the Edem/African reviewer spreadsheet; record review economics and friction.
-4. **Require source + licence status for every accepted catalogue correction.** A reviewer may use WAFCT to challenge a value, but WAFCT does not become a production source merely because it informed the challenge.
-5. **Do not create another food database.** Improve `food-data-layer-v2` / published managed catalogue boundaries when evidence requires it.
-6. **Run three B2B problem interviews** before treating food intelligence as a commercial product line.
-7. **Run the consumer beta separately.** Consumer retention, reviewer-network viability and B2B data demand are three different scoreboards.
-8. **Do not add accounts, sync or professional treatment workflow as incidental implementation details.** Each remains behind its named gate.
+1. **Complete the real Backup v3 migration test** across origins/profiles, including reload persistence and failed-import rollback.
+2. **Keep the evidence review manual** with the Edem/African reviewer spreadsheet; record review economics and friction.
+3. **Bind reviewer submissions to the source/licence gate** before any accepted catalogue correction is published.
+4. **Do not create another food database.** Improve `food-data-layer-v2` / published managed catalogue boundaries when evidence requires it.
+5. **Run three B2B problem interviews** before treating food intelligence as a commercial product line.
+6. **Run the consumer beta separately.** Consumer retention, reviewer-network viability and B2B data demand are three different scoreboards.
+7. **Do not add accounts, sync, independent data publication or professional treatment workflow as incidental implementation details.** Each remains behind its named gate.
+8. **Track release debt operationally.** Strategic classification belongs here; concrete pre-release remediation belongs in issues such as #12.
 
 ---
 
@@ -380,11 +412,12 @@ This architecture is working if:
 
 - a catalogue correction improves future food lookups without modifying historical diary snapshots;
 - a reviewer can improve food evidence without seeing any consumer diary;
+- every accepted reviewer-driven correction has a traceable source, reuse/licence position, preparation match and review record;
 - local users can continue to use the core app without an account or recurring backend dependency;
 - personal recipe evidence remains personal unless deliberately promoted through a separate reviewed process;
 - missing data remains missing across catalogue, logs, backup and restore;
 - current food-literacy functionality stays on the safe side of the intended-purpose boundary;
-- future professional/cloud ideas cannot enter production without their explicit gate;
+- future professional/cloud/independent-publication ideas cannot enter production without their explicit gate;
 - market evidence determines which new infrastructure gets built.
 
-The architecture should make the cheapest safe path the default and make expensive, regulated or privacy-expanding paths require conscious decisions.
+The architecture should make the cheapest safe path the default and make expensive, regulated, privacy-expanding or rights-sensitive paths require conscious decisions.
