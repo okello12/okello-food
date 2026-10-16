@@ -90,7 +90,36 @@
       return {...defaultState,...parsed,targets:{...defaultState.targets,...(parsed.targets||{})},logs:parsed.logs||{},customFoods:parsed.customFoods||[],recipes:parsed.recipes||[]};
     }catch(e){ return structuredClone(defaultState); }
   }
-  function saveState(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); }
+  // v49: app.js writes through the state repository rather than relying on
+  // state-repository-v46 intercepting Storage.prototype.setItem. The commit
+  // is a mutate against the live revision, so a stale in-memory `state`
+  // cannot overwrite a newer write from another module or tab. On success
+  // `state` is replaced by the committed copy (which carries the revision).
+  // Returns {ok, reason}. Callers must not render success on a rejection.
+  function saveState(source='app'){
+    const repo=window.OkelloStateRepository;
+    if(!repo?.mutate){
+      // Repository not loaded (should not happen in production boot order).
+      // Fall back to a direct write so the app never silently drops a save.
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      return {ok:true,reason:'direct-fallback'};
+    }
+    const snapshot=structuredClone(state);
+    const result=repo.mutate(draft=>{
+      // Our in-memory object is the intended next state for the fields app.js
+      // owns. Copy them onto the live draft rather than replacing it wholesale,
+      // so fields other modules own (schemaVersion, calibration, events...) survive.
+      for(const k of ['targets','logs','customFoods','recipes','weightLogs','mealTemplates'])if(k in snapshot)draft[k]=snapshot[k];
+      return draft;
+    },{source:`app.${source}`});
+    if(result?.ok){ state=loadState(); return {ok:true}; }
+    // Rejected: reload the durable copy so the screen cannot show an unsaved state.
+    state=loadState();
+    showToast(result?.reason==='revision-conflict'||result?.reason==='stale-state'
+      ?'Your diary changed elsewhere. Reloaded the saved copy; please try again.'
+      :'That change was not saved. Your existing diary was kept.');
+    return {ok:false,reason:result?.reason||'unknown'};
+  }
   function allFoods(){
     const custom = state.customFoods.map(f=>({...f,emoji:f.emoji||'🏷️',cat:f.cat||'Custom'}));
     const recipes = state.recipes.map(r=>({id:'recipe_'+r.id,name:r.name,emoji:'🍲',cat:'Recipes',kcal:r.kcalPer100,protein:r.proteinPer100,fibre:r.fibrePer100||0,portion:r.defaultPortion||300,min:r.min||200,max:r.max||450,note:'Your saved recipe'}));
@@ -133,6 +162,18 @@
   function todayEntries(){ return state.logs[todayKey()] || []; }
   function ensureToday(){ const k=todayKey(); if(!state.logs[k]) state.logs[k]=[]; return state.logs[k]; }
   function totalsFor(entries){ return entries.reduce((a,x)=>({kcal:a.kcal+(Number(x.kcal)||0),protein:a.protein+(Number(x.protein)||0),fibre:a.fibre+(Number(x.fibre)||0)}),{kcal:0,protein:0,fibre:0}); }
+  // Salt is nullable on every log entry (nutrition-integrity-v46 snapshots it
+  // at write time, null when the food had no value). Sum only what is known
+  // and report how much of the day's calories that covers, so an unknown is
+  // never displayed as zero.
+  function saltFor(entries){
+    let known=0,knownKcal=0,totalKcal=0,n=0;
+    for(const x of entries){
+      const kc=Number(x.kcal)||0; totalKcal+=kc;
+      if(x.salt!==null&&x.salt!==undefined&&Number.isFinite(Number(x.salt))){known+=Number(x.salt);knownKcal+=kc;n++;}
+    }
+    return {grams:known,entriesKnown:n,entriesTotal:entries.length,coverage:totalKcal>0?knownKcal/totalKcal:0};
+  }
   function mealCalories(meal){ return todayEntries().filter(x=>x.meal===meal).reduce((s,x)=>s+(Number(x.kcal)||0),0); }
 
   const mealShares = {Lunch:.30,Dinner:.45,Snack:.15,Other:.10};
@@ -242,12 +283,18 @@
     const food=foodById($('foodSelect').value); if(!food || food.raw) return;
     const g=clamp(Number($('gramsInput').value)||food.portion,1,5000); const c=calcFood(food,g);
     ensureToday().push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),foodId:food.id,name:food.name,emoji:food.emoji,grams:g,meal:$('mealSelect').value,kcal:c.kcal,protein:c.protein,fibre:c.fibre,ts:Date.now()});
-    saveState(); renderToday(); updateSmartPortion(); renderFoodLibrary(); showToast('Added to today');
+    if(!saveState('addToToday').ok){renderToday();return;}
+    renderToday(); updateSmartPortion(); renderFoodLibrary(); showToast('Added to today');
   }
   function renderToday(){
     $('todayTitle').textContent=formatDate(todayKey());
     const entries=ensureToday(); const totals=totalsFor(entries);
     $('todayCalories').textContent=Math.round(totals.kcal).toLocaleString(); $('todayProtein').textContent=Math.round(totals.protein)+' g'; $('todayFibre').textContent=Math.round(totals.fibre)+' g';
+    if($('todaySalt')){
+      const salt=saltFor(entries);
+      if(salt.entriesKnown===0){ $('todaySalt').textContent='—'; $('saltNote').textContent=entries.length?'No salt data for today\'s foods yet':'No salt data for today\'s foods yet'; }
+      else { $('todaySalt').textContent=(Math.round(salt.grams*10)/10)+' g'; $('saltNote').textContent=salt.coverage>=0.999?'From logged foods':`Known for ${Math.round(salt.coverage*100)}% of today\'s calories`; }
+    }
     const calDiff=Math.round(state.targets.calories-totals.kcal); const proteinDiff=Math.round(state.targets.protein-totals.protein);
     $('calRemainText').textContent=calDiff>=0 ? `${calDiff.toLocaleString()} kcal left` : `${Math.abs(calDiff).toLocaleString()} kcal over`;
     $('proteinRemainText').textContent=proteinDiff>=0 ? `${proteinDiff} g left` : `${Math.abs(proteinDiff)} g over target`;
@@ -256,7 +303,7 @@
     if(!entries.length){log.className='log-list empty-state';log.textContent='Nothing logged yet.';return;}
     log.className='log-list';
     log.innerHTML=entries.map((x,i)=>`<div class="log-row"><div><strong>${escapeHtml(x.emoji||'🍽️')} ${escapeHtml(x.name)}</strong><div class="meta">${escapeHtml(x.meal)} · ${round1(x.grams)} g · ${round1(x.protein)} g protein</div></div><div class="numbers"><strong>${Math.round(x.kcal)} kcal</strong><button class="remove-btn" type="button" data-remove="${i}">remove</button></div></div>`).join('');
-    log.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',()=>{entries.splice(Number(b.dataset.remove),1);saveState();renderToday();updateSmartPortion();renderFoodLibrary();}));
+    log.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',()=>{entries.splice(Number(b.dataset.remove),1);const r=saveState('removeEntry');renderToday();if(r.ok){updateSmartPortion();renderFoodLibrary();}}));
   }
 
   function renderCategoryChips(){
@@ -283,8 +330,9 @@
     const name=$('customName').value.trim(); const kcal=Number($('customKcal').value); const protein=Number($('customProtein').value)||0; const fibre=Number($('customFibre').value)||0; const portion=Math.max(1,Number($('customPortion').value)||100); const cat=$('customCategory').value||'Custom';
     if(!name||!(kcal>0)){showToast('Add a name and calories per 100 g');return;}
     state.customFoods.push({id:'custom_'+Date.now(),name,emoji:'🏷️',cat,kcal,protein,fibre,portion,note:'Your saved food',image:pendingCustomImage||'',barcode:pendingCustomBarcode||''});
-    saveState(); populateFoodSelects(); renderFoodLibrary();
-    ['customName','customKcal','customProtein','customFibre','barcodeInput'].forEach(id=>$(id).value=''); $('customPortion').value=100; $('customCategory').value='Custom'; pendingCustomImage=''; pendingCustomBarcode=''; $('barcodePreview').hidden=true; $('barcodePreview').innerHTML=''; $('barcodeStatus').textContent=''; updateCustomSuggestion(); showToast('Custom food saved');
+    if(!saveState('saveCustomFood').ok)return;
+    populateFoodSelects(); renderFoodLibrary();
+    ['customName','customKcal','customProtein','customFibre','customSalt','barcodeInput'].forEach(id=>{if($(id))$(id).value='';}); $('customPortion').value=100; $('customCategory').value='Custom'; pendingCustomImage=''; pendingCustomBarcode=''; $('barcodePreview').hidden=true; $('barcodePreview').innerHTML=''; $('barcodeStatus').textContent=''; updateCustomSuggestion(); showToast('Custom food saved');
   }
 
   async function lookupBarcode(){
@@ -341,13 +389,14 @@
   function saveRecipe(){
     const name=$('recipeName').value.trim(); const calc=calculateRecipe(); if(!name||!calc){showToast('Add recipe name, ingredients and finished weight');return;}
     state.recipes.push({id:Date.now(),name,kcalPer100:round1(calc.kcalPer100),proteinPer100:round1(calc.proteinPer100),fibrePer100:round1(calc.fibrePer100),defaultPortion:300,min:200,max:450,finalWeight:calc.weight,ingredients:recipeIngredients});
-    saveState(); recipeIngredients=[]; $('recipeName').value=''; $('recipeFinalWeight').value=''; renderIngredients(); $('recipeResult').hidden=true; populateFoodSelects(); renderSavedRecipes(); renderFoodLibrary(); showToast('Recipe saved');
+    if(!saveState('saveRecipe').ok)return;
+    recipeIngredients=[]; $('recipeName').value=''; $('recipeFinalWeight').value=''; renderIngredients(); $('recipeResult').hidden=true; populateFoodSelects(); renderSavedRecipes(); renderFoodLibrary(); showToast('Recipe saved');
   }
   function renderSavedRecipes(){
     const el=$('savedRecipes'); if(!state.recipes.length){el.className='log-list empty-state';el.textContent='No saved recipes yet.';return;}
     el.className='log-list'; el.innerHTML=state.recipes.map((r,i)=>{const f=foodById('recipe_'+r.id),s=smartPortionFor(f,$('mealSelect').value);return `<div class="log-row"><div><strong>🍲 ${escapeHtml(r.name)}</strong><div class="meta">${r.kcalPer100} kcal · ${r.proteinPer100} g protein per 100 g${s.grams?` · smart ${s.grams} g`:''}</div></div><div class="numbers"><button class="secondary-btn mini" type="button" data-log-recipe="${r.id}">Log</button><button class="remove-btn" type="button" data-del-recipe="${i}">delete</button></div></div>`}).join('');
     el.querySelectorAll('[data-log-recipe]').forEach(b=>b.addEventListener('click',()=>{setSelectedFood('recipe_'+b.dataset.logRecipe,true);document.querySelector('[data-tab="today"]').click();}));
-    el.querySelectorAll('[data-del-recipe]').forEach(b=>b.addEventListener('click',()=>{if(confirm('Delete this saved recipe?')){state.recipes.splice(Number(b.dataset.delRecipe),1);saveState();populateFoodSelects();renderSavedRecipes();renderFoodLibrary();}}));
+    el.querySelectorAll('[data-del-recipe]').forEach(b=>b.addEventListener('click',()=>{if(confirm('Delete this saved recipe?')){state.recipes.splice(Number(b.dataset.delRecipe),1);const r=saveState('deleteRecipe');populateFoodSelects();renderSavedRecipes();if(r.ok)renderFoodLibrary();}}));
   }
 
   function renderHistory(){
@@ -356,20 +405,20 @@
     el.className='history-list'; el.innerHTML=keys.map(k=>{const t=totalsFor(state.logs[k]);const diff=Math.round(state.targets.calories-t.kcal);return `<article class="history-card"><div><strong>${escapeHtml(formatDate(k))}</strong><br><small>${state.logs[k].length} items</small></div><div class="totals"><strong>${Math.round(t.kcal).toLocaleString()} kcal</strong><br><small>${Math.round(t.protein)} g protein · ${diff>=0?diff+' left':Math.abs(diff)+' over'}</small></div></article>`}).join('');
   }
   function saveTargets(){
-    const c=clamp(Number($('targetCalories').value)||2300,1200,6000), p=clamp(Number($('targetProtein').value)||150,50,400); state.targets={calories:c,protein:p}; saveState(); renderToday(); updateSmartPortion(); renderFoodLibrary(); updateCustomSuggestion(); showToast('Targets saved');
+    const c=clamp(Number($('targetCalories').value)||2300,1200,6000), p=clamp(Number($('targetProtein').value)||150,50,400); state.targets={calories:c,protein:p}; if(!saveState('saveTargets').ok){renderToday();return;} renderToday(); updateSmartPortion(); renderFoodLibrary(); updateCustomSuggestion(); showToast('Targets saved');
   }
   function exportBackup(){
     const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}), a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='okello-food-backup-'+todayKey()+'.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   }
   async function importBackup(file){
-    try{const text=await file.text(),parsed=JSON.parse(text);if(!parsed||typeof parsed!=='object')throw new Error();state={...defaultState,...parsed,targets:{...defaultState.targets,...(parsed.targets||{})}};saveState();initAll();showToast('Backup imported');}catch(e){showToast('That backup file could not be read');}
+    try{const text=await file.text(),parsed=JSON.parse(text);if(!parsed||typeof parsed!=='object')throw new Error();state={...defaultState,...parsed,targets:{...defaultState.targets,...(parsed.targets||{})}};if(!saveState('importBackup').ok){initAll();return;}initAll();showToast('Backup imported');}catch(e){showToast('That backup file could not be read');}
   }
 
   function bindEvents(){
     $('foodSelect').addEventListener('change',()=>setSelectedFood($('foodSelect').value,true));
     $('gramsInput').addEventListener('input',updateQuickCalc); $('foodSearch').addEventListener('input',e=>renderSuggestions(e.target.value)); $('addFoodBtn').addEventListener('click',addToToday);
     $('mealSelect').addEventListener('change',()=>{updateSmartPortion();renderFoodLibrary();updateCustomSuggestion();}); $('useSmartPortionBtn').addEventListener('click',useSmartPortion);
-    $('clearTodayBtn').addEventListener('click',()=>{if(confirm('Clear everything logged today?')){state.logs[todayKey()]=[];saveState();renderToday();updateSmartPortion();renderFoodLibrary();}});
+    $('clearTodayBtn').addEventListener('click',()=>{if(confirm('Clear everything logged today?')){state.logs[todayKey()]=[];const r=saveState('clearToday');renderToday();if(r.ok){updateSmartPortion();renderFoodLibrary();}}});
     $('librarySearch').addEventListener('input',renderFoodLibrary); $('saveCustomFoodBtn').addEventListener('click',saveCustomFood); $('lookupBarcodeBtn').addEventListener('click',lookupBarcode);
     ['customKcal','customProtein','customFibre','customPortion','customCategory'].forEach(id=>$(id).addEventListener('input',updateCustomSuggestion));
     $('addIngredientBtn').addEventListener('click',addIngredient); $('recipeFinalWeight').addEventListener('input',calculateRecipe); $('calculateRecipeBtn').addEventListener('click',calculateRecipe); $('saveRecipeBtn').addEventListener('click',saveRecipe);
