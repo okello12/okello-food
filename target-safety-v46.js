@@ -79,7 +79,18 @@
     const forecast=$('dayForecastCard');if(forecast)forecast.hidden=false;
   }
   function applyMode(){
-    if(mode()==='tracking-only')applyTrackingOnly();else if(mode())applyTargeted();
+    const current=mode();
+    if(!current)return;
+    // The static shell hides the allowance bar until a target decision exists.
+    // Once one does, release the first-paint guard here rather than in a bridge.
+    document.documentElement.classList.remove('targets-unconfirmed');
+    if(current==='tracking-only'){
+      applyTrackingOnly();
+      // Settings must not display invented values in tracking-only mode.
+      const kcal=$('targetCalories');const protein=$('targetProtein');
+      if(kcal){kcal.value='';kcal.placeholder='Enter your target';}
+      if(protein){protein.value='';protein.placeholder='Enter your target';}
+    }else applyTargeted();
   }
 
   document.addEventListener('click',event=>{

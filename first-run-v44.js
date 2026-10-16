@@ -189,17 +189,17 @@
     quickAdd.insertAdjacentElement('afterend', demo);
   }
 
+  // Target ownership lives in target-safety-v46. v44 never invents a default
+  // allowance; the only note it may show is a pointer to the target decision
+  // for a person who has not made one yet.
   function addDefaultTargetNote(){
     const profile = readProfile();
-    if(!profile || profile.customTargets || qs('.v44-default-note')) return;
+    if(!profile || profile.targetMode || profile.customTargets || qs('.v44-default-note')) return;
     const progress = qs('.progress-wrap');
     if(!progress) return;
-    const state = readState();
-    const kcal = Number(state.targets?.calories) || 2300;
-    const protein = Number(state.targets?.protein) || 150;
     const note = document.createElement('div');
     note.className = 'v44-default-note';
-    note.innerHTML = `<span>${Math.round(kcal).toLocaleString()} kcal · ${Math.round(protein)} g protein are starter targets, not personalised.</span><button type="button">Change</button>`;
+    note.innerHTML = `<span>No targets set. You can track without one, or enter targets you already use.</span><button type="button">Choose</button>`;
     note.querySelector('button').addEventListener('click', () => clickTab('settings'));
     progress.insertAdjacentElement('afterend', note);
   }
@@ -396,20 +396,23 @@
     const modal = document.createElement('div');
     modal.className = 'v44-more-sheet';
     modal.id = 'v44Onboarding';
-    modal.innerHTML = `<div class="v44-more-panel" role="dialog" aria-modal="true" aria-labelledby="v44OnboardingTitle"><p class="eyebrow">WELCOME</p><h3 id="v44OnboardingTitle">Make the first log feel familiar</h3><p class="muted">Two quick choices. No medical conditions, no long questionnaire.</p><label style="display:block;margin-top:12px;font-weight:800">What foods feel like home?<select id="v44Culture" class="smart-select" style="margin-top:5px"><option value="ghana-west-africa">Ghana & West Africa</option><option value="caribbean">Caribbean</option><option value="south-asia">South Asia</option><option value="mixed">Mixed / everyday</option></select></label><label style="display:block;margin-top:12px;font-weight:800">What are you focusing on?<select id="v44Focus" class="smart-select" style="margin-top:5px"><option value="just-see">Just see what I eat</option><option value="maintain">Maintain</option><option value="lighter">Eat lighter</option><option value="protein">More protein</option></select></label><div class="v44-default-note" style="margin-top:12px"><span>Starter targets are 2,300 kcal and 150 g protein. They are defaults, not personalised.</span></div><details style="margin-top:8px"><summary style="font-weight:800;color:var(--forest);cursor:pointer">Change starter targets</summary><div class="smart-row" style="margin-top:8px"><label>Calories<input id="v44Calories" class="smart-input" type="number" min="1200" max="6000" value="2300"></label><label>Protein (g)<input id="v44Protein" class="smart-input" type="number" min="50" max="400" value="150"></label></div></details><div class="button-row" style="margin-top:14px"><button id="v44Start" class="primary-btn" type="button">Start logging</button><button id="v44Skip" class="secondary-btn" type="button">Skip for now</button></div></div>`;
+    modal.innerHTML = `<div class="v44-more-panel" role="dialog" aria-modal="true" aria-labelledby="v44OnboardingTitle"><p class="eyebrow">WELCOME</p><h3 id="v44OnboardingTitle">Make the first log feel familiar</h3><p class="muted">Two quick choices. No medical conditions, no long questionnaire.</p><label style="display:block;margin-top:12px;font-weight:800">What foods feel like home?<select id="v44Culture" class="smart-select" style="margin-top:5px"><option value="ghana-west-africa">Ghana & West Africa</option><option value="caribbean">Caribbean</option><option value="south-asia">South Asia</option><option value="mixed">Mixed / everyday</option></select></label><label style="display:block;margin-top:12px;font-weight:800">What are you focusing on?<select id="v44Focus" class="smart-select" style="margin-top:5px"><option value="just-see">Just see what I eat</option><option value="maintain">Maintain</option><option value="lighter">Eat lighter</option><option value="protein">More protein</option></select></label><div class="button-row" style="margin-top:14px"><button id="v44Start" class="primary-btn" type="button">Start logging</button><button id="v44Skip" class="secondary-btn" type="button">Skip for now</button></div></div>`;
     document.body.appendChild(modal);
     function finish(skipped){
       const culture = $('v44Culture').value;
       const focus = $('v44Focus').value;
-      const kcal = Number($('v44Calories').value) || 2300;
-      const protein = Number($('v44Protein').value) || 150;
-      const customTargets = kcal !== 2300 || protein !== 150;
-      writeJson(PROFILE_KEY,{version:VERSION,culture,focus,customTargets,skipped:!!skipped,createdAt:new Date().toISOString()});
-      if(customTargets){
-        if($('targetCalories')) $('targetCalories').value = String(kcal);
-        if($('targetProtein')) $('targetProtein').value = String(protein);
-        $('saveTargetsBtn')?.click();
-      }
+      // Merge into the shared profile. target-safety-v46 writes targetMode,
+      // customTargets and related fields to the same key, and those must
+      // survive onboarding completing after the target decision was made.
+      const existing = readProfile() || {};
+      writeJson(PROFILE_KEY,{
+        ...existing,
+        version:VERSION,
+        culture,
+        focus,
+        skipped:!!skipped,
+        createdAt: existing.createdAt || new Date().toISOString()
+      });
       modal.remove();
       renderStarterShelf();
       addDefaultTargetNote();

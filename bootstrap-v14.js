@@ -17,7 +17,6 @@
     'category-rules-v1.js?v=47',
     'app.js?v=47',
     'target-safety-v46.js?v=47',
-    'target-safety-bridge-v47.js?v=47',
     'meal-catalog-facade-v1.js?v=47',
     'food-intelligence-v1.js?v=47',
     'personal-food-memory-v1.js?v=47',
