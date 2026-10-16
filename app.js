@@ -162,6 +162,18 @@
   function todayEntries(){ return state.logs[todayKey()] || []; }
   function ensureToday(){ const k=todayKey(); if(!state.logs[k]) state.logs[k]=[]; return state.logs[k]; }
   function totalsFor(entries){ return entries.reduce((a,x)=>({kcal:a.kcal+(Number(x.kcal)||0),protein:a.protein+(Number(x.protein)||0),fibre:a.fibre+(Number(x.fibre)||0)}),{kcal:0,protein:0,fibre:0}); }
+  // Salt is nullable on every log entry (nutrition-integrity-v46 snapshots it
+  // at write time, null when the food had no value). Sum only what is known
+  // and report how much of the day's calories that covers, so an unknown is
+  // never displayed as zero.
+  function saltFor(entries){
+    let known=0,knownKcal=0,totalKcal=0,n=0;
+    for(const x of entries){
+      const kc=Number(x.kcal)||0; totalKcal+=kc;
+      if(x.salt!==null&&x.salt!==undefined&&Number.isFinite(Number(x.salt))){known+=Number(x.salt);knownKcal+=kc;n++;}
+    }
+    return {grams:known,entriesKnown:n,entriesTotal:entries.length,coverage:totalKcal>0?knownKcal/totalKcal:0};
+  }
   function mealCalories(meal){ return todayEntries().filter(x=>x.meal===meal).reduce((s,x)=>s+(Number(x.kcal)||0),0); }
 
   const mealShares = {Lunch:.30,Dinner:.45,Snack:.15,Other:.10};
@@ -278,6 +290,11 @@
     $('todayTitle').textContent=formatDate(todayKey());
     const entries=ensureToday(); const totals=totalsFor(entries);
     $('todayCalories').textContent=Math.round(totals.kcal).toLocaleString(); $('todayProtein').textContent=Math.round(totals.protein)+' g'; $('todayFibre').textContent=Math.round(totals.fibre)+' g';
+    if($('todaySalt')){
+      const salt=saltFor(entries);
+      if(salt.entriesKnown===0){ $('todaySalt').textContent='—'; $('saltNote').textContent=entries.length?'No salt data for today\'s foods yet':'No salt data for today\'s foods yet'; }
+      else { $('todaySalt').textContent=(Math.round(salt.grams*10)/10)+' g'; $('saltNote').textContent=salt.coverage>=0.999?'From logged foods':`Known for ${Math.round(salt.coverage*100)}% of today\'s calories`; }
+    }
     const calDiff=Math.round(state.targets.calories-totals.kcal); const proteinDiff=Math.round(state.targets.protein-totals.protein);
     $('calRemainText').textContent=calDiff>=0 ? `${calDiff.toLocaleString()} kcal left` : `${Math.abs(calDiff).toLocaleString()} kcal over`;
     $('proteinRemainText').textContent=proteinDiff>=0 ? `${proteinDiff} g left` : `${Math.abs(proteinDiff)} g over target`;
@@ -315,7 +332,7 @@
     state.customFoods.push({id:'custom_'+Date.now(),name,emoji:'🏷️',cat,kcal,protein,fibre,portion,note:'Your saved food',image:pendingCustomImage||'',barcode:pendingCustomBarcode||''});
     if(!saveState('saveCustomFood').ok)return;
     populateFoodSelects(); renderFoodLibrary();
-    ['customName','customKcal','customProtein','customFibre','barcodeInput'].forEach(id=>$(id).value=''); $('customPortion').value=100; $('customCategory').value='Custom'; pendingCustomImage=''; pendingCustomBarcode=''; $('barcodePreview').hidden=true; $('barcodePreview').innerHTML=''; $('barcodeStatus').textContent=''; updateCustomSuggestion(); showToast('Custom food saved');
+    ['customName','customKcal','customProtein','customFibre','customSalt','barcodeInput'].forEach(id=>{if($(id))$(id).value='';}); $('customPortion').value=100; $('customCategory').value='Custom'; pendingCustomImage=''; pendingCustomBarcode=''; $('barcodePreview').hidden=true; $('barcodePreview').innerHTML=''; $('barcodeStatus').textContent=''; updateCustomSuggestion(); showToast('Custom food saved');
   }
 
   async function lookupBarcode(){
