@@ -10,9 +10,9 @@ const childProcess=require('child_process');
 // blobs from production commit 8e6765ffd355f210fc8369756a5b5ebbdc00f0d6,
 // then pass the generated backup state through the v46 migration.
 const EXPECTED_BLOBS={
-  'countable-servings-v45.js':'239e9d72c51a5317aac6bbcec20010068897deb6',
+  'fixtures/v45-shipped/countable-servings-v45.js':'239e9d72c51a5317aac6bbcec20010068897deb6',
   'piece-entry-v41.js':'5e1d02f1ba82d9e62463864f993ded62a5b0b104',
-  'backup-v2.js':'76261792a3cd80eb54df183e43325289d52cf06a'
+  'fixtures/v45-shipped/backup-v2.js':'76261792a3cd80eb54df183e43325289d52cf06a'
 };
 for(const [file,expected] of Object.entries(EXPECTED_BLOBS)){
   const actual=childProcess.execFileSync('git',['hash-object',file],{encoding:'utf8'}).trim();
@@ -20,8 +20,8 @@ for(const [file,expected] of Object.entries(EXPECTED_BLOBS)){
 }
 
 const pieceSrc=fs.readFileSync('piece-entry-v41.js','utf8');
-const countableSrc=fs.readFileSync('countable-servings-v45.js','utf8');
-const backupSrc=fs.readFileSync('backup-v2.js','utf8');
+const countableSrc=fs.readFileSync('fixtures/v45-shipped/countable-servings-v45.js','utf8');
+const backupSrc=fs.readFileSync('fixtures/v45-shipped/backup-v2.js','utf8');
 const migrationSrc=fs.readFileSync('count-unit-migration-v46.js','utf8');
 
 function clone(value){return JSON.parse(JSON.stringify(value));}
@@ -113,14 +113,14 @@ context.window.OkelloFoodCatalog={
 
 // Load the exact v45 countable-serving writer. Its startup selects the fake
 // egg control, so commitCurrent() executes the real shipped write path.
-vm.runInContext(countableSrc,context,{filename:'countable-servings-v45.js'});
+vm.runInContext(countableSrc,context,{filename:'fixtures/v45-shipped/countable-servings-v45.js'});
 const countable=context.window.OkelloCountableServingsV45;
 assert.ok(countable,'v45 countable-serving API did not initialise');
 assert.equal(countable.commitCurrent(),true,'exact v45 egg writer could not create a log');
 
 // Load the exact v45 backup owner and export the resulting production-shaped
 // state through completeBundle(), rather than hand-constructing a fixture.
-vm.runInContext(backupSrc,context,{filename:'backup-v2.js'});
+vm.runInContext(backupSrc,context,{filename:'fixtures/v45-shipped/backup-v2.js'});
 const bundle=context.window.OkelloBackup.bundle();
 assert.equal(bundle.format,'okello-backup-v2');
 assert.equal(bundle.version,2);

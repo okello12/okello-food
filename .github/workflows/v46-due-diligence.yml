@@ -59,13 +59,8 @@ jobs:
           node v45-countunit-backup-upgrade.test.js
           node write-rejection-v46.test.js
 
-      - name: Run current bundle regression
-        run: |
-          if grep -q "const VERSION = '47'" bootstrap-v14.js; then
-            node bundle-v47.test.js
-          else
-            node bundle-v46.test.js
-          fi
+      - name: Run current bundle regression (version-agnostic)
+        run: node bundle.test.js
 
       - name: Run v47 global, evidence and backup hardening regressions
         run: |
@@ -76,7 +71,7 @@ jobs:
           fi
           if [ -f recovery-v47.test.js ]; then node recovery-v47.test.js; fi
           if [ -f static-entry-v47.test.js ]; then node static-entry-v47.test.js; fi
-          if [ -f target-safety-v47.test.js ]; then node target-safety-v47.test.js; fi
+          node target-safety-v48.test.js
 
       - name: Syntax-check governed modules
         run: |

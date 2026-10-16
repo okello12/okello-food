@@ -2,7 +2,7 @@
 
 const fs=require('fs');
 const assert=require('assert');
-const src=fs.readFileSync('countable-servings-v45.js','utf8');
+const src=fs.readFileSync('fixtures/v45-shipped/countable-servings-v45.js','utf8');
 new Function(src);
 
 for(const text of [
