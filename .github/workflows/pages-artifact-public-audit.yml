@@ -93,6 +93,10 @@ jobs:
           bootstrap_src=$(sed -n 's/.*<script src="\(bootstrap-v14\.js[^"]*\)" defer><\/script>.*/\1/p' index.html | head -n1)
           [ -n "$build_id" ] || { echo 'Could not derive okello-build-id from source index.html' >&2; exit 1; }
           [ -n "$bootstrap_src" ] || { echo 'Could not derive bootstrap src from source index.html' >&2; exit 1; }
+          entry=$(sed -n 's/.*"start_url": *"\.\/\([^"]*\)".*/\1/p' manifest.webmanifest | head -n1)
+          [ -n "$entry" ] || { echo 'Could not derive start_url from manifest.webmanifest' >&2; exit 1; }
+          echo "ENTRY=$entry" >> "$GITHUB_ENV"
+          echo "Versioned entry from manifest: $entry"
 
           required=(
             'What did you eat?'
@@ -118,15 +122,15 @@ jobs:
             sha256sum index.html pages-site/index.html
             exit 1
           }
-          cmp -s app-v47-safe.html pages-site/app-v47-safe.html || {
-            echo 'Pages artifact app-v47-safe.html differs from source safe entry' >&2
-            sha256sum app-v47-safe.html pages-site/app-v47-safe.html
+          cmp -s "$entry" "pages-site/$entry" || {
+            echo "Pages artifact $entry differs from source versioned entry" >&2
+            sha256sum "$entry" "pages-site/$entry"
             exit 1
           }
 
           echo "BUILD_ID=$build_id" >> "$GITHUB_ENV"
           echo "BOOTSTRAP_SRC=$bootstrap_src" >> "$GITHUB_ENV"
-          sha256sum index.html pages-site/index.html app-v47-safe.html pages-site/app-v47-safe.html
+          sha256sum index.html pages-site/index.html "$entry" "pages-site/$entry"
 
       - name: Verify canonical, cache-busted and versioned public HTML
         shell: bash
@@ -163,10 +167,10 @@ jobs:
           check_public canonical "$base" public-canonical.html || canonical_ok=$?
           check_public cache-busted "${base}?pages-audit=${audit_token}" public-busted.html || busted_ok=$?
           check_public explicit-index "${base}index.html?pages-audit=${audit_token}" public-index.html || index_ok=$?
-          check_public safe-entry "${base}app-v47-safe.html?pages-audit=${audit_token}" public-safe.html || safe_ok=$?
+          check_public safe-entry "${base}${ENTRY}?pages-audit=${audit_token}" public-safe.html || safe_ok=$?
 
           echo 'Public response SHA-256:'
-          sha256sum public-canonical.html public-busted.html public-index.html public-safe.html pages-site/index.html pages-site/app-v47-safe.html
+          sha256sum public-canonical.html public-busted.html public-index.html public-safe.html pages-site/index.html "pages-site/${ENTRY}"
 
           if [ "$canonical_ok" -ne 0 ] && [ "$busted_ok" -eq 0 ]; then
             echo 'DIAGNOSIS: canonical Pages directory URL is stale while a cache-busted request is current.' >&2
@@ -202,7 +206,7 @@ jobs:
             echo 'Explicit public index contains the current marker but is not byte-identical to the deployed artifact.' >&2
             exit 1
           }
-          cmp -s pages-site/app-v47-safe.html public-safe.html || {
+          cmp -s "pages-site/${ENTRY}" public-safe.html || {
             echo 'Versioned safe entry is not byte-identical to the deployed safe-entry artifact.' >&2
             exit 1
           }
