@@ -60,6 +60,7 @@ jobs:
           node write-rejection-v46.test.js
           node app-repository-writes-v49.test.js
           node salt-display-v49.test.js
+          node reflection-v50.test.js
 
       - name: Run current bundle regression (version-agnostic)
         run: node bundle.test.js

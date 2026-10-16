@@ -2,7 +2,7 @@
   "name": "Okello Food Tracker",
   "short_name": "Okello Food",
   "description": "A personal Ghanaian food portion and calorie tracker.",
-  "start_url": "./app-v49.html",
+  "start_url": "./app-v50.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#FAF8F3",

@@ -24,6 +24,11 @@ function makeElement(id){
     querySelectorAll(){return [];},
     addEventListener(){},
     appendChild(){},
+    append(){},
+    prepend(){},
+    insertAdjacentElement(){},
+    remove(){},
+    closest(){return null;},
     setAttribute(){},
     classList:{add(){},remove(){},toggle(){},contains(){return false;}}
   };
@@ -57,6 +62,9 @@ windowShim.localStorage={
   removeItem:k=>{delete store[k];},
   clear(){for(const k of Object.keys(store))delete store[k];}
 };
+windowShim.addEventListener=()=>{};
+windowShim.removeEventListener=()=>{};
+windowShim.dispatchEvent=()=>true;
 windowShim.CustomEvent=class{constructor(type,init){this.type=type;this.detail=init&&init.detail;}};
 windowShim.location={href:'http://localhost/',reload(){}};
 
