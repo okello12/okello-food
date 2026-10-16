@@ -76,7 +76,7 @@ jobs:
             node backup-hardening-v47.test.js
           fi
           if [ -f recovery-v47.test.js ]; then node recovery-v47.test.js; fi
-          if [ -f static-entry-v47.test.js ]; then node static-entry-v47.test.js; fi
+          node static-entry.test.js
           node target-safety-v48.test.js
 
       - name: Syntax-check governed modules

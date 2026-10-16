@@ -43,8 +43,10 @@ for(const s of scripts){
   assert.ok(fs.existsSync(file),`${file} is in the bootstrap manifest but missing from the repo`);
   assert.ok(sw.includes(`'./${s}'`),`service worker does not cache ${s}`);
 }
-const cached=[...sw.matchAll(/'\.\/([^']+\.js\?v=\d+)'/g)].map(x=>x[1]);
+// The worker also caches the bootstrap itself, which cannot appear in its own manifest.
+const cached=[...sw.matchAll(/'\.\/([^']+\.js\?v=\d+)'/g)].map(x=>x[1]).filter(x=>!x.startsWith('bootstrap-v14.js'));
 assert.deepEqual([...new Set(cached)].sort(),[...new Set(scripts)].sort(),'service-worker JS cache set and bootstrap manifest differ');
+assert.ok(sw.includes(`'./bootstrap-v14.js?v=${v}'`),'service worker must cache the bootstrap at the current version');
 
 // Every shipped .js at the repo root is either loaded, a test, a fixture, or
 // the service worker / bootstrap itself. Anything else is dead weight.

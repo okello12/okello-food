@@ -163,7 +163,7 @@ These modules exist and must be classified carefully. Their presence does **not*
 | Current module | Current role | Classification | Future role / action |
 |---|---|---|---|
 | `target-safety-v46.js` | Tracking-only / own-target / confirmed-target safety | KEEP | Governing safety layer for current target-dependent features. |
-| `target-safety-bridge-v47.js` | Compatibility protection against legacy starter targets | TECHNICAL DEBT | Compatibility-only; active removal work is tracked outside this strategic document. |
+| ~~`target-safety-bridge-v47.js`~~ | Retired in v48 | REMOVED | first-run-v44 no longer carries starter targets and merges into the shared profile; the two guard behaviours moved into target-safety-v46.applyMode(). Issue #12 closed. |
 | `first-run-v44.js` | Onboarding/profile/legacy target defaults | EVOLVE + TECHNICAL DEBT | Keep first-run preference/profile boundary; operational remediation belongs in the release issue tracker. |
 | `smart-support.js`, `smart-portion-output-v41.js` | Support/portion output helpers | KEEP WITH BOUNDARY | General food-literacy calculations only; provenance must remain visible. |
 | `day-forecast-v1.js`, `FORECAST_ARCHITECTURE.md` | Habit/day projection | KEEP WITH BOUNDARY | Descriptive general-wellbeing projection; do not repurpose as clinical forecast. |
@@ -196,7 +196,7 @@ Existing recommendation code is **not** a shortcut around future regulatory asse
 
 This strategic document classifies technical debt so that compatibility code is not mistaken for future product design. It is **not** the operational backlog.
 
-Release-sensitive remediation must live in the issue/release tracker where it is visible before the next release. The active starter-target/bridge remediation is tracked in **GitHub issue #12**. Future concrete debt should be tracked the same way.
+Release-sensitive remediation must live in the issue/release tracker where it is visible before the next release. The starter-target/bridge remediation (**GitHub issue #12**) was completed in v48. Future concrete debt should be tracked the same way.
 
 Versioned predecessor modules and superseded handlers may remain for tests, recovery or compatibility, but new functionality must go into the current runtime owner rather than an older predecessor.
 
