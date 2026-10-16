@@ -62,6 +62,12 @@ jobs:
       - name: Run current bundle regression (version-agnostic)
         run: node bundle.test.js
 
+      - name: Run browser-harness contracts under node (snapshot invariant, category rules, product data)
+        run: |
+          node test-shim/run-browser-test.js snapshot-invariants-v1
+          node test-shim/run-browser-test.js category-rules-v1
+          node test-shim/run-browser-test.js product-data
+
       - name: Run v47 global, evidence and backup hardening regressions
         run: |
           if [ -f global-first-v47.js ]; then
