@@ -89,4 +89,4 @@ jobs:
           node --check template-runtime-v41.js &&
           node --check beta-feedback-v43.js &&
           node --check first-run-v44.js &&
-          node --check countable-servings-v45.js
+          node --check fixtures/v45-shipped/countable-servings-v45.js
