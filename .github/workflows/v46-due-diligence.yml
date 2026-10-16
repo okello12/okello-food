@@ -58,6 +58,7 @@ jobs:
           node count-unit-migration-v46.test.js
           node v45-countunit-backup-upgrade.test.js
           node write-rejection-v46.test.js
+          node app-repository-writes-v49.test.js
 
       - name: Run current bundle regression (version-agnostic)
         run: node bundle.test.js
