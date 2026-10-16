@@ -59,13 +59,14 @@ jobs:
           node v45-countunit-backup-upgrade.test.js
           node write-rejection-v46.test.js
 
-      - name: Run current bundle regression
+      - name: Run current bundle regression (version-agnostic)
+        run: node bundle.test.js
+
+      - name: Run browser-harness contracts under node (snapshot invariant, category rules, product data)
         run: |
-          if grep -q "const VERSION = '47'" bootstrap-v14.js; then
-            node bundle-v47.test.js
-          else
-            node bundle-v46.test.js
-          fi
+          node test-shim/run-browser-test.js snapshot-invariants-v1
+          node test-shim/run-browser-test.js category-rules-v1
+          node test-shim/run-browser-test.js product-data
 
       - name: Run v47 global, evidence and backup hardening regressions
         run: |
@@ -75,8 +76,8 @@ jobs:
             node backup-hardening-v47.test.js
           fi
           if [ -f recovery-v47.test.js ]; then node recovery-v47.test.js; fi
-          if [ -f static-entry-v47.test.js ]; then node static-entry-v47.test.js; fi
-          if [ -f target-safety-v47.test.js ]; then node target-safety-v47.test.js; fi
+          node static-entry.test.js
+          node target-safety-v48.test.js
 
       - name: Syntax-check governed modules
         run: |

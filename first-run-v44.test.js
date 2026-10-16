@@ -10,7 +10,7 @@ assert.ok(src.includes("const MAIN_STORE = 'okello_food_tracker_v3'"),'main stor
 for(const forbidden of ['v44Condition','healthCondition','diagnosis','medicalHistory']) assert.equal(src.includes(forbidden),false,`v44 onboarding must not collect ${forbidden}`);
 assert.ok(src.includes('What foods feel like home?'),'culture question missing');
 assert.ok(src.includes('What are you focusing on?'),'focus question missing');
-assert.ok(src.includes('defaults, not personalised'),'starter target disclosure missing');
+assert.equal(src.includes('defaults, not personalised'),false,'v44 must not disclose invented defaults; target-safety-v46 owns targets');
 assert.ok(src.includes("['waakye','Waakye']"),'waakye starter missing');
 assert.ok(src.includes("['banku','Banku']"),'banku starter missing');
 assert.ok(src.includes("['kenkey','Kenkey']"),'kenkey starter missing');
