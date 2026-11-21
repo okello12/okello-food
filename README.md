@@ -1,33 +1,19 @@
 # Okello Food Tracker
 
-A personal, mobile-first Ghanaian food portion and calorie tracker built as an installable Progressive Web App (PWA).
+An installable, local-first mobile food-literacy and general-wellbeing PWA. Food from around the world, understood in culturally familiar portions, with deeper West African coverage.
 
-## What it does
+## Features
+- Record meals, calories, protein, fibre and available salt information. Missing nutrients are not zero.
+- Use grams, culturally familiar portion estimates and countable units; distinguish measured and estimated amounts.
+- Search the food catalogue, scan packaged products or enter your own food from a label.
+- Calculate mixed dishes from ingredients and finished-pot weight; save recipes and meal templates.
+- View history and descriptive reflections based on your own logged observations.
+- Use tracking-only mode or explicitly confirm your own targets. No automatic starter calorie or protein target.
+- Core logging works offline after installation. Online barcode/product lookups use Open Food Facts.
+- Complete local backup and encrypted export/import. No account or cloud diary.
 
-- Daily calorie, protein and fibre tracking
-- Ghanaian foods including kenkey, banku, jollof, yam, plantain, goat, tilapia and okro
-- Whole-pot recipe calculator for jollof, stews and soups
-- Custom foods from packet nutrition labels
-- Saved recipes and daily history
-- Local on-device storage
-- Export/import backup
-- Offline use after installation
+## Install
+The current versioned entry is [app-v51.html](https://okello12.github.io/okello-food/app-v51.html) after the v51 release is deployed. In Safari on iPhone, choose Share → Add to Home Screen. On Android, use Chrome's Install app or Add to Home screen option. Keep a verified backup before moving devices or website origins.
 
-## Personal starting targets
-
-- 2,300 kcal/day
-- 150 g protein/day
-
-These are editable in Settings inside the app.
-
-## Install on iPhone
-
-Once GitHub Pages is enabled, open the published site in Safari, tap **Share → Add to Home Screen**, then launch **Okello Food** from the Home Screen.
-
-## Privacy
-
-Food logs, targets, recipes and custom foods are stored locally in the browser on the device. Use **Settings → Export backup** before changing phones or clearing Safari website data.
-
-## Nutrition note
-
-Nutrition figures are practical estimates. Ghanaian dishes can vary substantially by recipe, especially jollof, stew, soups, banku and kenkey. For homemade dishes, use the Recipe Calculator with the ingredients and final cooked weight.
+## Evidence and scope
+The adult beta is for food literacy and general wellbeing, not diagnosis or condition-specific treatment. Catalogue estimates, especially composite dishes, vary with the recipe and preparation. Prefer exact labels or your own weighed recipe when appropriate. See [Food evidence policy](FOOD_EVIDENCE_POLICY.md), [Intended purpose](INTENDED_PURPOSE.md) and [Privacy notice](privacy.html). Professional review, licence clearance, privacy governance and real-user adoption remain separate launch gates.
