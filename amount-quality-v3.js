@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  const localDayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
 
   const VERSION=3;
   const STORE='okello_food_tracker_v3';
@@ -7,7 +9,7 @@
   const $=id=>document.getElementById(id);
   const qs=(s,r=document)=>r.querySelector(s);
   const qsa=(s,r=document)=>Array.from(r.querySelectorAll(s));
-  const todayKey=()=>new Date().toISOString().slice(0,10);
+  const todayKey=()=>localDayKey(new Date());
   const VALID=new Set(['weighed','estimated']);
 
   function readState(){
@@ -102,7 +104,7 @@
   }
   if(todayLog){new MutationObserver(enhanceTodayRows).observe(todayLog,{childList:true,subtree:true});enhanceTodayRows();}
 
-  function dateKeys(n){const out=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);out.push(d.toISOString().slice(0,10));}return out;}
+  function dateKeys(n){const out=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);out.push(localDayKey(d));}return out;}
   function qualityStats(days=7){
     const state=readState();const out={weighed:0,estimated:0,unknown:0,total:0,entries:0};
     for(const key of dateKeys(days))for(const entry of state.logs?.[key]||[]){const kcal=Number(entry?.kcal)||0;out.total+=kcal;out.entries++;if(entry?.amountQuality==='weighed')out.weighed+=kcal;else if(entry?.amountQuality==='estimated')out.estimated+=kcal;else out.unknown+=kcal;}

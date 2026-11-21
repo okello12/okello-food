@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  const localDayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
 
   const STORE='okello_food_tracker_v3';
   const engine=window.OkelloTemplateEngine;
@@ -7,7 +9,7 @@
   if(!engine||!catalog)return;
 
   const VERSION=1;
-  const todayKey=()=>new Date().toISOString().slice(0,10);
+  const todayKey=()=>localDayKey(new Date());
 
   function readState(){
     try{return JSON.parse(localStorage.getItem(STORE)||'{}')||{};}

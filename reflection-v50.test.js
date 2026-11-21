@@ -16,7 +16,7 @@ const shim=require('./test-shim/browser-shim');
 const STORE='okello_food_tracker_v3';
 const src=fs.readFileSync('reflection-v50.js','utf8');
 
-function dayKey(offset){const d=new Date();d.setDate(d.getDate()-offset);return d.toISOString().slice(0,10);}
+function dayKey(offset){const d=new Date();d.setDate(d.getDate()-offset);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function isWeekend(key){const n=new Date(key+'T12:00:00').getDay();return n===0||n===6;}
 
 function boot(logs){
@@ -89,7 +89,7 @@ assert.equal(src.includes('2300')||src.includes('150'),false,'reflection must no
   assert.equal(repeat.includes('kcal'),false,'repeat foods are counted, not priced');
 
   // Plate companions from plateId.
-  const comp=texts.find(t=>/usually comes with/.test(t));
+  const comp=texts.find(t=>/was logged with/.test(t));
   assert.ok(comp,'must report plate companions');
   assert.ok(/Jollof rice|Banku/.test(comp),comp);
 
@@ -102,7 +102,7 @@ assert.equal(src.includes('2300')||src.includes('150'),false,'reflection must no
 
   // Measurement mix: weighed and reference-piece shares both present, with the
   // calibration nudge because reference share is non-trivial and no personal weights exist.
-  const mix=texts.find(t=>t.startsWith("Of this fortnight's calories"));
+  const mix=texts.find(t=>t.startsWith("Of this fortnight's logged calories"));
   assert.ok(mix,'must report provenance mix');
   assert.ok(/\d+% weighed/.test(mix),mix);
   assert.ok(/\d+% from standard piece sizes/.test(mix),mix);
@@ -151,4 +151,45 @@ assert.equal(src.includes('2300')||src.includes('150'),false,'reflection must no
   assert.ok(salt&&/carried a salt value/.test(salt.text),'absent salt must be named as absent');
 }
 
-console.log('reflection-v50: PASS');
+
+// Old amount provenance is not inferred; pair counts are distinct plates with a denominator.
+{
+ const logs={};
+ for(let i=0;i<6;i++){
+  const k=dayKey(i);
+  logs[k]=[{foodId:'banku',name:'Banku',grams:200,kcal:200,plateId:'same',meal:'Dinner'}];
+  if(i<3)logs[k].push(...[1,2].map(()=>({foodId:'okra',name:'Okro',grams:100,kcal:50,plateId:'same',meal:'Dinner',amountQuality:'estimated'})));
+ }
+ const {api}=boot(logs);const obs=api.build().observations.map(o=>o.text).join(' ');
+ assert.ok(obs.includes('Banku was logged with Okro on 3 of 6 plates containing Banku.'));
+ assert.ok(obs.includes('80% unclassified amounts'));
+ assert.ok(obs.includes('20% rough estimates'));
+}
+
+// Calendar-key owners use local dates, including east/west midnight and DST.
+{
+ const files=["app.js","amount-quality-v3.js","activity-v1.js","features-v1.js","smart-v3.js","day-forecast-v1.js","template-runtime-v41.js","reflection-v50.js","countable-servings-v46.js","quick-add-piece-v41.js","build-my-meal-v46.js","smart-meal-runtime-v41.js","first-run-v44.js","nutrition-integrity-v46.js"];
+ const cases=[
+  ['Europe/London','2026-07-01T23:20:00.000Z','2026-07-02'],
+  ['America/Los_Angeles','2026-01-01T02:00:00.000Z','2025-12-31'],
+  ['Pacific/Kiritimati','2026-11-21T11:00:00.000Z','2026-11-22'],
+  ['Africa/Accra','2026-11-21T00:20:00.000Z','2026-11-21'],
+  ['America/New_York','2026-03-08T04:30:00.000Z','2026-03-07'],
+  ['America/New_York','2026-03-08T07:30:00.000Z','2026-03-08']
+ ];
+ const {spawnSync}=require('child_process');
+ for(const p of files){
+  const content=fs.readFileSync(p,'utf8');
+  const declaration=content.split('\n').find(line=>line.trim().startsWith('const localDayKey='));
+  assert.ok(declaration,p+' must declare a local calendar key function');
+  assert.ok(!/\b(?:new Date\(\)|[dx])\.toISOString\(\)\.slice\(0,10\)/.test(content),p+' must not derive diary day from UTC');
+  for(const [tz,instant,expected] of cases){
+   const result=spawnSync(process.execPath,['-e',declaration+'; process.stdout.write(localDayKey(new Date(process.argv[1])));',instant],{encoding:'utf8',env:{...process.env,TZ:tz}});
+   assert.equal(result.status,0,p+' '+tz+' '+result.stderr);
+   assert.equal(result.stdout,expected,p+' '+tz+' '+instant);
+  }
+ }
+ console.log('calendar-key contract: PASS');
+}
+
+console.log('reflection-v50 and v51 regressions: PASS');

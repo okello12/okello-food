@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  const localDayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
 
   const STORE = 'okello_food_tracker_v3';
   const FAV_STORE = 'okello_food_favourites_v1';
@@ -8,7 +10,7 @@
   const qsa = (s, root=document) => Array.from(root.querySelectorAll(s));
   const round1 = n => Math.round((Number(n)||0)*10)/10;
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const todayKey = () => new Date().toISOString().slice(0,10);
+  const todayKey = () => localDayKey(new Date());
 
   const todayLog = $('todayLog');
   const historyPanel = $('tab-history');
@@ -192,7 +194,7 @@
   function dateKeyOffset(offset){
     const d = new Date();
     d.setDate(d.getDate()+offset);
-    return d.toISOString().slice(0,10);
+    return localDayKey(d);
   }
   function fmtDay(k){
     return new Intl.DateTimeFormat('en-GB',{weekday:'short'}).format(new Date(k+'T12:00:00'));
