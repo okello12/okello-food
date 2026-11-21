@@ -59,7 +59,7 @@ These are project decision thresholds, not claimed industry benchmarks.
 
 The beta remains local-first.
 
-- `okello_beta_metrics_v1` records local event types and timing, not food names or diary contents.
+- `okello_beta_metrics_v1` records local event types and timing, not food names or diary contents, only after the participant explicitly enables optional research metrics in Settings. A participant may turn this off and continue using the app.
 - `okello_beta_feedback_v1` stores structured feedback locally until the participant explicitly exports it.
 - The familiar-food discovery setting may be included in a participant's exported beta evidence to compare usability across discovery cohorts.
 - No cloud diary, account system or silent analytics endpoint is introduced by this protocol.

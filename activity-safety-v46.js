@@ -55,6 +55,9 @@
     return previousSet.call(this,key,value);
   };
 
+  // Mutation observers must never rewrite unchanged text: textContent setters
+  // produce child-list mutations even when the string is identical.
+  function setText(node,text){if(node&&node.textContent!==text)node.textContent=text;}
   function render(){
     const weight=userWeight();
     const kcal=$('actCalories');
@@ -66,11 +69,11 @@
     if(weightLabel)weightLabel.style.display='none';
     const activityTip=qs('.activity-tip');
     if(!weight){
-      if(kcal)kcal.textContent='—';
-      if(preview)preview.textContent='Active calories are not estimated until you have added your own weight. Time, distance and steps can still be logged.';
+      setText(kcal,'—');
+      setText(preview,'Active calories are not estimated until you have added your own weight. Time, distance and steps can still be logged.');
       if(activityTip&&!activityTip.dataset.v46){activityTip.dataset.v46='1';activityTip.textContent='Active-calorie estimates require a weight you entered yourself. The old 158 kg fallback is no longer used.';}
-      qsa('.activity-entry small').forEach(node=>{node.textContent=node.textContent.replace(/\s·\s~?0\sactive kcal/i,' · active kcal unavailable').replace(/\s·\s~?[\d,.]+\sactive kcal/i,' · active kcal unavailable');});
-      const strip=$('todayMoveSub');if(strip&&/active kcal/i.test(strip.textContent||''))strip.textContent='Movement is tracked separately from your food target. Active kcal needs your own weight.';
+      qsa('.activity-entry small').forEach(node=>{setText(node,node.textContent.replace(/\s·\s~?0\sactive kcal/i,' · active kcal unavailable').replace(/\s·\s~?[\d,.]+\sactive kcal/i,' · active kcal unavailable'));});
+      const strip=$('todayMoveSub');if(strip&&/active kcal/i.test(strip.textContent||''))setText(strip,'Movement is tracked separately from your food target. Active kcal needs your own weight.');
     }else{
       if(activityTip&&!activityTip.dataset.v46){activityTip.dataset.v46='1';activityTip.textContent=`Active calories are estimates using your latest recorded weight (${Math.round(weight*10)/10} kg) and do not increase your food allowance.`;}
     }

@@ -4,7 +4,7 @@ Status: **not completed**. This document prepares the facts and unresolved quest
 
 Live ICO tool: https://ico.org.uk/fee-checker
 
-Checked 8 September 2026. The ICO says organisations, including sole traders, that use personal information may need to pay unless an exemption applies. It also states that companies that have not started trading do not need to pay a fee yet and should retake the assessment once trading starts. The answer depends on the actual operator and processing, not merely on the existence of an app.
+Fee guidance rechecked 21 November 2026: https://ico.org.uk/for-organisations/data-protection-fee/data-protection-fee ; self-assessment https://ico.org.uk/for-organisations/data-protection-fee/data-protection-fee-self-assessment/ . The ICO says organisations, including sole traders, that use personal information may need to pay unless an exemption applies. It also states that companies that have not started trading do not need to pay a fee yet and should retake the assessment once trading starts. The answer depends on the actual operator and processing, not merely on the existence of an app.
 
 ## Facts already supported by the product
 
@@ -22,9 +22,9 @@ Record these answers contemporaneously with the ICO assessment:
 
 | Question | Answer |
 | --- | --- |
-| Legal operator: individual/sole trader/company/other | **TBD** |
-| Legal/trading name | **TBD** |
-| Company number if applicable | **TBD** |
+| Legal operator: individual/sole trader/company/other | **Sole trader selected, 21 November 2026; exact legal identity to be confirmed privately** |
+| Legal/trading name | **Preferred Bowlful; clearance pending; legal name to confirm privately** |
+| Company number if applicable | Not applicable for selected sole trader structure |
 | Has the operator started trading? If yes, date | **TBD** |
 | Is any money currently received for Okello Food or related services? | **TBD** |
 | Does the operator determine the purposes/means of any personal-data processing connected to the service? | **TBD / privacy assessment** |

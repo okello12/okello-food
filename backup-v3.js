@@ -23,7 +23,7 @@
     {key:'okello_beta_metrics_v1',field:'betaMetrics',type:'array',durability:'durable'},
     {key:'okello_recipe_voice_draft_v1',field:'recipeDraft',type:'string-null',durability:'draft'}
   ]);
-  const DISPOSABLE=Object.freeze(['okello_scanner_debug_v1','okello_scanner_last_error_v1','okello_touch_fallback_count','okello_smart_meal_last_trace_v42']);
+  const DISPOSABLE=Object.freeze(['okello_scanner_debug_v1','okello_scanner_last_error_v1','okello_touch_fallback_count','okello_smart_meal_last_trace_v42','okello_beta_metrics_optin_v1']);
 
   function toast(message){const node=$('toast');if(!node)return;node.textContent=message;node.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>node.classList.remove('show'),3200);}
   function isObject(value){return !!value&&typeof value==='object'&&!Array.isArray(value);}
@@ -158,7 +158,7 @@
 
   function updateCopy(){
     const backupCard=$('exportBtn')?.closest('.card');const note=backupCard?.querySelector('.muted');if(note)note.textContent='Complete backup v3 includes food and weight history, recipes, favourites, satiety, activity, photo notes, shopping scans, first-run preferences, adult-beta/network choices, beta feedback, local beta metrics and the current recipe draft. The shipped Ghana/world catalogue is not duplicated into your backup because it is part of the app bundle, not user data.';
-    const secure=$('encryptedExportBtn')?.closest('.secure-transfer');const secureNote=secure?.querySelector('.secure-note');if(secureNote)secureNote.textContent='Encrypted backups use your passphrase locally. Scanner diagnostics, temporary runtime traces and touch-debug counters are deliberately excluded.';
+    const secure=$('encryptedExportBtn')?.closest('.secure-transfer');const secureNote=secure?.querySelector('.secure-note');if(secureNote)secureNote.textContent='Encrypted backups use your passphrase locally. Scanner diagnostics, temporary runtime traces, touch-debug counters and the device-specific research opt-in are deliberately excluded.';
   }
   updateCopy();
 

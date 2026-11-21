@@ -28,7 +28,11 @@ assert.ok(src.includes('piece.createLogDraft'),'rough servings must use governed
 assert.ok(src.includes("source:'rough-serving-v44'"),'rough serving source missing');
 assert.ok(src.includes('Estimated serving'),'estimated log badge missing');
 assert.ok(src.includes('Estimated from pieces'),'piece estimate badge missing');
-assert.ok(src.includes("const existing = qs('.v44-estimate-badge', row)"),'estimate badges must update in place rather than mutation-loop');
+// The portion badge must be found and updated in place, and must exclude the
+// food-evidence badge nutrition-integrity-v46 renders with the same base class;
+// otherwise the two modules overwrite each other's text and loop. Behaviour is
+// also checked in a real browser by scripts/cross-origin-browser-test.cjs.
+assert.ok(/const existing = qs\('\.v44-estimate-badge:not\(\.v46-food-evidence\)', row\)/.test(src),'portion badge must update in place and exclude the food-evidence badge');
 assert.ok(src.includes("if(existing.textContent !== label) existing.textContent = label"),'stable estimate badge update guard missing');
 assert.ok(src.includes("if(!event.isTrusted || !roughSelection) return"),'manual gram edits must cancel rough-serving provenance');
 assert.ok(src.includes("$('useSmartPortionBtn')?.addEventListener('click'"),'Smart Portion must cancel any prior rough-serving selection');
