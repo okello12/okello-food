@@ -420,6 +420,7 @@
         createdAt: existing.createdAt || new Date().toISOString()
       });
       modal.remove();
+      window.dispatchEvent(new Event('okello:profile-updated'));
       renderStarterShelf();
       addDefaultTargetNote();
       $('globalFoodSearch')?.focus();

@@ -64,6 +64,7 @@
   const hub=document.createElement('section');hub.className='global-hub';
   hub.innerHTML=`<div class="hub-search-row"><div class="hub-search-box"><span class="hub-search-icon" aria-hidden="true">⌕</span><input id="globalFoodSearch" type="search" autocomplete="off" placeholder="Search food or packaged product…" aria-label="Search all foods"><button id="hubClearBtn" class="hub-clear" type="button" aria-label="Clear search">×</button></div><button id="hubScanBtn" class="hub-scan" type="button">▣ Scan</button></div><div class="hub-tools"><button id="hubAddBtn" class="hub-tool" type="button">＋ Add food</button><button id="hubRecipeBtn" class="hub-tool" type="button">🍲 Recipe</button><button id="hubFoodsBtn" class="hub-tool" type="button">Browse library</button><span id="hubBalance" class="hub-balance">2,300 kcal left</span></div><div id="hubResults" class="hub-results" hidden></div>`;
   mast.insertAdjacentElement('afterend',hub);
+  window.dispatchEvent(new Event('okello:global-hub-rendered'));
 
   const globalSearch=$('globalFoodSearch'),hubResults=$('hubResults'),clearBtn=$('hubClearBtn');let searchTimer=null;
   function localResults(term){const q=term.trim().toLowerCase();if(!q)return [];return optionList().filter(x=>x.label.toLowerCase().includes(q)).slice(0,9);}
