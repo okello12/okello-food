@@ -1,6 +1,6 @@
-# Bowlful — founding offer and terms workpaper
+# Working-name pending — founding offer and terms workpaper
 
-21 November 2026. Internal draft. Not an offer open for acceptance. Bowlful is the founder's preferred brand; clearance pending. Do not publish, prescribe a launch date, accept payment, or present premium features as available until the launch gate is closed.
+21 November 2026. Internal draft. Not an offer open for acceptance. The founder now prefers Portuva provisionally (21 November 2026), but **Portiva: Calorie & Macro Coach** is an existing directly relevant app and creates a material confusion risk; Portuva is NOT cleared. Bowlful was the former working candidate. See BRAND_CLEARANCE_PORTUVA.md. Do not publish, prescribe a launch date, accept payment, or present premium features as available until the launch gate is closed.
 
 ## Offer
 - Operator: UK sole trader, [legal name] trading as [cleared name]. UK adults aged 18+, general food literacy/wellbeing only.
