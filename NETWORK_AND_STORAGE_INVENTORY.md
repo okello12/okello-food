@@ -31,7 +31,8 @@ The in-app Web Speech Recognition feature is disabled in v46. Users may still us
 | `okello_beta_feedback_v1` | Durable local beta evidence | Included |
 | `okello_adult_beta_v46` | Durable adult-beta confirmation | Included |
 | `okello_remote_lookup_notice_v46` | Durable acknowledgement of Open Food Facts network disclosure | Included |
-| `okello_beta_metrics_v1` | Durable local-only beta adoption metrics | Included |
+| `okello_beta_metrics_v1` | Optional local-only beta research metrics, disabled by default | Included |
+| `okello_beta_metrics_optin_v1` | Device-specific voluntary research choice; absence means off | Not transferred; explicitly opt in on each device |
 | `okello_recipe_voice_draft_v1` | Recoverable recipe-text draft | Included |
 
 The shipped Ghana/world managed catalogue is deliberately **not** user data in v46. `catalog-storage-v46.js` separates managed `ghana_`/`world_` records from the durable main-state document and provides a temporary compatibility view to older runtime modules. Backup v3 therefore backs up the user's custom foods and history, not a duplicate of the shipped catalogue.
