@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  const localDayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
 
   const STORE='okello_food_tracker_v3';
   const VERSION=2;
@@ -19,7 +21,7 @@
   const $=id=>document.getElementById(id);
   const qs=(selector,root=document)=>root.querySelector(selector);
   const qsa=(selector,root=document)=>Array.from(root.querySelectorAll(selector));
-  const todayKey=()=>new Date().toISOString().slice(0,10);
+  const todayKey=()=>localDayKey(new Date());
   function readState(){if(repo)return repo.read();try{return JSON.parse(localStorage.getItem(STORE)||'{}')||{};}catch(_){return {};}}
   function writeState(state){if(repo)return repo.replace(state,{source:'countable-serving-v46'}).ok;try{localStorage.setItem(STORE,JSON.stringify(state));return true;}catch(_){return false;}}
   function toast(message){const node=$('toast');if(!node)return;node.textContent=message;node.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>node.classList.remove('show'),1900);}

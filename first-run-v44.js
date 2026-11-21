@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  const localDayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
 
   const VERSION = 1;
   const PROFILE_KEY = 'okello_first_run_v44';
@@ -24,7 +26,7 @@
   }
   function readState(){ return readJson(MAIN_STORE, {}) || {}; }
   function writeState(state){ return writeJson(MAIN_STORE, state); }
-  function todayKey(){ return new Date().toISOString().slice(0,10); }
+  function todayKey(){ return localDayKey(new Date()); }
   function totalLogCount(state=readState()){
     return Object.values(state.logs || {}).reduce((n, rows) => n + (Array.isArray(rows) ? rows.length : 0), 0);
   }

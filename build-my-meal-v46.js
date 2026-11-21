@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  const localDayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
 
   const VERSION=1;
   const repo=window.OkelloStateRepository;
@@ -10,7 +12,7 @@
   const $=id=>document.getElementById(id);
   const qs=(selector,root=document)=>root.querySelector(selector);
   const qsa=(selector,root=document)=>Array.from(root.querySelectorAll(selector));
-  const todayKey=()=>new Date().toISOString().slice(0,10);
+  const todayKey=()=>localDayKey(new Date());
   const round1=n=>Math.round(Number(n)*10)/10;
   const esc=value=>String(value??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]||c));
   const WORD_NUMS=Object.freeze({one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,a:1,an:1});

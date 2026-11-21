@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  const localDayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
 
   const STORE='okello_food_tracker_v3';
   const TRACE_KEY='okello_smart_meal_last_trace_v42';
@@ -14,7 +16,7 @@
   const $=id=>document.getElementById(id);
   const qsa=(selector,root=document)=>Array.from(root.querySelectorAll(selector));
   const round1=n=>Math.round((Number(n)||0)*10)/10;
-  const todayKey=()=>new Date().toISOString().slice(0,10);
+  const todayKey=()=>localDayKey(new Date());
   const uid=prefix=>(globalThis.crypto&&typeof globalThis.crypto.randomUUID==='function')
     ?`${prefix}_${globalThis.crypto.randomUUID()}`
     :`${prefix}_${Date.now()}_${Math.random().toString(36).slice(2)}`;

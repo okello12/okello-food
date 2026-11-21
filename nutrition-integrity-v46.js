@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  const localDayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
 
   const VERSION=1;
   const MAIN_STORE='okello_food_tracker_v3';
@@ -8,7 +10,7 @@
   const $=id=>document.getElementById(id);
   const qs=(selector,root=document)=>root.querySelector(selector);
   const qsa=(selector,root=document)=>Array.from(root.querySelectorAll(selector));
-  const todayKey=()=>new Date().toISOString().slice(0,10);
+  const todayKey=()=>localDayKey(new Date());
   const finite=value=>value!==null&&value!==''&&Number.isFinite(Number(value));
   const nullable=value=>finite(value)?Number(value):null;
   const round1=value=>Math.round(Number(value)*10)/10;

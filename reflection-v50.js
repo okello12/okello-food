@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  const localDayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
 
   // Reflection: the "so what" layer. Reads the last 14 days of logs and says
   // things only this app can know, because only this app records them:
@@ -27,7 +29,7 @@
     try{return window.OkelloStateRepository?.read?.()||JSON.parse(localStorage.getItem(MAIN_STORE)||'{}')||{};}
     catch(_){return {};}
   }
-  function dayKey(d){return d.toISOString().slice(0,10);}
+  function dayKey(d){return localDayKey(d);}
   function recentDays(n){const out=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);out.push(dayKey(d));}return out;}
   function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
   function pct(n,d){return d>0?Math.round(n/d*100):0;}
