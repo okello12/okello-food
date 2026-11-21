@@ -2,7 +2,7 @@
 
 **21 November 2026. Internal evidence note. NOT a trade mark clearance opinion.**
 
-Founder preference: **Portuva**; proposed pronunciation "por-too-vah". The decision records preference only, **not authorisation to launch, buy domains, rename the production app or create a live Stripe payment link**. Continue public beta as Okello Food pending clearance.
+**RETIRED name** as of 21 November 2026: founder elected to change away from Portuva following the direct-sector near-name collision. This page is retained as evidence of why the name was withdrawn. Former pronunciation "por-too-vah". The decision records preference only, **not authorisation to launch, buy domains, rename the production app or create a live Stripe payment link**. Continue public beta as Okello Food pending clearance.
 
 ## Significant near-name collision
 
@@ -25,4 +25,4 @@ An initial broad web search did not surface an established standalone nutrition 
 4. Do not buy domains, file a trade mark, commission final logos, rename GitHub Pages or Stripe business, or sell under Portuva until cleared or founder expressly accepts a lawyer-reviewed risk.
 5. Keep an alternative distinctive name shortlist available if Portuva fails clearance.
 
-Owner: founder. Status: **HOLD (preferred but materially conflicted)**.
+Owner: founder. Status: **WITHDRAWN**. No legal determination that use is prohibited; commercially unsuitable risk compared with alternatives.
