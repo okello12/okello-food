@@ -22,6 +22,8 @@ async function test(engine,from,to){
  // Prevent deliberate testing from sending information to a third-party host.
  await ctx.route('**/*',route=>{const u=new URL(route.request().url());return u.hostname==='127.0.0.1'?route.continue():route.abort();});
  const p=await ctx.newPage();p.on('pageerror',e=>console.error(engine.name()+' source page error:',e.message));await ready(p,from);console.log(engine.name()+': source booted');
+ const freshTargets=await p.evaluate(()=>window.OkelloStateRepository.read().targets);
+ assert.deepEqual(freshTargets,{calories:null,protein:null},'a new user must not receive invented calorie/protein targets');
  await p.locator('#v46AdultConfirm').tap({timeout:10000});
  await p.locator('#v46TrackOnly').tap({timeout:10000});
  if(await p.locator('#v44Skip').isVisible())await p.locator('#v44Skip').tap({timeout:10000});
