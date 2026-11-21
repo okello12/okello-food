@@ -16,7 +16,8 @@
 
   const defaultState=()=>({
     schemaVersion:SCHEMA_VERSION,
-    targets:{calories:2300,protein:150},
+    // No inferred energy/protein targets in a newly created diary.
+    targets:{calories:null,protein:null},
     logs:{},
     customFoods:[],
     recipes:[],
@@ -84,9 +85,10 @@
     const existingSchema=Number(state.schemaVersion)||0;
     if(existingSchema<SCHEMA_VERSION){state.schemaVersion=SCHEMA_VERSION;changed=true;}
 
-    if(ensureObject(state,'targets',{calories:2300,protein:150}))changed=true;
-    if(!(Number(state.targets.calories)>0)){state.targets.calories=2300;changed=true;}
-    if(!(Number(state.targets.protein)>0)){state.targets.protein=150;changed=true;}
+    if(ensureObject(state,'targets',{calories:null,protein:null}))changed=true;
+    // Preserve genuine existing values exactly, including historical imported
+    // targets. Absence is not a licence to invent a target during migration.
+    for(const nutrient of ['calories','protein'])if(!Object.prototype.hasOwnProperty.call(state.targets,nutrient)){state.targets[nutrient]=null;changed=true;}
     if(ensureObject(state,'logs'))changed=true;
     if(ensureArray(state,'customFoods'))changed=true;
     if(ensureArray(state,'recipes'))changed=true;

@@ -76,7 +76,7 @@
     {id:'raw_stock_cube',name:'Stock cubes, seasoning (recipe)',emoji:'🧂',cat:'Raw ingredient',kcal:200,protein:5,fibre:0,portion:20,min:5,max:200,raw:true,note:'about 10 g a cube'}
   ];
 
-  const defaultState = {targets:{calories:2300,protein:150},logs:{},customFoods:[],recipes:[]};
+  const defaultState = {targets:{calories:null,protein:null},logs:{},customFoods:[],recipes:[]};
   // UI ownership: app.js announces stable render completion. Enhancers should
   // listen for these events instead of observing and rewriting the whole page.
   const signal=(name,detail={})=>window.dispatchEvent(new CustomEvent(`okello:${name}`,{detail}));
@@ -199,10 +199,12 @@
   }
   function smartPortionFor(food,meal){
     if(!food || !(food.kcal>0)) return {grams:0,kcal:0,reason:'Calories per 100 g are needed first.'};
+    const target=Number(state.targets?.calories);
+    if(!Number.isFinite(target)||target<=0)return {grams:0,kcal:0,reason:'Choose your own calorie target to use Smart Portion.'};
     const dailyTotal=totalsFor(todayEntries()).kcal;
-    const dailyRemaining=Math.max(0,state.targets.calories-dailyTotal);
+    const dailyRemaining=Math.max(0,target-dailyTotal);
     if(dailyRemaining<=0) return {grams:0,kcal:0,reason:'You have used today’s calorie target.'};
-    const mealTarget=state.targets.calories*(mealShares[meal]||.10);
+    const mealTarget=target*(mealShares[meal]||.10);
     const mealUsed=mealCalories(meal);
     const mealRemaining=Math.max(0,mealTarget-mealUsed);
     if(mealRemaining<=0) return {grams:0,kcal:0,reason:`Your ${meal.toLowerCase()} allowance is already used. You can still override it.`};
@@ -302,10 +304,13 @@
       if(salt.entriesKnown===0){ $('todaySalt').textContent='—'; $('saltNote').textContent=entries.length?'No salt data for today\'s foods yet':'No salt data for today\'s foods yet'; }
       else { $('todaySalt').textContent=(Math.round(salt.grams*10)/10)+' g'; $('saltNote').textContent=salt.coverage>=0.999?'From logged foods':`Known for ${Math.round(salt.coverage*100)}% of today\'s calories`; }
     }
-    const calDiff=Math.round(state.targets.calories-totals.kcal); const proteinDiff=Math.round(state.targets.protein-totals.protein);
-    $('calRemainText').textContent=calDiff>=0 ? `${calDiff.toLocaleString()} kcal left` : `${Math.abs(calDiff).toLocaleString()} kcal over`;
-    $('proteinRemainText').textContent=proteinDiff>=0 ? `${proteinDiff} g left` : `${Math.abs(proteinDiff)} g over target`;
-    $('calorieBar').style.width=clamp(totals.kcal/state.targets.calories*100,0,100)+'%'; $('calorieBar').classList.toggle('over',totals.kcal>state.targets.calories);
+    const kc=Number(state.targets?.calories),pr=Number(state.targets?.protein);
+    const hasKc=Number.isFinite(kc)&&kc>0,hasPr=Number.isFinite(pr)&&pr>0;
+    const calDiff=hasKc?Math.round(kc-totals.kcal):null;
+    const proteinDiff=hasPr?Math.round(pr-totals.protein):null;
+    $('calRemainText').textContent=hasKc?(calDiff>=0 ? `${calDiff.toLocaleString()} kcal left` : `${Math.abs(calDiff).toLocaleString()} kcal over`):'No calorie target set';
+    $('proteinRemainText').textContent=hasPr?(proteinDiff>=0 ? `${proteinDiff} g left` : `${Math.abs(proteinDiff)} g over target`):'No protein target set';
+    $('calorieBar').style.width=hasKc?clamp(totals.kcal/kc*100,0,100)+'%':'0%'; $('calorieBar').classList.toggle('over',hasKc&&totals.kcal>kc);
     const log=$('todayLog');
     if(!entries.length){log.className='log-list empty-state';log.textContent='Nothing logged yet.';signal('today-rendered',{day:todayKey(),count:0});return;}
     log.className='log-list';
@@ -411,10 +416,13 @@
   function renderHistory(){
     const keys=Object.keys(state.logs).sort().reverse(), el=$('historyList');
     if(!keys.length){el.className='history-list empty-state';el.textContent='Your completed days will appear here.';return;}
-    el.className='history-list'; el.innerHTML=keys.map(k=>{const t=totalsFor(state.logs[k]);const diff=Math.round(state.targets.calories-t.kcal);return `<article class="history-card"><div><strong>${escapeHtml(formatDate(k))}</strong><br><small>${state.logs[k].length} items</small></div><div class="totals"><strong>${Math.round(t.kcal).toLocaleString()} kcal</strong><br><small>${Math.round(t.protein)} g protein · ${diff>=0?diff+' left':Math.abs(diff)+' over'}</small></div></article>`}).join('');
+    const target=Number(state.targets?.calories);const hasTarget=Number.isFinite(target)&&target>0;
+    el.className='history-list'; el.innerHTML=keys.map(k=>{const t=totalsFor(state.logs[k]);const diff=hasTarget?Math.round(target-t.kcal):null;return `<article class="history-card"><div><strong>${escapeHtml(formatDate(k))}</strong><br><small>${state.logs[k].length} items</small></div><div class="totals"><strong>${Math.round(t.kcal).toLocaleString()} kcal</strong><br><small>${Math.round(t.protein)} g protein${hasTarget?' · '+(diff>=0?diff+' left':Math.abs(diff)+' over'):''}</small></div></article>`}).join('');
   }
   function saveTargets(){
-    const c=clamp(Number($('targetCalories').value)||2300,1200,6000), p=clamp(Number($('targetProtein').value)||150,50,400); state.targets={calories:c,protein:p}; if(!saveState('saveTargets').ok){renderToday();return;} renderToday(); updateSmartPortion(); renderFoodLibrary(); updateCustomSuggestion(); showToast('Targets saved');
+    const c=Number($('targetCalories').value),p=Number($('targetProtein').value);
+    if(!(c>=1200&&c<=6000&&p>=20&&p<=400)){showToast('Enter your existing calorie and protein targets first.');return;}
+    state.targets={calories:Math.round(c),protein:Math.round(p)}; if(!saveState('saveTargets').ok){renderToday();return;} renderToday(); updateSmartPortion(); renderFoodLibrary(); updateCustomSuggestion(); showToast('Targets saved');
   }
   function exportBackup(){
     const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}), a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='okello-food-backup-'+todayKey()+'.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
@@ -438,7 +446,7 @@
   }
 
   function initAll(){
-    populateFoodSelects(); $('targetCalories').value=state.targets.calories; $('targetProtein').value=state.targets.protein; setSelectedFood(selectedFoodId,true); renderToday(); renderFoodLibrary(); renderIngredients(); renderSavedRecipes(); renderHistory(); updateCustomSuggestion();
+    populateFoodSelects(); $('targetCalories').value=state.targets?.calories??''; $('targetProtein').value=state.targets?.protein??''; setSelectedFood(selectedFoodId,true); renderToday(); renderFoodLibrary(); renderIngredients(); renderSavedRecipes(); renderHistory(); updateCustomSuggestion();
   }
 
   function syncFromStorage(){

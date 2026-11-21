@@ -28,7 +28,7 @@
   }
   function ensureState(){
     const s = readState();
-    s.targets = s.targets || {calories:2300, protein:150};
+    s.targets = s.targets || {calories:null, protein:null};
     s.logs = s.logs || {};
     s.customFoods = Array.isArray(s.customFoods) ? s.customFoods : [];
     s.recipes = Array.isArray(s.recipes) ? s.recipes : [];
@@ -204,19 +204,19 @@
   }
   function renderWeekly(){
     const s = ensureState();
-    const target = Number(s.targets?.calories)||2300;
+    const target=Number(s.targets?.calories);const hasTarget=Number.isFinite(target)&&target>0;
     const days = Array.from({length:7},(_,i)=>dateKeyOffset(i-6)).map(k=>({k,...totals(s.logs[k]||[])}));
     const withFood = days.filter(d=>d.kcal>0);
     const avg = withFood.length ? withFood.reduce((n,d)=>n+d.kcal,0)/withFood.length : 0;
     const avgProtein = withFood.length ? withFood.reduce((n,d)=>n+d.protein,0)/withFood.length : 0;
-    const onTarget = withFood.filter(d=>d.kcal<=target).length;
-    weekly.innerHTML = `<div class="section-heading"><div><p class="eyebrow">7-DAY VIEW</p><h3>Weekly progress</h3><p class="feature-sub">A quick view of calories logged against your ${target.toLocaleString()} kcal target.</p></div></div>
+    const onTarget = hasTarget?withFood.filter(d=>d.kcal<=target).length:null;
+    weekly.innerHTML = `<div class="section-heading"><div><p class="eyebrow">7-DAY VIEW</p><h3>Weekly progress</h3><p class="feature-sub">${hasTarget?`A quick view of calories logged against your ${target.toLocaleString()} kcal target.`:'Your logged calories over the past seven days. No calorie target is set.'}</p></div></div>
       <div class="week-grid">${days.map(d=>{
-        const pct=Math.min(100,(d.kcal/target)*100);
-        const cls=d.kcal===0?'empty':d.kcal>target?'over':'';
+        const pct=hasTarget?Math.min(100,(d.kcal/target)*100):0;
+        const cls=d.kcal===0?'empty':hasTarget&&d.kcal>target?'over':'';
         return `<div class="week-day"><strong>${d.kcal?Math.round(d.kcal):'—'}</strong><div class="week-track"><div class="week-fill ${cls}" style="height:${d.kcal?Math.max(3,pct):2}%"></div></div><small>${fmtDay(d.k)}</small></div>`;
       }).join('')}</div>
-      <div class="week-summary"><div class="week-stat"><span>Average</span><strong>${avg?Math.round(avg).toLocaleString():'—'} kcal</strong></div><div class="week-stat"><span>Protein avg</span><strong>${avgProtein?Math.round(avgProtein)+' g':'—'}</strong></div><div class="week-stat"><span>At/below target</span><strong>${onTarget}/${withFood.length||0} days</strong></div></div>`;
+      <div class="week-summary"><div class="week-stat"><span>Average</span><strong>${avg?Math.round(avg).toLocaleString():'—'} kcal</strong></div><div class="week-stat"><span>Protein avg</span><strong>${avgProtein?Math.round(avgProtein)+' g':'—'}</strong></div>${hasTarget?`<div class="week-stat"><span>At/below target</span><strong>${onTarget}/${withFood.length||0} days</strong></div>`:''}</div>`;
   }
   renderWeekly();
 
@@ -349,17 +349,19 @@
     const custom=Number($('smartRecipeKcal')?.value);
     const shares={Lunch:.30,Dinner:.45,Snack:.15,Other:.10};
     const today=totals(s.logs[todayKey()]||[]).kcal;
-    const dailyRemain=Math.max(0,(Number(s.targets?.calories)||2300)-today);
+    const target=Number(s.targets?.calories);const hasTarget=Number.isFinite(target)&&target>0;
+    if(!hasTarget&&!(custom>0))return null;
+    const dailyRemain=hasTarget?Math.max(0,target-today):null;
     const mealUsed=(s.logs[todayKey()]||[]).filter(x=>(x.meal||'Other')===meal).reduce((n,x)=>n+(Number(x.kcal)||0),0);
-    const mealRemain=Math.max(0,(Number(s.targets?.calories)||2300)*(shares[meal]||.10)-mealUsed);
-    const budget=custom>0?Math.min(custom,dailyRemain||custom):Math.min(dailyRemain,mealRemain*.85);
+    const mealRemain=hasTarget?Math.max(0,target*(shares[meal]||.10)-mealUsed):null;
+    const budget=custom>0?(hasTarget?Math.min(custom,dailyRemain):custom):Math.min(dailyRemain,mealRemain*.85);
     const grams=Math.max(0,Math.min(1000,Math.round((budget/(Number(r.kcalPer100)/100))/5)*5));
     return {r,meal,budget,grams,kcal:grams*(Number(r.kcalPer100)/100),dailyRemain,mealRemain};
   }
   function updateSmartRecipe(){
     const x=currentRecipeSuggestion();const box=$('smartRecipeResult');if(!box)return;
     if(!x||x.grams<=0){box.innerHTML='<strong>0 g</strong><small>No calorie room available for this calculation yet, or the recipe has no calorie value.</small>';return;}
-    box.innerHTML=`<strong>${x.grams} g</strong><small>About ${Math.round(x.kcal)} kcal of ${esc(x.r.name)}. Daily room before this serving: ${Math.round(x.dailyRemain)} kcal.</small>`;
+    box.innerHTML=`<strong>${x.grams} g</strong><small>About ${Math.round(x.kcal)} kcal of ${esc(x.r.name)}. ${x.dailyRemain===null?'Personal calorie budget not set.':`Daily room before this serving: ${Math.round(x.dailyRemain)} kcal.`}</small>`;
   }
   function useSmartRecipe(){
     const x=currentRecipeSuggestion();if(!x||!x.grams)return;

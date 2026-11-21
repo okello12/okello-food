@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const read=f=>fs.readFileSync(f,'utf8');
+const main=read('app.js'),migration=read('storage-migration-v1.js'),features=read('features-v1.js'),smart=read('smart-meal-runtime-v41.js'),ux=read('ux-v2.js');
+assert.ok(main.includes('targets:{calories:null,protein:null}'),'new app must not default to 2300/150');
+assert.ok(migration.includes('targets:{calories:null,protein:null}'),'new storage must not invent targets');
+assert.ok(!/calories=2300|protein=150|calories:2300|protein:150|\|\|2300|\|\|150\b/.test([main,migration,features,smart].join('\n')),'legacy target fallback still active');
+assert.ok(main.includes("'No calorie target set'")&&main.includes("'No protein target set'"),'untargeted mode must be explicit');
+assert.ok(!ux.includes('>2,300 kcal left<'),'first paint must not announce an invented allowance');
+assert.ok(read('target-safety-v46.js').includes('kc>0&&pr>0'),'legacy missing targets cannot silently be confirmed');
+console.log('target-data-truth-v54: PASS');
