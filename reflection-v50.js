@@ -56,21 +56,30 @@
   }
 
   function plateCompanions({entries}){
-    const plates={};
-    for(const e of entries){if(!e.plateId)continue;(plates[e.plateId]=plates[e.plateId]||[]).push(e);}
-    const pairs={};
-    for(const items of Object.values(plates)){
-      if(items.length<2)continue;
-      // base = the highest-kcal starch/soup on the plate, if any; else the largest entry
-      const base=items.slice().sort((a,b)=>Number(b.kcal)-Number(a.kcal))[0];
-      for(const other of items){if(other===base)continue;const k=`${shortName(base.name)}|${shortName(other.name)}`;pairs[k]=(pairs[k]||0)+1;}
+    const plates=new Map(), foods=new Map(), pairs=new Map();
+    for(const e of entries){
+      if(!e.plateId)continue;
+      const plate=JSON.stringify([e.day,e.plateId]);
+      const id=String(e.foodId||e.name);
+      if(!plates.has(plate))plates.set(plate,new Map());
+      plates.get(plate).set(id,shortName(e.name));
     }
-    const top=Object.entries(pairs).filter(([,n])=>n>=MIN_REPEAT).sort((a,b)=>b[1]-a[1]);
-    if(!top.length)return null;
-    const grouped={};
-    for(const [k,n] of top){const [base,other]=k.split('|');(grouped[base]=grouped[base]||[]).push(`${other} (${n})`);}
-    const [base,others]=Object.entries(grouped)[0];
-    return {text:`${base} usually comes with ${others.slice(0,3).join(', ')}.`,evidence:`from plates logged together`};
+    for(const items of plates.values()){
+      for(const [id,name] of items){
+        if(!foods.has(id))foods.set(id,{name,count:0});
+        foods.get(id).count++;
+      }
+      const ids=[...items.keys()].sort();
+      for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){
+        const key=JSON.stringify([ids[i],ids[j]]);
+        pairs.set(key,(pairs.get(key)||0)+1);
+      }
+    }
+    const top=[...pairs].filter(([,count])=>count>=MIN_REPEAT).sort((a,b)=>b[1]-a[1])[0];
+    if(!top)return null;
+    const [a,b]=JSON.parse(top[0]),count=top[1];
+    const [base,other]=foods.get(a).count>=foods.get(b).count?[a,b]:[b,a];
+    return {text:`${foods.get(base).name} was logged with ${foods.get(other).name} on ${count} of ${foods.get(base).count} plates containing ${foods.get(base).name}.`,evidence:`${plates.size} identified plates in the logged period`};
   }
 
   function mealSlots({entries,days}){
@@ -89,23 +98,25 @@
   }
 
   function measurementMix({entries}){
-    let weighedKcal=0,calibratedKcal=0,referenceKcal=0,roughKcal=0,total=0;
+    let weighedKcal=0,calibratedKcal=0,referenceKcal=0,roughKcal=0,unknownKcal=0,total=0;
     for(const e of entries){
       const k=Number(e.kcal)||0;total+=k;
       if(e.amountQuality==='weighed')weighedKcal+=k;
       else if(e.estimateSource==='personal-piece-weight')calibratedKcal+=k;
       else if(e.estimateSource==='reference-piece-weight'||e.pieceKey)referenceKcal+=k;
-      else roughKcal+=k;
+      else if(e.amountQuality==='estimated')roughKcal+=k;
+      else unknownKcal+=k;
     }
     if(total<=0)return null;
-    const w=pct(weighedKcal,total),c=pct(calibratedKcal,total),r=pct(referenceKcal,total),g=pct(roughKcal,total);
+    const w=pct(weighedKcal,total),c=pct(calibratedKcal,total),r=pct(referenceKcal,total),g=pct(roughKcal,total),u=pct(unknownKcal,total);
     const parts=[];
     if(w)parts.push(`${w}% weighed`);
     if(c)parts.push(`${c}% from your own piece weights`);
     if(r)parts.push(`${r}% from standard piece sizes`);
     if(g)parts.push(`${g}% rough estimates`);
-    let text=`Of this fortnight's calories, ${parts.join(', ')}.`;
-    if(r>=30&&c===0)text+=' Weighing one piece of your usual meat a few times would let the app use your own sizes instead.';
+    if(u)parts.push(`${u}% unclassified amounts`);
+    let text=`Of this fortnight's logged calories, ${parts.join(', ')}.`;
+    if(r>=30&&c===0)text+=' Weighing pieces of a familiar countable food can help refine its portion estimate.';
     return {text,evidence:`${entries.length} entries`};
   }
 
@@ -128,7 +139,7 @@
     if(total<=0)return null;
     const p=pct(known,total);
     if(p>=90)return null;
-    return {text:p===0?'None of this fortnight\'s foods carried a salt value yet, so salt cannot be summed.':`Salt is known for only ${p}% of logged calories. Packaged foods and your own recipes carry it; most catalogue dishes do not yet.`,evidence:'data coverage'};
+    return {text:p===0?'None of this fortnight\'s foods carried a salt value yet, so salt cannot be summed.':`Salt is known for only ${p}% of logged calories. Some packaged foods and recipes have salt data; most catalogue dishes do not yet.`,evidence:'data coverage'};
   }
 
   // ---- render ---------------------------------------------------------------

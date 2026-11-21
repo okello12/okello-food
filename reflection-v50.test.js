@@ -89,7 +89,7 @@ assert.equal(src.includes('2300')||src.includes('150'),false,'reflection must no
   assert.equal(repeat.includes('kcal'),false,'repeat foods are counted, not priced');
 
   // Plate companions from plateId.
-  const comp=texts.find(t=>/usually comes with/.test(t));
+  const comp=texts.find(t=>/was logged with/.test(t));
   assert.ok(comp,'must report plate companions');
   assert.ok(/Jollof rice|Banku/.test(comp),comp);
 
@@ -102,7 +102,7 @@ assert.equal(src.includes('2300')||src.includes('150'),false,'reflection must no
 
   // Measurement mix: weighed and reference-piece shares both present, with the
   // calibration nudge because reference share is non-trivial and no personal weights exist.
-  const mix=texts.find(t=>t.startsWith("Of this fortnight's calories"));
+  const mix=texts.find(t=>t.startsWith("Of this fortnight's logged calories"));
   assert.ok(mix,'must report provenance mix');
   assert.ok(/\d+% weighed/.test(mix),mix);
   assert.ok(/\d+% from standard piece sizes/.test(mix),mix);
@@ -152,3 +152,17 @@ assert.equal(src.includes('2300')||src.includes('150'),false,'reflection must no
 }
 
 console.log('reflection-v50: PASS');
+
+// Old amount provenance is not inferred; pair counts are distinct plates with a denominator.
+{
+ const logs={};
+ for(let i=0;i<6;i++){
+  const k=dayKey(i);
+  logs[k]=[{foodId:'banku',name:'Banku',grams:200,kcal:200,plateId:'same',meal:'Dinner'}];
+  if(i<3)logs[k].push(...[1,2].map(()=>({foodId:'okra',name:'Okro',grams:100,kcal:50,plateId:'same',meal:'Dinner',amountQuality:'estimated'})));
+ }
+ const {api}=boot(logs);const obs=api.build().observations.map(o=>o.text).join(' ');
+ assert.ok(obs.includes('Banku was logged with Okro on 3 of 6 plates containing Banku.'));
+ assert.ok(obs.includes('80% unclassified amounts'));
+ assert.ok(obs.includes('20% rough estimates'));
+}
