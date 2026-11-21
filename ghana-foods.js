@@ -46,7 +46,7 @@
     {"id":"ghana_garden_egg_stew","name":"Garden egg stew","emoji":"🍆","cat":"Soup","kcal":105,"protein":4,"fibre":2.5,"portion":220,"min":150,"max":300,"note":"Estimate; oil and fish vary"},
     {"id":"ghana_agushie_stew","name":"Agushie / egusi stew","emoji":"🥘","cat":"Soup","kcal":180,"protein":8,"fibre":2.5,"portion":180,"min":120,"max":250,"note":"Seed-heavy and calorie dense; recipe varies"},
     {"id":"ghana_tomato_stew","name":"Ghana tomato stew, no meat","emoji":"🍅","cat":"Soup","kcal":100,"protein":2,"fibre":1.5,"portion":150,"min":100,"max":220,"note":"Oil amount is the main variable"},
-    {"id":"ghana_shito","name":"Shito","emoji":"🌶️","cat":"Extras","kcal":300,"protein":5,"fibre":2,"portion":20,"min":10,"max":30,"note":"Very calorie dense; oil amount varies greatly"},
+    {"id":"ghana_shito","name":"Shito","emoji":"🌶️","cat":"Extras","kcal":350,"protein":5,"fibre":4,"portion":15,"min":5,"max":25,"quality":"Estimated","note":"Generic estimate; oil varies greatly. For your own shito, use the recipe calculator or jar label."},
     {"id":"ghana_fresh_pepper","name":"Fresh pepper sauce, no oil","emoji":"🌶️","cat":"Extras","kcal":35,"protein":1.5,"fibre":2,"portion":50,"min":25,"max":80,"note":"Fresh tomato/onion/chilli style"},
     {"id":"ghana_hausa_koko","name":"Hausa koko, unsweetened","emoji":"🥣","cat":"Starch","kcal":55,"protein":1.5,"fibre":0.8,"portion":350,"min":250,"max":450,"note":"Log sugar and milk separately"},
     {"id":"ghana_tom_brown","name":"Tom Brown porridge, unsweetened","emoji":"🥣","cat":"Starch","kcal":75,"protein":3,"fibre":1.5,"portion":350,"min":250,"max":450,"note":"Estimate; cereal blend varies; log sugar/milk separately"},

@@ -155,8 +155,22 @@
   state.customFoods=output;
   try{localStorage.setItem(STORE,JSON.stringify(state));}catch(_){}
 
-  function currentManaged(){const s=readState();return (Array.isArray(s.customFoods)?s.customFoods:[]).filter(isManaged).map(food=>normaliseManaged(food));}
-  function byIdMap(){return new Map(currentManaged().map(food=>[String(food.id),food]));}
+  // Performance: normalise the managed catalogue once per stored state rather
+  // than on every call. regionForId() runs once per rendered food card, and
+  // before v52 each call re-read storage and re-normalised every managed row.
+  // Normalised rows are flat, so callers receive shallow copies and cannot
+  // mutate the cache.
+  let managedKey,managedCache,managedMap;
+  function managedRows(){
+    let raw;try{raw=localStorage.getItem(STORE);}catch(_){raw=null;}
+    if(managedCache&&raw===managedKey)return managedCache;
+    let s={};try{s=JSON.parse(raw||'{}')||{};}catch(_){s={};}
+    managedCache=(Array.isArray(s.customFoods)?s.customFoods:[]).filter(isManaged).map(food=>normaliseManaged(food));
+    managedMap=new Map(managedCache.map(food=>[String(food.id),food]));managedKey=raw;
+    return managedCache;
+  }
+  function currentManaged(){return managedRows().map(food=>({...food}));}
+  function byIdMap(){managedRows();return managedMap;}
   function regionForId(id){const key=String(id||'');if(key.startsWith('ghana_'))return 'Ghana';const food=byIdMap().get(key);return food?regionFor(food):'Global';}
   function stats(){
     const foods=currentManaged();const regions={},sources={},qualities={};

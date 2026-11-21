@@ -8,7 +8,6 @@
   const nativeGet=Storage.prototype.getItem;
   const MANAGED=/^(?:ghana_|world_)/;
 
-  function clone(value){return value&&typeof value==='object'?JSON.parse(JSON.stringify(value)):value;}
   function isManaged(food){return MANAGED.test(String(food?.id||''));}
 
   // Ghana/world compatibility loaders still run before this module in v46.
@@ -36,13 +35,23 @@
   // Give those readers a synthetic compatibility view while keeping the
   // durable store stripped. The repository itself captured native storage
   // access before this shim and therefore continues to read the true user state.
+  //
+  // Performance: dozens of modules read this key, some once per rendered food
+  // card. The managed rows are frozen and the view is a pure function of the
+  // stored string, so the last view is reused until the stored string changes.
+  // Before v52 every read re-cloned ~270 catalogue rows, which made a single
+  // "Add to today" take several seconds on a phone.
+  let lastRaw,lastView;
   Storage.prototype.getItem=function(key){
     const value=nativeGet.call(this,key);
     if(this!==window.localStorage||String(key)!==STORE)return value;
+    if(lastView!==undefined&&value===lastRaw)return lastView;
     try{
       const live=JSON.parse(value||'{}')||{};
       const custom=Array.isArray(live.customFoods)?live.customFoods.filter(food=>!isManaged(food)):[];
-      return JSON.stringify({...live,customFoods:[...frozen.map(clone),...custom]});
+      const view=JSON.stringify({...live,customFoods:[...frozen,...custom]});
+      lastRaw=value;lastView=view;
+      return view;
     }catch(_){return value;}
   };
 

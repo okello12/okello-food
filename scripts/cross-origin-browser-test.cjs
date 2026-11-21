@@ -41,7 +41,11 @@ async function test(engine,from,to){
  await q.locator('#v46AdultConfirm').tap({timeout:10000});
  await q.locator('#v46OwnTargets').tap({timeout:10000});
  await q.locator('#v46TargetCalories').fill('2200');await q.locator('#v46TargetProtein').fill('100');
+ // "Use these targets" saves and then reloads. Wait for the new document's load
+ // before evaluating, or a slower engine (WebKit) destroys the context mid-call.
+ const reloaded=q.waitForEvent('load',{timeout:30000});
  await q.locator('#v46SaveOwnTargets').tap({timeout:10000});
+ await reloaded;
  await q.waitForFunction(()=>document.documentElement.dataset.okelloVersion&&window.OkelloTargetSafetyV46?.mode()==='own-targets'&&window.OkelloBackup,{},{timeout:35000});
  if(await q.locator('#v44Skip').isVisible())await q.locator('#v44Skip').tap({timeout:10000});
  console.log(engine.name()+': own-target tap accepted');
@@ -63,6 +67,25 @@ async function test(engine,from,to){
  const choice=await q.evaluate(()=>{const m=window.OkelloBetaMetricsV46;m.setEnabled(true);m.record('synthetic');const yes=m.enabled(),n=m.read().length;m.setEnabled(false);m.record('synthetic');return {yes,n,after:m.read().length,enabled:m.enabled()};});
  assert.equal(choice.yes,true);assert.equal(choice.enabled,false);assert.equal(choice.n,choice.after);
  console.log(engine.name()+': cross-origin backup, reload, invalid import, opt-in/withdrawal PASS');
+
+ // Responsiveness: a diary with today's entries is where the Today-log
+ // enhancers (badges, evidence, countable servings) all act on the same rows.
+ // Before v52 they could rewrite each other indefinitely and freeze the page.
+ const today=await q.evaluate(()=>new Date().toISOString().slice(0,10));
+ await q.evaluate(t=>{const r=window.OkelloStateRepository.mutate(s=>{s.logs={...(s.logs||{}),[t]:[
+   {foodId:'banku',name:'Corn banku',grams:225,kcal:326.25,protein:4.95,fibre:2.25,salt:null,amountQuality:'weighed',meal:'Dinner',ts:Date.now()},
+   {foodId:'tilapia',name:'Tilapia, cooked',grams:150,kcal:192,protein:39,fibre:0,salt:null,pieceCount:1,pieceKey:'tilapia',estimatedGrams:150,estimateSource:'reference-piece-weight',amountQuality:'estimated',meal:'Dinner',ts:Date.now()},
+   {foodId:'ghana_okro_stew',name:'Okro stew',grams:300,kcal:285,protein:15,fibre:8.4,salt:null,amountQuality:'estimated',meal:'Dinner',ts:Date.now()}]};return s;},{source:'responsiveness-test'});if(!r.ok)throw Error('today fixture not written');},today);
+ await q.reload({waitUntil:'domcontentloaded'});await q.waitForFunction(()=>document.documentElement.dataset.okelloVersion&&window.OkelloStateRepository,{},{timeout:35000});
+ await q.waitForFunction(()=>document.querySelectorAll('#todayLog .log-row').length===3,{},{timeout:15000});
+ await q.waitForTimeout(2500);
+ const quiet=await q.evaluate(()=>new Promise(done=>{let n=0;const o=new MutationObserver(r=>{n+=r.length;});o.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true});setTimeout(()=>{o.disconnect();done(n);},1500);}));
+ assert.ok(quiet<50,'page did not settle: '+quiet+' DOM mutations in 1.5 s with no input');
+ const badges=await q.evaluate(()=>[...document.querySelectorAll('#todayLog .log-row')].map(r=>r.querySelectorAll('.v44-estimate-badge:not(.v46-food-evidence)').length));
+ assert.ok(badges.every(n=>n<=1),'duplicate portion badges: '+JSON.stringify(badges));
+ const t0=Date.now();await q.locator('.tab[data-tab="foods"]').tap({timeout:10000});
+ await q.waitForFunction(()=>document.querySelector('.tab[data-tab="foods"]').classList.contains('active'),{},{timeout:10000});
+ console.log(engine.name()+': today diary settled ('+quiet+' idle mutations), badges '+JSON.stringify(badges)+', Foods tab in '+(Date.now()-t0)+' ms');
  }finally{await browser.close();}
 }
 (async()=>{const a=await serve(),b=await serve();try{for(const engine of [chromium,webkit])await test(engine,a.url,b.url);}finally{a.server.closeAllConnections();b.server.closeAllConnections();a.server.close();b.server.close();}})().catch(err=>{console.error(err);process.exitCode=1;}).finally(()=>clearTimeout(hardDeadline));

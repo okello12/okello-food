@@ -5,7 +5,7 @@
 | Candidate app ID | Article sample | kcal | protein g | AOAC fibre g | Match/risk and decision |
 |---|---|---:|---:|---:|---|
 | kenkey | 15 Kenkey | 118 | 2.6 | 3.3 | Confirm Ga variety and husk/preparation; do not assume Fante equivalent. |
-| ghana_shito | 16 Shito sauce | 619 | 4.9 | unavailable | Oil-rich sampled preparation; runtime generic estimate is 350, seed is 300. High-priority range/variant review; do not replace silently. |
+| ghana_shito | 16 Shito sauce | 619 | 4.9 | unavailable | Oil-rich sampled preparation; runtime generic estimate and (from v52) seed are both 350; before v52 the app actually served the 300 seed because the override no longer applied. High-priority range/variant review; do not replace silently. |
 | ghana_fufu | 17 Cassava and plantain fufu | 86 | 1.4 | 1.4 | Sample flour formulation includes potato; not necessarily fresh pounded cassava/plantain. Reject automatic equivalence. |
 | ghana_plantain_chips | 19 Plantain chips | 484 | 1.7 | 5.5 | Packaged plain/chilli sample; exact packet preferred. |
 | world_eba | 20 Eba | 112 | 0.2 | 2.0 | Hydration/cooked yield and garri identity need review. |
