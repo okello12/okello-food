@@ -122,7 +122,7 @@
   document.addEventListener('click',event=>{const add=event.target?.closest?.('#addFoodBtn');if(add&&current){event.preventDefault();event.stopImmediatePropagation();commitCurrent();return;}const smart=event.target?.closest?.('#useSmartPortionBtn');if(smart&&current){event.preventDefault();event.stopImmediatePropagation();useSmartCount();}},true);
   document.addEventListener('change',event=>{if(event.target?.matches?.('#foodSelect'))setTimeout(syncForSelectedFood,0);});
   document.addEventListener('click',event=>{if(event.target?.closest?.('.hub-result,[data-hub-food],.quick-food,#foodSuggestions *'))setTimeout(syncForSelectedFood,0);},true);
-  window.addEventListener('okello:food-log-changed',()=>setTimeout(refreshBadges,0));const todayLog=$('todayLog');if(todayLog)new MutationObserver(refreshBadges).observe(todayLog,{childList:true,subtree:true});
+  window.addEventListener('okello:food-log-changed',()=>setTimeout(refreshBadges,0));window.addEventListener('okello:today-rendered',refreshBadges);
   ensureControl();syncForSelectedFood();refreshBadges();
 
   window.OkelloCountableServingsV46=Object.freeze({version:VERSION,generic:GENERIC,definitionFor,packetDefinition,estimatedGrams,amountFor,readState,syncForSelectedFood,useSmartCount,commitCurrent,badgeLabel});

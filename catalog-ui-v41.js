@@ -56,10 +56,9 @@
     queueMicrotask(normaliseAll);
   }
 
-  // Legacy app.js re-renders these surfaces from its closure-owned catalogue.
-  // Identity normalisation therefore runs after DOM mutations while downstream
-  // catalog consumers use the canonical facade directly.
-  new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
+  // The app now explicitly announces each relevant render. Avoid whole-page
+  // mutation observers that can turn repeated badge edits into a feedback loop.
+  for(const type of ['okello:food-selects-rendered','okello:food-library-rendered','okello:food-suggestions-rendered'])window.addEventListener(type,schedule);
   document.addEventListener('change',event=>{
     if(event.target?.matches?.('#foodSelect,#recipeFoodSelect'))schedule();
   });

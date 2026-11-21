@@ -11,6 +11,7 @@ assert.ok(SOURCE.includes("document.getElementById('recipeFoodSelect')"),'recipe
 assert.ok(SOURCE.includes("'data-log-food'"),'food-library buttons must be canonicalised');
 assert.ok(SOURCE.includes("'data-food'"),'search suggestions must be canonicalised');
 assert.ok(SOURCE.includes('exact.has(canonical)'),'alias row should be removed when the canonical UI row already exists');
-assert.ok(SOURCE.includes('new MutationObserver(schedule).observe(document.body'),'re-rendered legacy surfaces must be repaired continuously');
+for(const event of ['okello:food-selects-rendered','okello:food-library-rendered','okello:food-suggestions-rendered'])assert.ok(SOURCE.includes("'"+event+"'"),'legacy surfaces must be repaired when owner emits '+event);
+assert.ok(!SOURCE.includes('new MutationObserver(schedule).observe(document.body'),'catalogue adapter must not watch the entire page');
 
 console.log('catalog-ui-v41: PASS');

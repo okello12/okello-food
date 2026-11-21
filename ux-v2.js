@@ -64,6 +64,7 @@
   const hub=document.createElement('section');hub.className='global-hub';
   hub.innerHTML=`<div class="hub-search-row"><div class="hub-search-box"><span class="hub-search-icon" aria-hidden="true">⌕</span><input id="globalFoodSearch" type="search" autocomplete="off" placeholder="Search food or packaged product…" aria-label="Search all foods"><button id="hubClearBtn" class="hub-clear" type="button" aria-label="Clear search">×</button></div><button id="hubScanBtn" class="hub-scan" type="button">▣ Scan</button></div><div class="hub-tools"><button id="hubAddBtn" class="hub-tool" type="button">＋ Add food</button><button id="hubRecipeBtn" class="hub-tool" type="button">🍲 Recipe</button><button id="hubFoodsBtn" class="hub-tool" type="button">Browse library</button><span id="hubBalance" class="hub-balance">2,300 kcal left</span></div><div id="hubResults" class="hub-results" hidden></div>`;
   mast.insertAdjacentElement('afterend',hub);
+  window.dispatchEvent(new Event('okello:global-hub-rendered'));
 
   const globalSearch=$('globalFoodSearch'),hubResults=$('hubResults'),clearBtn=$('hubClearBtn');let searchTimer=null;
   function localResults(term){const q=term.trim().toLowerCase();if(!q)return [];return optionList().filter(x=>x.label.toLowerCase().includes(q)).slice(0,9);}
@@ -107,7 +108,8 @@
   function chip(id,kind){return `<button type="button" class="quick-food" data-quick-food="${esc(id)}"><strong>${esc(labelFor(id))}</strong><small>${kind}</small></button>`;}
   function renderShelf(){const state=readState();const favs=readFavs().filter(id=>Array.from(foodSelect.options).some(o=>o.value===id)).slice(0,6);const recent=recentIds(state).filter(id=>!favs.includes(id)).slice(0,6);const content=[...favs.map(id=>chip(id,'Favourite')),...recent.map(id=>chip(id,'Recent'))].join('');shelf.innerHTML=`<div class="quick-shelf-head"><h3>Quick picks</h3><span>${favs.length?'Favourites + recent':'Recent foods appear here'}</span></div><div class="quick-chips">${content||'<span style="color:var(--muted);font-size:.82rem">Log a few foods and your quickest choices will appear here.</span>'}</div>`;shelf.querySelectorAll('[data-quick-food]').forEach(b=>b.addEventListener('click',()=>selectFood(b.dataset.quickFood)));}
   function updateBalance(){const c=$('calRemainText')?.textContent||'';const p=$('proteinRemainText')?.textContent||'';$('hubBalance').textContent=[c,p].filter(Boolean).join(' · ');renderShelf();}
-  const obs=new MutationObserver(updateBalance);[$('calRemainText'),$('proteinRemainText'),$('todayLog')].filter(Boolean).forEach(el=>obs.observe(el,{childList:true,subtree:true,characterData:true}));
+  window.addEventListener('okello:today-rendered',updateBalance);
+  window.addEventListener('okello:food-log-changed',updateBalance);
   $('librarySearch')?.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.value.trim()){const q=e.target.value.trim();const found=optionList().some(x=>x.label.toLowerCase().includes(q.toLowerCase()));if(!found){e.preventDefault();globalSearch.value=q;showLocalResults();hub.scrollIntoView({behavior:'smooth',block:'start'});}}});
 
   syncFavorite();renderShelf();updateBalance();

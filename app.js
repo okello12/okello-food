@@ -77,6 +77,9 @@
   ];
 
   const defaultState = {targets:{calories:2300,protein:150},logs:{},customFoods:[],recipes:[]};
+  // UI ownership: app.js announces stable render completion. Enhancers should
+  // listen for these events instead of observing and rewriting the whole page.
+  const signal=(name,detail={})=>window.dispatchEvent(new CustomEvent(`okello:${name}`,{detail}));
   let state = loadState();
   let recipeIngredients = [];
   let selectedFoodId = 'rice';
@@ -247,6 +250,7 @@
       '<optgroup label="Raw ingredients, weight into the pot">'+foods.filter(f=>f.raw).map(toOpt).join('')+'</optgroup>'+ 
       '<optgroup label="Already cooked or ready to eat">'+foods.filter(f=>!f.raw).map(toOpt).join('')+'</optgroup>';
     if(foodById(selectedFoodId) && !foodById(selectedFoodId).raw) $('foodSelect').value=selectedFoodId; else selectedFoodId='rice';
+    signal('food-selects-rendered');
   }
   function setSelectedFood(id,resetGrams=true){
     const food=foodById(id); if(!food || food.raw) return;
@@ -279,6 +283,7 @@
     box.innerHTML=matches.map(f=>{const s=smartPortionFor(f,$('mealSelect').value);return `<button class="suggestion" type="button" data-food="${escapeHtml(f.id)}"><span>${escapeHtml(f.emoji+' '+f.name)}</span><small>${s.grams?s.grams+' g smart':'saved'}</small></button>`}).join('');
     box.hidden=false;
     box.querySelectorAll('[data-food]').forEach(b=>b.addEventListener('click',()=>{setSelectedFood(b.dataset.food,true);$('foodSearch').value='';box.hidden=true;}));
+    signal('food-suggestions-rendered');
   }
 
   function addToToday(){
@@ -302,10 +307,11 @@
     $('proteinRemainText').textContent=proteinDiff>=0 ? `${proteinDiff} g left` : `${Math.abs(proteinDiff)} g over target`;
     $('calorieBar').style.width=clamp(totals.kcal/state.targets.calories*100,0,100)+'%'; $('calorieBar').classList.toggle('over',totals.kcal>state.targets.calories);
     const log=$('todayLog');
-    if(!entries.length){log.className='log-list empty-state';log.textContent='Nothing logged yet.';return;}
+    if(!entries.length){log.className='log-list empty-state';log.textContent='Nothing logged yet.';signal('today-rendered',{day:todayKey(),count:0});return;}
     log.className='log-list';
     log.innerHTML=entries.map((x,i)=>`<div class="log-row"><div><strong>${escapeHtml(x.emoji||'🍽️')} ${escapeHtml(x.name)}</strong><div class="meta">${escapeHtml(x.meal)} · ${round1(x.grams)} g · ${round1(x.protein)} g protein</div></div><div class="numbers"><strong>${Math.round(x.kcal)} kcal</strong><button class="remove-btn" type="button" data-remove="${i}">remove</button></div></div>`).join('');
     log.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',()=>{entries.splice(Number(b.dataset.remove),1);const r=saveState('removeEntry');renderToday();if(r.ok){updateSmartPortion();renderFoodLibrary();}}));
+    signal('today-rendered',{day:todayKey(),count:entries.length});
   }
 
   function renderCategoryChips(){
@@ -320,6 +326,7 @@
     const foods=allFoods().filter(f=>!f.raw&&(activeCategory==='All'||f.cat===activeCategory)&&(!term||(f.name+' '+f.cat).toLowerCase().includes(term)));
     $('foodLibrary').innerHTML=foods.length?foods.map(f=>{const s=smartPortionFor(f,meal);return `<article class="food-card">${foodVisual(f)}<div><h4>${escapeHtml(f.name)}</h4><p>${Math.round(f.kcal)} kcal · ${round1(f.protein)} g protein per 100 g</p><div class="portion">${escapeHtml(f.note||f.portion+' g')}</div><div class="smart-line">${s.grams?`Smart now: ${s.grams} g · ${Math.round(s.kcal)} kcal`:'Smart now: —'}</div></div><button type="button" data-log-food="${escapeHtml(f.id)}">Use ${s.grams||f.portion} g on Today</button></article>`}).join(''):'<div class="empty-state">No foods match that search.</div>';
     $('foodLibrary').querySelectorAll('[data-log-food]').forEach(b=>b.addEventListener('click',()=>{const f=foodById(b.dataset.logFood);setSelectedFood(f.id,false);const s=smartPortionFor(f,$('mealSelect').value);$('gramsInput').value=s.grams||f.portion;updateQuickCalc();document.querySelector('[data-tab="today"]').click();window.scrollTo({top:0,behavior:'smooth'});}));
+    signal('food-library-rendered',{count:foods.length});
   }
 
   function updateCustomSuggestion(){

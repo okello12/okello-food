@@ -125,8 +125,11 @@
 
   function reconcile(){patchPositioning();patchOnboarding();renderStarterShelf();ensureSettingsCard();}
   reconcile();
-  const observer=new MutationObserver(()=>reconcile());observer.observe(document.body,{childList:true,subtree:true});
-  setTimeout(()=>{reconcile();observer.disconnect();},12000);
+  window.addEventListener('okello:food-selects-rendered',reconcile);
+  window.addEventListener('okello:boot-ready',reconcile);
+  // A first-run profile choice is durable and can refresh its starter shelf
+  // without observing unrelated DOM changes.
+  window.addEventListener('okello:profile-updated',reconcile);
 
   window.OkelloGlobalFirstV47=Object.freeze({version:VERSION,regions:REGIONS.map(([key,label])=>({key,label})),currentRegion,saveRegion,renderStarterShelf});
 })();

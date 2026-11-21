@@ -109,20 +109,10 @@
     },true);
   }
 
-  // iPhone must retain a genuine file-input user gesture. Watch only for scan
-  // surfaces being replaced and put the native input back when necessary.
-  const observer=new MutationObserver(mutations=>{
-    for(const mutation of mutations){
-      for(const node of mutation.addedNodes){
-        if(!(node instanceof Element)) continue;
-        if(node.matches?.(RELATED_SELECTOR)||node.querySelector?.(RELATED_SELECTOR)){
-          scheduleRepair();
-          return;
-        }
-      }
-    }
-  });
-  observer.observe(document.body,{childList:true,subtree:true});
+  // The static shell and UX module own the scan button surfaces. Reapply the
+  // native iPhone capture only when their owners announce a render, rather
+  // than observing every DOM mutation on the whole document.
+  for(const name of ['okello:food-selects-rendered','okello:global-hub-rendered','okello:boot-ready'])window.addEventListener(name,scheduleRepair);
   ensureLaunchSurfaces();
 
   window.OkelloScannerLaunch=Object.freeze({

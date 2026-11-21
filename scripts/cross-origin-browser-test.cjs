@@ -86,6 +86,16 @@ async function test(engine,from,to){
  const t0=Date.now();await q.locator('.tab[data-tab="foods"]').tap({timeout:10000});
  await q.waitForFunction(()=>document.querySelector('.tab[data-tab="foods"]').classList.contains('active'),{},{timeout:10000});
  console.log(engine.name()+': today diary settled ('+quiet+' idle mutations), badges '+JSON.stringify(badges)+', Foods tab in '+(Date.now()-t0)+' ms');
+ // A genuine add must trigger the app-owned render event and let all enhancers
+ // update without a page reload or observing unrelated changes.
+ await q.locator('.tab[data-tab="today"]').tap({timeout:10000});
+ await q.locator('#foodSelect').selectOption('rice');
+ await q.locator('#gramsInput').fill('190');
+ await q.locator('#addFoodBtn').tap({timeout:10000});
+ await q.waitForFunction(()=>document.querySelectorAll('#todayLog .log-row').length===4,{},{timeout:15000});
+ assert.equal(await q.locator('#todayLog .log-row .feature-actions').count(),4,'feature enhancements not applied after a genuine add');
+ assert.equal(await q.locator('#todayLog .log-row .amount-quality-select').count(),4,'measurement controls not applied after a genuine add');
+ console.log(engine.name()+': app-owned Today render notified all enhancers after real tap');
  }finally{await browser.close();}
 }
 (async()=>{const a=await serve(),b=await serve();try{for(const engine of [chromium,webkit])await test(engine,a.url,b.url);}finally{a.server.closeAllConnections();b.server.closeAllConnections();a.server.close();b.server.close();}})().catch(err=>{console.error(err);process.exitCode=1;}).finally(()=>clearTimeout(hardDeadline));

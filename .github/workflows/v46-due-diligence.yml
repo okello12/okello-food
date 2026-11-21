@@ -61,6 +61,7 @@ jobs:
           node app-repository-writes-v49.test.js
           node salt-display-v49.test.js
           node reflection-v50.test.js
+          node render-ownership-v53.test.js
 
       - name: Run current bundle regression (version-agnostic)
         run: node bundle.test.js

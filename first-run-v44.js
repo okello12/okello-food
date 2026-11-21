@@ -420,6 +420,7 @@
         createdAt: existing.createdAt || new Date().toISOString()
       });
       modal.remove();
+      window.dispatchEvent(new Event('okello:profile-updated'));
       renderStarterShelf();
       addDefaultTargetNote();
       $('globalFoodSearch')?.focus();
@@ -456,7 +457,7 @@
   });
 
   const todayLog = $('todayLog');
-  if(todayLog) new MutationObserver(() => renderEstimateBadges()).observe(todayLog,{childList:true,subtree:true});
+  window.addEventListener('okello:today-rendered',renderEstimateBadges);
   const activityStrip = qs('.today-move-strip');
   if(activityStrip) new MutationObserver(hideDeadActivity).observe(activityStrip,{childList:true,subtree:true,characterData:true});
 
