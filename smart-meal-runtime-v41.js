@@ -94,8 +94,8 @@
 
   function remaining(){
     const state=readState();
-    const targetCalories=Number(state.targets?.calories)||2300;
-    const targetProtein=Number(state.targets?.protein)||150;
+    const targetCalories=Number(state.targets?.calories)>0?Number(state.targets.calories):0;
+    const targetProtein=Number(state.targets?.protein)>0?Number(state.targets.protein):0;
     const used=totals(state.logs?.[todayKey()]||[]);
     return {
       kcal:Math.max(0,targetCalories-used.kcal),
@@ -248,19 +248,19 @@
     const key=todayKey();
     const entries=state.logs?.[key]||[];
     const used=totals(entries);
-    const calories=Number(state.targets?.calories)||2300;
-    const protein=Number(state.targets?.protein)||150;
+    const calories=Number(state.targets?.calories)>0?Number(state.targets.calories):0;
+    const protein=Number(state.targets?.protein)>0?Number(state.targets.protein):0;
     const calDiff=Math.round(calories-used.kcal);
     const proteinDiff=Math.round(protein-used.protein);
     if($('todayTitle'))$('todayTitle').textContent=formatDate(key);
     if($('todayCalories'))$('todayCalories').textContent=Math.round(used.kcal).toLocaleString();
     if($('todayProtein'))$('todayProtein').textContent=Math.round(used.protein)+' g';
     if($('todayFibre'))$('todayFibre').textContent=Math.round(used.fibre)+' g';
-    if($('calRemainText'))$('calRemainText').textContent=calDiff>=0?`${calDiff.toLocaleString()} kcal left`:`${Math.abs(calDiff).toLocaleString()} kcal over`;
-    if($('proteinRemainText'))$('proteinRemainText').textContent=proteinDiff>=0?`${proteinDiff} g left`:`${Math.abs(proteinDiff)} g over target`;
+    if($('calRemainText'))$('calRemainText').textContent=calories>0?(calDiff>=0?`${calDiff.toLocaleString()} kcal left`:`${Math.abs(calDiff).toLocaleString()} kcal over`):'No calorie target set';
+    if($('proteinRemainText'))$('proteinRemainText').textContent=protein>0?(proteinDiff>=0?`${proteinDiff} g left`:`${Math.abs(proteinDiff)} g over target`):'No protein target set';
     if($('calorieBar')){
-      $('calorieBar').style.width=Math.min(100,Math.max(0,used.kcal/calories*100))+'%';
-      $('calorieBar').classList.toggle('over',used.kcal>calories);
+      $('calorieBar').style.width=calories>0?Math.min(100,Math.max(0,used.kcal/calories*100))+'%':'0%';
+      $('calorieBar').classList.toggle('over',calories>0&&used.kcal>calories);
     }
     const log=$('todayLog');
     if(log){

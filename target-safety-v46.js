@@ -38,7 +38,8 @@
   function ensureGate(){
     if(mode())return;
     const s=state();
-    if(existingUser(s)){
+    const kc=Number(s.targets?.calories),pr=Number(s.targets?.protein);
+    if(existingUser(s)&&kc>0&&pr>0){
       // Preserve existing users' already-established targets, but record the
       // migration decision explicitly rather than treating defaults as new-user advice.
       setMode('existing-confirmed',{customTargets:true,migratedExistingUser:true});
