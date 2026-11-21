@@ -1,6 +1,6 @@
 # New commercial brand shortlist — 21 November 2026
 
-**Decision:** Portuva withdrawn at founder's instruction after finding Portiva: Calorie & Macro Coach, a close-spelling competitor. Bowlful previously withdrawn from first place after existing food-sector uses. **No new name is adopted or cleared.** Live beta remains Okello Food; do not rename shell, GitHub repo, app manifest, Stripe merchant or price/checkout, or register a domain yet.
+**Decision:** Portuva withdrawn at founder's instruction after finding Portiva: Calorie & Macro Coach, a close-spelling competitor. Bowlful previously withdrawn from first place after existing food-sector uses. **Founder now prefers Tembika provisionally; it is not cleared.** Live beta remains Okello Food; do not rename shell, GitHub repo, app manifest, Stripe merchant or price/checkout, or register a domain yet.
 
 ## Current candidates for more serious clearance
 
@@ -13,4 +13,4 @@
 - **Live registrar/domain availability not established.** Independently check .com, .co.uk and .app plus relevant social handles before purchase.
 - Take professional advice if any plausible close match. No inference that an absence from indexed web search means legal availability.
 
-Recommended research priority: **Porumi first**, Bowlari second, subject to the founder actually choosing a replacement after clearance. Keep the existing name on the live app until then.
+Founder selected **Tembika** on 21 November 2026 as the priority for clearance; previous Porumi/Bowlari notes are retained as abandoned or secondary options. See `BRAND_TEMBIKA_PREFLIGHT.md`. Keep the existing name on the live app until then.
