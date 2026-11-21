@@ -1,8 +1,10 @@
 (() => {
   'use strict';
+  const localDayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
   const $ = id => document.getElementById(id);
   const STORAGE_KEY = 'okello_food_tracker_v3';
-  const todayKey = () => new Date().toISOString().slice(0,10);
+  const todayKey = () => localDayKey(new Date());
   const formatDate = iso => new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long'}).format(new Date(iso+'T12:00:00'));
   const round1 = n => Math.round(n*10)/10;
   const clamp = (n,min,max) => Math.min(max,Math.max(min,n));

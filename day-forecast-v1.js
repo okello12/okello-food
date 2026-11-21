@@ -1,11 +1,13 @@
 (() => {
   'use strict';
+  const localDayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
 
   const STORE='okello_food_tracker_v3';
   const WINDOW_DAYS=45;
   const $=id=>document.getElementById(id);
   const qs=(s,r=document)=>r.querySelector(s);
-  const todayKey=()=>new Date().toISOString().slice(0,10);
+  const todayKey=()=>localDayKey(new Date());
   const round=n=>Math.round(Number(n)||0);
 
   const todayPanel=$('tab-today');
@@ -41,7 +43,7 @@
     const ts=Number(entry?.ts)||0;
     if(ts>0){
       const d=new Date(ts);
-      if(!Number.isNaN(d.getTime()) && d.toISOString().slice(0,10)===dayKey){
+      if(!Number.isNaN(d.getTime()) && localDayKey(d)===dayKey){
         return d.getHours()*60+d.getMinutes();
       }
     }

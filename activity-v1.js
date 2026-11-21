@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  const localDayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
 
   const STORE = 'okello_activity_v1';
   const MAIN_STORE = 'okello_food_tracker_v3';
@@ -8,7 +10,7 @@
   const qsa = (s, r=document) => Array.from(r.querySelectorAll(s));
   const round1 = n => Math.round((Number(n)||0)*10)/10;
   const clamp = (n,a,b) => Math.min(b,Math.max(a,n));
-  const todayKey = () => new Date().toISOString().slice(0,10);
+  const todayKey = () => localDayKey(new Date());
   const uid = p => (crypto.randomUUID ? `${p}_${crypto.randomUUID()}` : `${p}_${Date.now()}_${Math.random().toString(36).slice(2)}`);
   const esc = s => String(s ?? '').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));
 
@@ -333,7 +335,7 @@
     el.innerHTML=rows.map(x=>`<div class="activity-entry"><div><strong>${esc(x.type)}</strong><small>${round1(x.minutes)} min${x.distanceKm?` · ${round1(x.distanceKm)} km`:''}${x.steps?` · ${Math.round(x.steps).toLocaleString()} steps`:''} · ~${Math.round(x.activeCalories||0)} active kcal${x.source==='gps'?' · GPS':''}</small></div><button type="button" data-del-act="${esc(x.id)}">Delete</button></div>`).join('');
     qsa('[data-del-act]',el).forEach(b=>b.addEventListener('click',()=>{data.entries=data.entries.filter(x=>x.id!==b.dataset.delAct);writeActivity(data);renderAll();toast('Activity removed.');}));
   }
-  function lastNDates(n){const out=[];const d=new Date();d.setHours(12,0,0,0);for(let i=n-1;i>=0;i--){const x=new Date(d);x.setDate(d.getDate()-i);out.push(x.toISOString().slice(0,10));}return out;}
+  function lastNDates(n){const out=[];const d=new Date();d.setHours(12,0,0,0);for(let i=n-1;i>=0;i--){const x=new Date(d);x.setDate(d.getDate()-i);out.push(localDayKey(x));}return out;}
   function renderWeek(){
     const dates=lastNDates(7),vals=dates.map(d=>dayTotals(d));
     const max=Math.max(data.goals.minutes,...vals.map(v=>v.minutes),1);
