@@ -151,7 +151,6 @@ assert.equal(src.includes('2300')||src.includes('150'),false,'reflection must no
   assert.ok(salt&&/carried a salt value/.test(salt.text),'absent salt must be named as absent');
 }
 
-console.log('reflection-v50: PASS');
 
 // Old amount provenance is not inferred; pair counts are distinct plates with a denominator.
 {
@@ -183,7 +182,7 @@ console.log('reflection-v50: PASS');
   const content=fs.readFileSync(p,'utf8');
   const declaration=content.split('\n').find(line=>line.trim().startsWith('const localDayKey='));
   assert.ok(declaration,p+' must declare a local calendar key function');
-  assert.ok(!/\\b(?:new Date\\(\\)|[dx])\\.toISOString\\(\\)\\.slice\\(0,10\\)/.test(content),p+' must not derive diary day from UTC');
+  assert.ok(!/\b(?:new Date\(\)|[dx])\.toISOString\(\)\.slice\(0,10\)/.test(content),p+' must not derive diary day from UTC');
   for(const [tz,instant,expected] of cases){
    const result=spawnSync(process.execPath,['-e',declaration+'; process.stdout.write(localDayKey(new Date(process.argv[1])));',instant],{encoding:'utf8',env:{...process.env,TZ:tz}});
    assert.equal(result.status,0,p+' '+tz+' '+result.stderr);
@@ -192,3 +191,5 @@ console.log('reflection-v50: PASS');
  }
  console.log('calendar-key contract: PASS');
 }
+
+console.log('reflection-v50 and v51 regressions: PASS');
