@@ -145,6 +145,7 @@
       catch (err) { console.error(err); }
     }
     document.documentElement.dataset.okelloVersion = VERSION;
+    window.dispatchEvent(new Event('okello:boot-ready'));
   }
 
   boot();

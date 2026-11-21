@@ -178,9 +178,9 @@
       let badge=qs('.v46-food-evidence',row);
       if(!badge){badge=document.createElement('span');badge.className='v44-estimate-badge v46-food-evidence';const meta=qs('.meta',row);if(meta)meta.insertAdjacentElement('afterend',badge);}
       const missing=entry.nutritionCompleteness?.missing||[];
-      if(missing.length){badge.textContent='Nutrition partly unavailable';badge.hidden=false;}
-      else if(entry.foodEvidence?.quality==='Estimated'||entry.foodEvidence?.confidence==='low'){badge.textContent='Food data estimated';badge.hidden=false;}
-      else if(entry.foodEvidence?.sourceName){badge.textContent=String(entry.foodEvidence.sourceName);badge.hidden=false;}
+      if(missing.length){if(badge.textContent!=='Nutrition partly unavailable')badge.textContent='Nutrition partly unavailable';badge.hidden=false;}
+      else if(entry.foodEvidence?.quality==='Estimated'||entry.foodEvidence?.confidence==='low'){if(badge.textContent!=='Food data estimated')badge.textContent='Food data estimated';badge.hidden=false;}
+      else if(entry.foodEvidence?.sourceName){if(badge.textContent!==String(entry.foodEvidence.sourceName))badge.textContent=String(entry.foodEvidence.sourceName);badge.hidden=false;}
       else badge.hidden=true;
     });
   }

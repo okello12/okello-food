@@ -17,11 +17,17 @@ async function test(engine,from,to){
  try{
  console.log(engine.name()+': browser launched');
  // This regression exercises origin isolation and backup, not service-worker behaviour.
- const ctx=await browser.newContext({viewport:{width:390,height:844},timezoneId:'Europe/London',serviceWorkers:'block'});
+ const ctx=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,timezoneId:'Europe/London',serviceWorkers:'block'});
  ctx.setDefaultTimeout(30000);ctx.setDefaultNavigationTimeout(30000);
  // Prevent deliberate testing from sending information to a third-party host.
  await ctx.route('**/*',route=>{const u=new URL(route.request().url());return u.hostname==='127.0.0.1'?route.continue():route.abort();});
  const p=await ctx.newPage();p.on('pageerror',e=>console.error(engine.name()+' source page error:',e.message));await ready(p,from);console.log(engine.name()+': source booted');
+ await p.locator('#v46AdultConfirm').tap({timeout:10000});
+ await p.locator('#v46TrackOnly').tap({timeout:10000});
+ if(await p.locator('#v44Skip').isVisible())await p.locator('#v44Skip').tap({timeout:10000});
+ assert.equal(await p.locator('#v46TargetGate').count(),0,'tracking-only gate remained');
+ assert.equal(await p.evaluate(()=>window.OkelloTargetSafetyV46.mode()),'tracking-only');
+ console.log(engine.name()+': tracking-only tap accepted');
  const src=await p.evaluate(({day,key})=>{
   const r=window.OkelloStateRepository.mutate(s=>{
    s.logs={...(s.logs||{}),[day]:[{foodId:'banku',name:'Banku',grams:225,kcal:326.25,protein:4.95,fibre:2.25,salt:null,amountQuality:'weighed',meal:'Dinner',ts:new Date(day+'T18:00:00Z').getTime()}]};
@@ -32,6 +38,13 @@ async function test(engine,from,to){
   return window.OkelloBackup.bundle();
  },{day,key});
  const q=await ctx.newPage();q.on('pageerror',e=>console.error(engine.name()+' destination page error:',e.message));await ready(q,to);console.log(engine.name()+': independent destination booted');
+ await q.locator('#v46AdultConfirm').tap({timeout:10000});
+ await q.locator('#v46OwnTargets').tap({timeout:10000});
+ await q.locator('#v46TargetCalories').fill('2200');await q.locator('#v46TargetProtein').fill('100');
+ await q.locator('#v46SaveOwnTargets').tap({timeout:10000});
+ await q.waitForFunction(()=>document.documentElement.dataset.okelloVersion&&window.OkelloTargetSafetyV46?.mode()==='own-targets'&&window.OkelloBackup,{},{timeout:35000});
+ if(await q.locator('#v44Skip').isVisible())await q.locator('#v44Skip').tap({timeout:10000});
+ console.log(engine.name()+': own-target tap accepted');
  assert.equal(await q.evaluate(day=>Boolean(window.OkelloStateRepository.read().logs?.[day]),day),false,'origins not isolated');
  const before=await q.evaluate(()=>window.OkelloBackup.bundle());
  await q.evaluate(b=>{const r=window.OkelloBackup.restore(b);if(!r.ok)throw Error('restore failed');},src);

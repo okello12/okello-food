@@ -114,8 +114,9 @@
     else{const state=readState();state.logs=state.logs&&typeof state.logs==='object'?state.logs:{};state.logs[key]=Array.isArray(state.logs[key])?state.logs[key]:[];state.logs[key].push(draft);ok=writeState(state);}
     if(!ok)return false;window.OkelloAppState?.syncFromStorage?.();window.dispatchEvent(new CustomEvent('okello:food-log-changed',{detail:{day:key,source:'countable-serving-v46'}}));toast(`${current.count} ${plural(current.def,current.count)} added`);return true;
   }
+  function badgeLabel(entry){const label=unitWords(entry.pieceKey||'piece')[1];return `Counted ${label} · ${entry.estimateSource==='packet-unit-weight'?'packet weight':entry.estimateSource==='personal-piece-weight'?'personal calibration':'reference weight'}`;}
   function refreshBadges(){
-    const entries=readState().logs?.[todayKey()]||[];qsa('#todayLog .log-row').forEach((row,index)=>{const entry=entries[index];if(entry?.source!=='countable-serving-v46')return;const badge=qs('.v44-estimate-badge',row);if(!badge)return;const label=unitWords(entry.pieceKey||'piece')[1];badge.textContent=`Counted ${label} · ${entry.estimateSource==='packet-unit-weight'?'packet weight':entry.estimateSource==='personal-piece-weight'?'personal calibration':'reference weight'}`;});
+    const entries=readState().logs?.[todayKey()]||[];qsa('#todayLog .log-row').forEach((row,index)=>{const entry=entries[index];if(entry?.source!=='countable-serving-v46')return;const badge=qs('.v44-estimate-badge:not(.v46-food-evidence)',row);if(!badge)return;const label=badgeLabel(entry);if(badge.textContent!==label)badge.textContent=label;});
   }
 
   document.addEventListener('click',event=>{const add=event.target?.closest?.('#addFoodBtn');if(add&&current){event.preventDefault();event.stopImmediatePropagation();commitCurrent();return;}const smart=event.target?.closest?.('#useSmartPortionBtn');if(smart&&current){event.preventDefault();event.stopImmediatePropagation();useSmartCount();}},true);
@@ -124,5 +125,5 @@
   window.addEventListener('okello:food-log-changed',()=>setTimeout(refreshBadges,0));const todayLog=$('todayLog');if(todayLog)new MutationObserver(refreshBadges).observe(todayLog,{childList:true,subtree:true});
   ensureControl();syncForSelectedFood();refreshBadges();
 
-  window.OkelloCountableServingsV46=Object.freeze({version:VERSION,generic:GENERIC,definitionFor,packetDefinition,estimatedGrams,amountFor,readState,syncForSelectedFood,useSmartCount,commitCurrent});
+  window.OkelloCountableServingsV46=Object.freeze({version:VERSION,generic:GENERIC,definitionFor,packetDefinition,estimatedGrams,amountFor,readState,syncForSelectedFood,useSmartCount,commitCurrent,badgeLabel});
 })();

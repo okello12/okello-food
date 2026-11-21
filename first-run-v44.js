@@ -322,6 +322,10 @@
 
   function estimateLabel(log){
     if(log?.amountQuality === 'weighed') return 'Weighed';
+    if(log?.source==='countable-serving-v46') {
+      const label=window.OkelloCountableServingsV46?.badgeLabel?.(log);
+      return label||'Estimated from pieces';
+    }
     if(log?.enteredUnit === 'pieces') return 'Estimated from pieces';
     if(log?.estimateSource === 'rough-serving-v44') return 'Estimated serving';
     const food = catalog.getById?.(log?.foodId);
@@ -340,7 +344,7 @@
       const rows = qsa('.log-row', logNode);
       const entries = readState().logs?.[todayKey()] || [];
       rows.forEach((row, index) => {
-        const existing = qs('.v44-estimate-badge', row);
+        const existing = qs('.v44-estimate-badge:not(.v46-food-evidence)', row);
         const label = estimateLabel(entries[index]);
         if(!label){ existing?.remove(); return; }
         if(existing){
