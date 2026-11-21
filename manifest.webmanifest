@@ -2,7 +2,7 @@
   "name": "Okello Food Tracker",
   "short_name": "Okello Food",
   "description": "A private, local-first food and portion tracker for everyday meals from around the world.",
-  "start_url": "./app-v52.html",
+  "start_url": "./app-v53.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#FAF8F3",
