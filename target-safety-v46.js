@@ -105,7 +105,7 @@
   if(existingUser()||mode())ensureGate();
   applyMode();
   window.addEventListener('okello:boot-ready',()=>{ensureGate();applyMode();},{once:true});
-  observer=new MutationObserver(()=>applyMode());observer.observe(document.body,{childList:true,subtree:true});
+  for(const type of ['okello:today-rendered','okello:food-library-rendered'])window.addEventListener(type,applyMode);
   setTimeout(()=>{applyMode();},800);
 
   window.OkelloTargetSafetyV46=Object.freeze({version:VERSION,mode,setMode,setOwnTargets,apply:applyMode});

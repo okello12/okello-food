@@ -186,7 +186,7 @@
   }
 
   ensureCustomFields();
-  const todayLog=$('todayLog');if(todayLog)new MutationObserver(renderIntegrity).observe(todayLog,{childList:true,subtree:true});
+  window.addEventListener('okello:today-rendered',renderIntegrity);
   window.addEventListener('okello:food-log-changed',renderIntegrity);
   setTimeout(renderIntegrity,0);setTimeout(renderIntegrity,700);
 

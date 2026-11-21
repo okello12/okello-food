@@ -52,7 +52,7 @@
     apply();
   }));
 
-  new MutationObserver(apply).observe(library,{childList:true,subtree:true});
+  window.addEventListener('okello:food-library-rendered',apply);
   search?.addEventListener('input',()=>setTimeout(apply,0));
   $('categoryChips')?.addEventListener('click',()=>setTimeout(apply,0));
   apply();

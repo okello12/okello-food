@@ -456,7 +456,7 @@
   });
 
   const todayLog = $('todayLog');
-  if(todayLog) new MutationObserver(() => renderEstimateBadges()).observe(todayLog,{childList:true,subtree:true});
+  window.addEventListener('okello:today-rendered',renderEstimateBadges);
   const activityStrip = qs('.today-move-strip');
   if(activityStrip) new MutationObserver(hideDeadActivity).observe(activityStrip,{childList:true,subtree:true,characterData:true});
 

@@ -102,7 +102,8 @@
       select.value=VALID.has(entry.amountQuality)?entry.amountQuality:'';select.title=qualityLabel(entry.amountQuality);
     });
   }
-  if(todayLog){new MutationObserver(enhanceTodayRows).observe(todayLog,{childList:true,subtree:true});enhanceTodayRows();}
+  window.addEventListener('okello:today-rendered',enhanceTodayRows);
+  if(todayLog)enhanceTodayRows();
 
   function dateKeys(n){const out=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);out.push(localDayKey(d));}return out;}
   function qualityStats(days=7){

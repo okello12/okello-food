@@ -107,7 +107,8 @@
   function chip(id,kind){return `<button type="button" class="quick-food" data-quick-food="${esc(id)}"><strong>${esc(labelFor(id))}</strong><small>${kind}</small></button>`;}
   function renderShelf(){const state=readState();const favs=readFavs().filter(id=>Array.from(foodSelect.options).some(o=>o.value===id)).slice(0,6);const recent=recentIds(state).filter(id=>!favs.includes(id)).slice(0,6);const content=[...favs.map(id=>chip(id,'Favourite')),...recent.map(id=>chip(id,'Recent'))].join('');shelf.innerHTML=`<div class="quick-shelf-head"><h3>Quick picks</h3><span>${favs.length?'Favourites + recent':'Recent foods appear here'}</span></div><div class="quick-chips">${content||'<span style="color:var(--muted);font-size:.82rem">Log a few foods and your quickest choices will appear here.</span>'}</div>`;shelf.querySelectorAll('[data-quick-food]').forEach(b=>b.addEventListener('click',()=>selectFood(b.dataset.quickFood)));}
   function updateBalance(){const c=$('calRemainText')?.textContent||'';const p=$('proteinRemainText')?.textContent||'';$('hubBalance').textContent=[c,p].filter(Boolean).join(' · ');renderShelf();}
-  const obs=new MutationObserver(updateBalance);[$('calRemainText'),$('proteinRemainText'),$('todayLog')].filter(Boolean).forEach(el=>obs.observe(el,{childList:true,subtree:true,characterData:true}));
+  window.addEventListener('okello:today-rendered',updateBalance);
+  window.addEventListener('okello:food-log-changed',updateBalance);
   $('librarySearch')?.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.value.trim()){const q=e.target.value.trim();const found=optionList().some(x=>x.label.toLowerCase().includes(q.toLowerCase()));if(!found){e.preventDefault();globalSearch.value=q;showLocalResults();hub.scrollIntoView({behavior:'smooth',block:'start'});}}});
 
   syncFavorite();renderShelf();updateBalance();

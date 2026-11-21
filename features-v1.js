@@ -181,7 +181,7 @@
     reloadWithMessage(`${x.name} added again`);
   }
 
-  new MutationObserver(enhanceTodayLog).observe(todayLog,{childList:true,subtree:true});
+  window.addEventListener('okello:today-rendered',enhanceTodayLog);
   enhanceTodayLog();
 
   // ---------- Weekly dashboard ----------
@@ -406,7 +406,7 @@
     });
   }
   const foodLibrary=$('foodLibrary');
-  if(foodLibrary){new MutationObserver(enhanceFoodCards).observe(foodLibrary,{childList:true,subtree:true});enhanceFoodCards();}
+  if(foodLibrary){window.addEventListener('okello:food-library-rendered',enhanceFoodCards);enhanceFoodCards();}
 
   // ---------- Secure encrypted device transfer ----------
   const secure=document.createElement('section');
